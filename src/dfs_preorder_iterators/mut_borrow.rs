@@ -46,7 +46,7 @@ impl<'a, Node> Iterator for MutBorrowedDFSPreorderIterator<'a, Node>
     fn next(&mut self) -> Option<Self::Item> {
         match std::mem::take(&mut self.root) {
             Some(next) => {
-                let (value, children) = next.get_value_and_children_borrow_mut();
+                let (value, children) = next.get_value_and_children_iter_mut();
                 match children {
                     None => {}
                     Some(children) => self.traversal_stack.push(children)
@@ -58,7 +58,7 @@ impl<'a, Node> Iterator for MutBorrowedDFSPreorderIterator<'a, Node>
                 match next {
                     None => return None,
                     Some(node) => {
-                        let (value, children) = node.get_value_and_children_borrow_mut();
+                        let (value, children) = node.get_value_and_children_iter_mut();
                         match  children {
                             None => {}
                             Some(children) => self.traversal_stack.push(children),

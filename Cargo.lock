@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "tree-iterators-rs"
-version = "0.1.0"
+name = "tree_iterators_rs"
+version = "1.0.0"

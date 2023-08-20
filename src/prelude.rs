@@ -17,76 +17,30 @@ use super::dfs_postorder_iterators::{
     borrow::BorrowedDFSPostorderIterator,
 };
 
+/// A default implemenation of a tree node. This struct 
+/// provides a series of tree traversal utilities to allow 
+/// you to easily work with and modify trees.
+#[derive(Clone, Debug)]
 pub struct TreeNode<T> {
+    /// This node's value
     pub value: T,
+    /// The children of the current node.
     pub children: Option<Vec<TreeNode<T>>>
-}
-
-impl<T> Clone for TreeNode<T> where T: Clone {
-    fn clone(&self) -> Self {
-        Self {
-            value: self.value.clone(),
-            children: self.children.clone()
-        }
-    }
-}
-
-impl<T> OwnedTreeNode for TreeNode<T> {
-    type OwnedValue = T;
-    type OwnedChildren = IntoIter<Self>;
-
-    fn get_value_and_children(self) -> (Self::OwnedValue, Option<Self::OwnedChildren>) {
-        (
-            self.value, 
-            match self.children {
-                None => None,
-                Some(children) => Some(children.into_iter())
-            }
-        )
-    }
-}
-
-impl<'a, T> MutBorrowedTreeNode<'a> for TreeNode<T> 
-    where T: 'a {
-
-    type MutBorrowedValue = &'a mut T;
-    type MutBorrowedChildren = IterMut<'a, TreeNode<T>>;
-
-    fn get_value_and_children_borrow_mut(&'a mut self) -> (Self::MutBorrowedValue, Option<Self::MutBorrowedChildren>) {
-        (
-            &mut self.value,
-            match &mut self.children {
-                None => None,
-                Some(children) => Some(children.iter_mut())
-            }
-        )
-    }
-}
-
-impl<'a, T> BorrowedTreeNode<'a> for TreeNode<T> 
-    where T: 'a {
-
-    type BorrowedValue = &'a T;
-    type BorrowedChildren = Iter<'a, TreeNode<T>>;
-
-    fn get_value_and_children_borrow(&'a self) -> (Self::BorrowedValue, Option<Self::BorrowedChildren>) {
-        let children_iter = match &self.children {
-            Some(vec) => Some(vec.iter()),
-            None => None
-        };
-        (&self.value, children_iter)
-    }
 }
 
 pub trait OwnedTreeNode 
     where Self: Sized {
     
+    /// The value of each node in the tree.
     type OwnedValue: Sized;
+    /// The type of iterator that can be used to iterate over each node's children 
+    /// collection.
     type OwnedChildren: Iterator<Item = Self>;
 
     /// This method gets the value and children from this node, consuming it 
     /// in the process. The other methods of this trait assume that the 'Children' 
-    /// list does not contain and circular references back to parent nodes.
+    /// list does not contain any circular references. If they do, it will create
+    /// an infinite loop.
     fn get_value_and_children(self) -> (Self::OwnedValue, Option<Self::OwnedChildren>);
 
     /// This method retrieves an iterator that can be used to perform
@@ -190,13 +144,16 @@ pub trait OwnedTreeNode
 pub trait MutBorrowedTreeNode<'a> 
     where Self: Sized + 'a {
     
+    /// A mutable reference to the value of each node in the tree.
     type MutBorrowedValue: Sized;
+    /// The type of iterator that can be used to iterate over each node's children 
+    /// collection.
     type MutBorrowedChildren: Iterator<Item = &'a mut Self>;
 
-    /// This method gets the value and children from this node, consuming it 
-    /// in the process. The other methods of this trait assume that the 'Children' 
-    /// list does not contain and circular references back to parent nodes.
-    fn get_value_and_children_borrow_mut(&'a mut self) -> (Self::MutBorrowedValue, Option<Self::MutBorrowedChildren>);
+    /// This method gets the value and children from this node. The other 
+    /// methods of this trait assume that the 'Children' list does not contain 
+    /// any circular references. If there are, an inifite loop will result.
+    fn get_value_and_children_iter_mut(&'a mut self) -> (Self::MutBorrowedValue, Option<Self::MutBorrowedChildren>);
 
     /// This method retrieves an iterator that can be used to perform
     /// Breadth First (Queue - specifically VecDeque-based) searches of a tree. If performance is 
@@ -299,13 +256,16 @@ pub trait MutBorrowedTreeNode<'a>
 pub trait BorrowedTreeNode<'a> 
     where Self: Sized + 'a {
     
+    /// A reference to the value of each node in the tree.
     type BorrowedValue: Sized;
+    /// The type of iterator that can be used to iterate over each node's children 
+    /// collection.
     type BorrowedChildren: Iterator<Item = &'a Self>;
 
     /// This method gets the value and children from this node, consuming it 
     /// in the process. The other methods of this trait assume that the 'Children' 
     /// list does not contain and circular references back to parent nodes.
-    fn get_value_and_children_borrow(&'a self) -> (Self::BorrowedValue, Option<Self::BorrowedChildren>);
+    fn get_value_and_children_iter(&'a self) -> (Self::BorrowedValue, Option<Self::BorrowedChildren>);
 
     /// This method retrieves an iterator that can be used to perform
     /// Breadth First (Queue - specifically VecDeque-based) searches of a tree. If performance is 
@@ -405,8 +365,64 @@ pub trait BorrowedTreeNode<'a>
     }
 }
 
+impl<T> OwnedTreeNode for TreeNode<T> {
+    type OwnedValue = T;
+    type OwnedChildren = IntoIter<Self>;
+
+    /// This method gets the value and children from this node. The other 
+    /// methods of this trait assume that the 'Children' list does not contain 
+    /// any circular references. If there are, an inifite loop will result.
+    fn get_value_and_children(self) -> (Self::OwnedValue, Option<Self::OwnedChildren>) {
+        (
+            self.value, 
+            match self.children {
+                None => None,
+                Some(children) => Some(children.into_iter())
+            }
+        )
+    }
+}
+
+impl<'a, T> MutBorrowedTreeNode<'a> for TreeNode<T> 
+    where T: 'a {
+
+    type MutBorrowedValue = &'a mut T;
+    type MutBorrowedChildren = IterMut<'a, TreeNode<T>>;
+
+    /// This method gets the value and children from this node. The other 
+    /// methods of this trait assume that the 'Children' list does not contain 
+    /// any circular references. If there are, an inifite loop will result.
+    fn get_value_and_children_iter_mut(&'a mut self) -> (Self::MutBorrowedValue, Option<Self::MutBorrowedChildren>) {
+        (
+            &mut self.value,
+            match &mut self.children {
+                None => None,
+                Some(children) => Some(children.iter_mut())
+            }
+        )
+    }
+}
+
+impl<'a, T> BorrowedTreeNode<'a> for TreeNode<T> 
+    where T: 'a {
+
+    type BorrowedValue = &'a T;
+    type BorrowedChildren = Iter<'a, TreeNode<T>>;
+
+    /// This method gets the value and children from this node. The other 
+    /// methods of this trait assume that the 'Children' list does not contain 
+    /// any circular references. If there are, an inifite loop will result.
+    fn get_value_and_children_iter(&'a self) -> (Self::BorrowedValue, Option<Self::BorrowedChildren>) {
+        let children_iter = match &self.children {
+            Some(vec) => Some(vec.iter()),
+            None => None
+        };
+        (&self.value, children_iter)
+    }
+}
+
 #[cfg(test)]
-mod tests {
+pub (crate) mod tests {
     use super::*;
 
     #[test]
@@ -488,7 +504,7 @@ mod tests {
         ]
     }
 
-    fn create_tree_for_testing(empty_children_list: Option<Vec<TreeNode<usize>>>) -> TreeNode<usize> {
+    pub (crate) fn create_tree_for_testing(empty_children_list: Option<Vec<TreeNode<usize>>>) -> TreeNode<usize> {
         TreeNode {
             value: 0,
             children: Some(vec![

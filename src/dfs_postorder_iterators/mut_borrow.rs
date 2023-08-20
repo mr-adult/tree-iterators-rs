@@ -28,7 +28,7 @@ impl<'a, Node> Iterator for MutBorrowedDFSPostorderIterator<'a, Node>
         loop {
             match std::mem::take(&mut self.root) {
                 Some(next) => {
-                    let (value, children) = next.get_value_and_children_borrow_mut();
+                    let (value, children) = next.get_value_and_children_iter_mut();
                     match children {
                         None => { return Some(value); }
                         Some(children) => {
@@ -50,7 +50,7 @@ impl<'a, Node> Iterator for MutBorrowedDFSPostorderIterator<'a, Node>
                                         return self.item_stack.pop();
                                     }
                                     Some(node) => {
-                                        let (value, children) = node.get_value_and_children_borrow_mut();
+                                        let (value, children) = node.get_value_and_children_iter_mut();
                                         self.item_stack.push(value);
                                         match children {
                                             None => { return self.item_stack.pop(); }

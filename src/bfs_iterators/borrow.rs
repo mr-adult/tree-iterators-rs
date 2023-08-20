@@ -26,7 +26,7 @@ impl<'a, Node> Iterator for BorrowedBFSIterator<'a, Node>
     fn next(&mut self) -> Option<Self::Item> {
         match std::mem::take(&mut self.root) {
             Some(root) => {
-                let (value, children) = root.get_value_and_children_borrow();
+                let (value, children) = root.get_value_and_children_iter();
                 match children {
                     None => {}
                     Some(children) => {
@@ -47,7 +47,7 @@ impl<'a, Node> Iterator for BorrowedBFSIterator<'a, Node>
                                     continue;
                                 }
                                 Some(next) => {
-                                    let (value, children) = next.get_value_and_children_borrow();
+                                    let (value, children) = next.get_value_and_children_iter();
                                     match children {
                                         None => {}
                                         Some(children) => self.traversal_queue.push_back(children)                                   }
