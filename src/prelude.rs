@@ -44,10 +44,7 @@ pub trait OwnedTreeNode
     fn get_value_and_children(self) -> (Self::OwnedValue, Option<Self::OwnedChildren>);
 
     /// This method retrieves an iterator that can be used to perform
-    /// Breadth First (Queue - specifically VecDeque-based) searches of a tree. If performance is 
-    /// not a serious concern, a Breadth First (iterative deepening) search
-    /// (referred to as BFS in this library) should be preferred to make
-    /// debugging easier.
+    /// Breadth First (Queue - specifically VecDeque-based) searches of a tree.
     /// 
     /// A Breadth First Search (BFS) is defined as:
     /// 
@@ -450,21 +447,19 @@ pub (crate) mod tests {
 
     #[test]
     fn bfs_has_correct_order() {
-        let expected = (0..=10).collect::<Vec<usize>>();
+        let expected = get_expected_order_bfs();
         for test_tree in create_trees_for_testing() {
             for (i, value) in test_tree.bfs().enumerate() {
                 assert_eq!(expected[i], value);
             }
         }
 
-        let expected = (0..=10).collect::<Vec<usize>>();
         for mut test_tree in create_trees_for_testing() {
             for (i, value) in test_tree.bfs_iter_mut().enumerate() {
                 assert_eq!(expected[i], *value);
             }
         }
 
-        let expected = (0..=10).collect::<Vec<usize>>();
         for test_tree in create_trees_for_testing() {
             for (i, value) in test_tree.bfs_iter().enumerate() {
                 assert_eq!(expected[i], *value);
@@ -550,6 +545,61 @@ pub (crate) mod tests {
     }
 
     #[test]
+    fn bfs_attach_ancestors_works() {
+        let expected = get_expected_order_bfs();
+
+        for test_tree in create_trees_for_testing() {
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.bfs_iter().attach_ancestors();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], *value[value.len() - 1]);
+                
+                let (expected_depth, expected_parent, expected_ancestors) = get_expected_metadata_for_value(*value[value.len() - 1]);
+
+                assert_eq!(expected_depth, value.len() - 1);
+
+                if value.len() > 1 {
+                    assert_eq!(expected_parent.expect("parent to exist"), *value[value.len() - 2]);
+                } else {
+                    assert_eq!(None, expected_parent);
+                }
+
+                for (j, ancestor) in value.iter().enumerate() {
+                    if j == value.len() - 1 { continue; }
+                    assert_eq!(expected_ancestors[j], **ancestor);
+                }
+
+                i += 1;
+            }
+        }
+
+        // for mut test_tree in create_trees_for_testing() {
+        //     let mut i = 0;
+        //     let mut iter_with_metadata = test_tree.bfs_iter_mut().attach_ancestors();
+        //     while let Some(value) = iter_with_metadata.next() {
+        //         assert_eq!(expected[i], *value[value.len() - 1]);
+                
+        //         let (expected_depth, expected_parent, expected_ancestors) = get_expected_metadata_for_value(*value[value.len() - 1]);
+
+        //         assert_eq!(expected_depth, value.len() - 1);
+
+        //         if value.len() > 1 {
+        //             assert_eq!(expected_parent.expect("parent to exist"), *value[value.len() - 2]);
+        //         } else {
+        //             assert_eq!(None, expected_parent);
+        //         }
+
+        //         for (j, ancestor) in value.iter().enumerate() {
+        //             if j == value.len() - 1 { continue; }
+        //             assert_eq!(expected_ancestors[j], **ancestor);
+        //         }
+
+        //         i += 1;
+        //     }
+        // }
+    }
+
+    #[test]
     fn dfs_preorder_attach_ancestors_works() {
         let expected = get_expected_order_dfs_preorder();
 
@@ -623,6 +673,10 @@ pub (crate) mod tests {
 
     fn get_expected_order_dfs_preorder() -> [usize; 11] {
         [0,1,3,4,2,5,6,7,8,9,10]
+    }
+
+    fn get_expected_order_bfs() -> [usize; 11] {
+        [0,1,2,3,4,5,6,7,8,9,10]
     }
 
     fn get_expected_order_dfs_postorder() -> [usize; 11] {
