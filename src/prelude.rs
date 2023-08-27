@@ -1,6 +1,8 @@
 use std::slice::{Iter, IterMut};
 use std::vec::IntoIter;
 
+use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
+
 use super::bfs_iterators::{
     owned::OwnedBFSIterator,
     mut_borrow::MutBorrowedBFSIterator,
@@ -475,26 +477,70 @@ pub (crate) mod tests {
 
     #[test]
     fn dfs_postorder_has_correct_order() {
-        let expected = vec![3,4,1,5,10,9,8,7,6,2,0];
+        let expected = get_expected_order_dfs_postorder();
         for test_tree in create_trees_for_testing() {
             for (i, value) in test_tree.dfs_postorder().enumerate() {
                 assert_eq!(expected[i], value);
             }
         }
 
-        let expected = vec![3,4,1,5,10,9,8,7,6,2,0];
         for mut test_tree in create_trees_for_testing() {
             for (i, value) in test_tree.dfs_postorder_iter_mut().enumerate() {
                 assert_eq!(expected[i], *value);
             }
         }
 
-        let expected = vec![3,4,1,5,10,9,8,7,6,2,0];
         for test_tree in create_trees_for_testing() {
             for (i, value) in test_tree.dfs_postorder_iter().enumerate() {
                 assert_eq!(expected[i], *value);
             }
         }
+    }
+
+    #[test]
+    fn dfs_postorder_with_metadata_works() {
+        let expected = get_expected_order_dfs_postorder();
+
+        for mut test_tree in create_trees_for_testing() {
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.dfs_postorder_iter_mut().attach_ancestors();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], *value[value.len() - 1]);
+                let (expected_depth, expected_parent, expected_ancestors) = match *value[value.len() - 1] {
+                    0 => (0, None, vec![]),
+                    1 => (1, Some(0), vec![0]),
+                    2 => (1, Some(0), vec![0]),
+                    3 => (2, Some(1), vec![0, 1]),
+                    4 => (2, Some(1), vec![0, 1]),
+                    5 => (2, Some(2), vec![0, 2]),
+                    6 => (2, Some(2), vec![0, 2]),
+                    7 => (3, Some(6), vec![0, 2, 6]),
+                    8 => (4, Some(7), vec![0, 2, 6, 7]),
+                    9 => (5, Some(8), vec![0, 2, 6, 7, 8]),
+                    10 => (6, Some(9), vec![0, 2, 6, 7, 8, 9]),
+                    _ => panic!("unexpected value"),
+                };
+
+                assert_eq!(expected_depth, value.len() - 1);
+
+                if value.len() > 1 {
+                    assert_eq!(expected_parent.expect("parent to exist"), *value[value.len() - 2]);
+                } else {
+                    assert_eq!(None, expected_parent);
+                }
+
+                for (j, ancestor) in value.iter().enumerate() {
+                    if j == value.len() - 1 { continue; }
+                    assert_eq!(expected_ancestors[j], **ancestor);
+                }
+
+                i += 1;
+            }
+        }
+    }
+
+    fn get_expected_order_dfs_postorder() -> Vec<usize> {
+        vec![3,4,1,5,10,9,8,7,6,2,0]
     }
 
     fn create_trees_for_testing() -> Vec<TreeNode<usize>> {
