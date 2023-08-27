@@ -20,17 +20,7 @@ impl<'a, Node> MutBorrowedDFSPostorderIterator<'a, Node>
         }
     }
 
-    /// Attaches the ancestors of the node to the iterator.
-    /// This operation transforms the iterator into a StreamingIterator,
-    /// meaning that the values can no longer be directly save and used 
-    /// across loop iterations. The references are still valid, but they
-    /// must be extracted from their containing slice to reuse them.
-    /// 
-    /// You will be sacrificing the use of for loops, as this iterator is
-    /// no longer a native rust iterator and must be supported separately.
-    /// For more information, see the streaming-iterator crate on crates.io.
-    /// 
-    /// This method retrieves a streaming iterable that can be used to perform
+    /// This method retrieves a streaming iterator that can be used to perform
     /// Depth First Postorder searches of a tree.
     /// 
     /// A Depth First Postorder search (referred to as DFS Postorder) 
@@ -39,7 +29,9 @@ impl<'a, Node> MutBorrowedDFSPostorderIterator<'a, Node>
     /// A tree traversal that involves depth-first searching a tree 
     /// from the bottom up. Given a tree of the following shape, this 
     /// traversal type would traverse the elements and yield slices in
-    /// the following order: 
+    /// the following order. Note for each slice, the current node is
+    /// at index slice.len() - 1, the root is at index 0 and all other 
+    /// ancestors are found in between.
     /// - \[0, 1, 3\], 
     /// - \[0, 1, 4\], 
     /// - \[0, 1\], 
@@ -68,6 +60,21 @@ impl<'a, Node> MutBorrowedDFSPostorderIterator<'a, Node>
     /// -           \
     /// -           10
     ///
+    /// More technical details:
+    /// 
+    /// This method attaches the ancestors of the node to the iterator.
+    /// This operation transforms the iterator into a StreamingIterator,
+    /// meaning that the values can no longer be directly save and used 
+    /// across loop iterations. The references to the nodes themselves 
+    /// are still valid across the entirety of the loop, but you must 
+    /// extract them from their containing slice to reuse them. This
+    /// will incure a performance penalty that this library does not
+    /// assume you want.
+    /// 
+    /// Since this iterator is no longer a Rust Iterator, for loops will
+    /// no longer work. See details on how to work around this in the 
+    /// [streaming-iterator](https://crates.io/crates/streaming-iterator) crate.
+    /// 
     pub fn attach_ancestors(self) -> MutBorrowedDFSPostorderIteratorWithAncestors<'a, Node> {
         match self.root {
             None => panic!("Attempted to attach metadata to a DFSPostOrderIterator in the middle of a tree traversal. This is forbidden."),

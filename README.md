@@ -10,12 +10,12 @@ The other benefit of this library is its tight integration with the rest of Rust
 
 ## Getting Started
 
-The easiest way to get started is to simply add this crate as a dependency and add a using statement to pull in its prelude (tree_iterators_rs::prelude). You can then create your data structure using the TreeNode struct provided and build on top of it. This struct provides the default implementation of all functionality in this crate. The methods that come attached to this struct include the following (all of which can be found in [this file](https://github.com/mr-adult/tree-iterators-rs/blob/main/src/prelude.rs file):
-- Owned Iterator APIs - these take ownership of the TreeNode similar to an into_iter() call.
+The easiest way to get started is to simply add this crate as a dependency and add a using statement to pull in its prelude (tree_iterators_rs::prelude). You can then create your data structure using the TreeNode struct provided and build on top of it. This struct provides the default implementation of all functionality in this crate. The methods that come attached to this struct include the following (all of which can be found in [this file](https://github.com/mr-adult/tree-iterators-rs/blob/main/src/prelude.rs)):
+- Owned Iterator APIs - these take ownership of the TreeNode similarly to an into_iter() call.
 	- bfs()
 	- dfs_preorder()
 	- dfs_postorder()
-- Mutable borrow APIs - these do not take ownership and behave similar to an iter_mut() call.
+- Mutable borrow APIs - these do not take ownership and behave similarly to an iter_mut() call.
 	- bfs_iter_mut()
 	- dfs_preorder_iter_mut()
 	- dfs_postorder_iter_mut()
@@ -160,7 +160,7 @@ while stack.len() > 0 {
 println!("{}", result);
 ```
 
-## Depth First Postorder Search (DFS Postorder)
+### Depth First Postorder Search (DFS Postorder)
 
 Similarly to the BFS and DFS preorder examples, all 3 APIs' usage are identical other than their borrowing model, so only one example will be given.
 ```rust
