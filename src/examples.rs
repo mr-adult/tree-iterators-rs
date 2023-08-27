@@ -168,6 +168,69 @@ mod tests {
         println!("{}", result);
     }
 
+    use streaming_iterator::StreamingIterator;
+
+    #[test]
+    fn dfs_preorder_attach_ancestors_example() {
+        let root = create_example_tree();
+        let mut result = String::new();
+
+        root.dfs_preorder_iter()
+            .attach_ancestors()
+            .filter(|slice| 
+                slice.iter().all(|value| **value % 2 == 0)
+            )
+            .map(|slice| slice[slice.len() - 1])
+            .for_each(|value| {
+                result.push(' ');
+                result.push_str(&value.to_string())
+            });
+        
+        // result: 0 2 6
+        println!("{}", result);
+    }
+
+    #[test]
+    fn dfs_postorder_attach_ancestors_example() {
+        let root = create_example_tree();
+        let mut result = String::new();
+
+        root.dfs_postorder_iter()
+            .attach_ancestors()
+            .filter(|slice| 
+                slice.iter().all(|value| **value % 2 == 0)
+            )
+            .map(|slice| slice[slice.len() - 1])
+            .for_each(|value| {
+                result.push(' ');
+                result.push_str(&value.to_string())
+            });
+        
+        // result: 6 2 0
+        println!("{}", result);
+    }
+
+    #[test]
+    fn bfs_attach_ancestors_example() {
+        let root = create_example_tree();
+        let mut result = String::new();
+
+        root.bfs_iter()
+            .attach_ancestors()
+            .filter(|slice| 
+                slice.iter().all(|value| **value % 2 == 0)
+            )
+            .map(|slice| slice[slice.len() - 1])
+            .for_each(|value| {
+                result.push(' ');
+                result.push_str(&value.to_string())
+            });
+        
+        // result: 0 2 6
+        println!("{}", result);
+    }
+
+
     fn create_example_tree() -> TreeNode<usize> {
         create_tree_for_testing(None)
     }
@@ -228,3 +291,4 @@ mod custom_implemenation {
         }
     }
 }
+

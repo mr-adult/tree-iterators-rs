@@ -23,6 +23,8 @@ The easiest way to get started is to simply add this crate as a dependency and a
 	- bfs_iter()
 	- dfs_preorder_iter()
 	- dfs_postorder_iter()
+- In addition to these APIs, all of the borrowed APIs and both of the dfs mutable borrow APIs have an additional method that can be called. This method changes the iterator to return a slice of references to the current tree value, as well as all of its parent values. For more details, see Examples.
+	- attach_ancestors()
 
 
 ## Examples
@@ -211,6 +213,80 @@ let mut result = String::new();
 dfs_postorder(root, &mut result);
 
 // result: 3, 4, 1, 5, 10, 9, 8, 7, 6, 2, 0,
+println!("{}", result);
+```
+
+## Attach Ancestors
+
+attach_ancestors() is a method that can be called after each of the following APIs to change the iterator structure into one that returns a slice of all ancestors and the current value in the tree. If one of these are called, the (now streaming) iterator will yield a slice where the item at index 0 is the root value, the item at index len() - 1 is the current value, and everything in between is the other ancestors. As an example, when we are at the value of 10 in our traversal, the slice will look like this: \[0, 2, 6, 7, 8, 9, 10\].
+- bfs_iter() - this will convert the traversal from a queue-based traversal to an iterative deepening traversal, so be careful calling this!
+- dfs_preorder_iter()
+- dfs_postorder_iter()
+- dfs_preorder_iter_mut()
+- dfs_postorder_iter_mut()
+
+For example, I can use this API to filter down to only the values where all of the ancestors are even numbers in the example tree:
+
+```rust
+use streaming_iterator::StreamingIterator;
+
+let root = create_example_tree();
+let mut result = String::new();
+
+root.dfs_preorder_iter()
+	.attach_ancestors()
+	.filter(|slice| 
+		slice.iter().all(|value| **value % 2 == 0)
+	)
+	.map(|slice| slice[slice.len() - 1])
+	.for_each(|value| {
+		result.push(' ');
+		result.push_str(&value.to_string())
+	});
+
+// result: 0 2 6
+println!("{}", result);
+```
+
+I can do the same with the postorder iterator to get the result in reverse:
+
+```rust
+let root = create_example_tree();
+let mut result = String::new();
+
+root.dfs_postorder_iter()
+	.attach_ancestors()
+	.filter(|slice| 
+		slice.iter().all(|value| **value % 2 == 0)
+	)
+	.map(|slice| slice[slice.len() - 1])
+	.for_each(|value| {
+		result.push(' ');
+		result.push_str(&value.to_string())
+	});
+
+// result: 6 2 0
+println!("{}", result);
+```
+
+And I can do the same with a breadth-first search. This just so happens to yield the same result as the depth first preorder iterator:
+
+```rust
+let root = create_example_tree();
+let mut result = String::new();
+
+root.bfs_iter()
+	.attach_ancestors()
+	.filter(|slice| 
+		slice.iter().all(|value| **value % 2 == 0)
+	)
+	.map(|slice| slice[slice.len() - 1])
+	.for_each(|value| {
+		result.push(' ');
+		result.push_str(&value.to_string())
+	});
+
+// result: 0 2 6
 println!("{}", result);
 ```
 
