@@ -2,8 +2,9 @@
 name = "tree_iterators_rs"
 version = "1.0.1"
 edition = "2021"
-description = "tree-iterators-rs is a library built to provide you with the utilities to easily work with tree data structures in Rust."
+description = "tree-iterators-rs is a library built to provide you with the iterators to easily work with tree data structures in Rust."
 license = "MIT"
+repository = "https://github.com/mr-adult/tree-iterators-rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
