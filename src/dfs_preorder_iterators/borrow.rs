@@ -1,6 +1,6 @@
 use streaming_iterator::StreamingIterator;
-
 use crate::prelude::BorrowedTreeNode;
+use super::{preorder_streaming_iterator_impl, dfs_preorder_next, advance_dfs};
 
 pub struct BorrowedDFSPreorderIterator<'a, Node>
     where Node: BorrowedTreeNode<'a> {
@@ -81,59 +81,13 @@ impl<'a, Node> BorrowedDFSPreorderIterator<'a, Node>
             }
         }
     }
-
-    fn pop_empty_iterators_until_move(&mut self) -> Option<&'a Node> {
-        loop {
-            let stack_len = self.traversal_stack.len();
-            if stack_len == 0 { return None; }
-            match self.traversal_stack.get_mut(stack_len - 1) {
-                None => return None,
-                Some(top) => {
-                    match top.next() {
-                        None => {
-                            self.traversal_stack.pop();
-                        }
-                        Some(value) => {
-                            return Some(value);
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
 
 impl<'a, Node> Iterator for BorrowedDFSPreorderIterator<'a, Node> 
     where Node: BorrowedTreeNode<'a> {
     
     type Item = Node::BorrowedValue;
-    
-    fn next(&mut self) -> Option<Self::Item> {
-        match std::mem::take(&mut self.root) {
-            Some(next) => {
-                let (value, children) = next.get_value_and_children_iter();
-                match children {
-                    None => {}
-                    Some(children) => self.traversal_stack.push(children)
-                }
-                return Some(value);
-            }
-            None => {
-                let next = self.pop_empty_iterators_until_move();
-                match next {
-                    None => return None,
-                    Some(node) => {
-                        let (value, children) = node.get_value_and_children_iter();
-                        match  children {
-                            None => {}
-                            Some(children) => self.traversal_stack.push(children),
-                        }
-                        return Some(value);
-                    }
-                }
-            }
-        }
-    }
+    dfs_preorder_next!(get_value_and_children_iter);
 }
 
 pub struct BorrowedDFSPreorderIteratorWithAncestors<'a, Node>
@@ -156,71 +110,12 @@ impl<'a, Node> BorrowedDFSPreorderIteratorWithAncestors<'a, Node>
         }
     }
 
-    fn pop_empty_iterators_until_move(&mut self) -> Option<&'a Node> {
-        loop {
-            let stack_len = self.traversal_stack.len();
-            if stack_len == 0 { return None; }
-            match self.traversal_stack.get_mut(stack_len - 1) {
-                None => return None,
-                Some(top) => {
-                    if self.item_stack.len() > stack_len {
-                        self.item_stack.pop();
-                    }
-                    match top.next() {
-                        None => {
-                            self.traversal_stack.pop();
-                            self.item_stack.pop();
-                        }
-                        Some(value) => {
-                            return Some(value);
-                        }
-                    }
-                }
-            }
-        }
-    }
+    advance_dfs!(get_value_and_children_iter);
 }
 
 impl<'a, Node> StreamingIterator for BorrowedDFSPreorderIteratorWithAncestors<'a, Node> 
     where Node: BorrowedTreeNode<'a> {
     
     type Item = [Node::BorrowedValue];
-    
-    fn advance(&mut self) {
-        match std::mem::take(&mut self.root) {
-            Some(next) => {
-                let (value, children) = next.get_value_and_children_iter();
-                match children {
-                    None => {}
-                    Some(children) => self.traversal_stack.push(children)
-                }
-
-                self.item_stack.push(value);
-                return;
-            }
-            None => {
-                let next = self.pop_empty_iterators_until_move();
-                match next {
-                    None => return,
-                    Some(node) => {
-                        let (value, children) = node.get_value_and_children_iter();
-                        match  children {
-                            None => {}
-                            Some(children) => self.traversal_stack.push(children),
-                        }
-                        self.item_stack.push(value);
-                        return;
-                    }
-                }
-            }
-        }
-    }
-
-    fn get(&self) -> Option<&Self::Item> {
-        if self.item_stack.len() > 0 {
-            Some(&self.item_stack)
-        } else {
-            None
-        }
-    }
+    preorder_streaming_iterator_impl!();
 }
