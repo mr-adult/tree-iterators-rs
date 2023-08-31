@@ -77,7 +77,7 @@ impl<'a, Node> BorrowedDFSPreorderIterator<'a, Node>
     /// 
     pub fn attach_ancestors(self) -> BorrowedDFSPreorderIteratorWithAncestors<'a, Node> {
         match self.root {
-            None => panic!("Attempted to attach metadata to a DFSPostOrderIterator in the middle of a tree traversal. This is forbidden."),
+            None => panic!("Attempted to attach metadata to a DFSPreOrderIterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
                 BorrowedDFSPreorderIteratorWithAncestors::new(root)
             }
