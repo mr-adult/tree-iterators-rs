@@ -44,19 +44,21 @@ impl<'a, Node> BorrowedDFSPreorderIterator<'a, Node>
     /// 
     /// In this traversal, each node will only be traversed before any
     /// of its children have been traversed.
-    /// -        0
-    /// -       / \
-    /// -      1   2
-    /// -     / \ / \
-    /// -    3  4 5  6
-    /// -           /
-    /// -          7
-    /// -           \
-    /// -            8
-    /// -           /
-    /// -          9
-    /// -           \
-    /// -           10
+    /// ```
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
     /// 
     /// More technical details:
     /// 

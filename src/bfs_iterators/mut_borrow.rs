@@ -49,19 +49,21 @@ impl<'a, Node> MutBorrowedBFSIterator<'a, Node>
     /// 
     /// In this traversal, we scan each level of the tree from left to
     /// right before going down to the next level.
-    /// -        0
-    /// -       / \
-    /// -      1   2
-    /// -     / \ / \
-    /// -    3  4 5  6
-    /// -           /
-    /// -          7
-    /// -           \
-    /// -            8
-    /// -           /
-    /// -          9
-    /// -           \
-    /// -           10
+    /// ```
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
     ///
     /// More technical details:
     /// 

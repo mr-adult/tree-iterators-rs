@@ -55,19 +55,21 @@ pub trait OwnedTreeNode
     /// 
     /// In this traversal, we scan each level of the tree from left to
     /// right before going down to the next level.
-    /// -        0
-    /// -       / \
-    /// -      1   2
-    /// -     / \ / \
-    /// -    3  4 5  6
-    /// -           /
-    /// -          7
-    /// -           \
-    /// -            8
-    /// -           /
-    /// -          9
-    /// -           \
-    /// -           10
+    /// ```
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
     /// 
     fn bfs(self) -> OwnedBFSIterator<Self> {
         OwnedBFSIterator::new(self)
@@ -85,19 +87,21 @@ pub trait OwnedTreeNode
    /// 
    /// In this traversal, each node will only be traversed before any
    /// of its children have been traversed.
-   /// -        0
-   /// -       / \
-   /// -      1   2
-   /// -     / \ / \
-   /// -    3  4 5  6
-   /// -           /
-   /// -          7
-   /// -           \
-   /// -            8
-   /// -           /
-   /// -          9
-   /// -           \
-   /// -           10
+    /// ```
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
    /// 
     fn dfs_preorder(self) -> OwnedDFSPreorderIterator<Self> {
         OwnedDFSPreorderIterator::new(self)
@@ -116,19 +120,21 @@ pub trait OwnedTreeNode
     /// 
     /// In this traversal, each node will only be traversed after all
     /// of its children have been traversed.
-    /// -        0
-    /// -       / \
-    /// -      1   2
-    /// -     / \ / \
-    /// -    3  4 5  6
-    /// -           /
-    /// -          7
-    /// -           \
-    /// -            8
-    /// -           /
-    /// -          9
-    /// -           \
-    /// -           10
+    /// ```
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
     /// 
     /// This traversal type guarantees that getChildren() will only be 
     /// called once per node of the tree.
@@ -167,19 +173,21 @@ pub trait MutBorrowedTreeNode<'a>
     /// 
     /// In this traversal, we scan each level of the tree from left to
     /// right before going down to the next level.
-    /// -        0
-    /// -       / \
-    /// -      1   2
-    /// -     / \ / \
-    /// -    3  4 5  6
-    /// -           /
-    /// -          7
-    /// -           \
-    /// -            8
-    /// -           /
-    /// -          9
-    /// -           \
-    /// -           10
+    /// ```
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
     /// 
     fn bfs_iter_mut(&'a mut self) -> MutBorrowedBFSIterator<Self> {
         MutBorrowedBFSIterator::new(self)
@@ -197,19 +205,21 @@ pub trait MutBorrowedTreeNode<'a>
    /// 
    /// In this traversal, each node will only be traversed before any
    /// of its children have been traversed.
-   /// -        0
-   /// -       / \
-   /// -      1   2
-   /// -     / \ / \
-   /// -    3  4 5  6
-   /// -           /
-   /// -          7
-   /// -           \
-   /// -            8
-   /// -           /
-   /// -          9
-   /// -           \
-   /// -           10
+    /// ```
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
    /// 
     fn dfs_preorder_iter_mut(&'a mut self) -> MutBorrowedDFSPreorderIterator<'a, Self> {
         MutBorrowedDFSPreorderIterator::new(self)
@@ -228,19 +238,21 @@ pub trait MutBorrowedTreeNode<'a>
     /// 
     /// In this traversal, each node will only be traversed after all
     /// of its children have been traversed.
-    /// -        0
-    /// -       / \
-    /// -      1   2
-    /// -     / \ / \
-    /// -    3  4 5  6
-    /// -           /
-    /// -          7
-    /// -           \
-    /// -            8
-    /// -           /
-    /// -          9
-    /// -           \
-    /// -           10
+    /// ```
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
     /// 
     /// This traversal type guarantees that getChildren() will only be 
     /// called once per node of the tree.
@@ -279,19 +291,21 @@ pub trait BorrowedTreeNode<'a>
     /// 
     /// In this traversal, we scan each level of the tree from left to
     /// right before going down to the next level.
-    /// -        0
-    /// -       / \
-    /// -      1   2
-    /// -     / \ / \
-    /// -    3  4 5  6
-    /// -           /
-    /// -          7
-    /// -           \
-    /// -            8
-    /// -           /
-    /// -          9
-    /// -           \
-    /// -           10
+    /// ```
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
     /// 
     fn bfs_iter(&'a self) -> BorrowedBFSIterator<Self> {
         BorrowedBFSIterator::new(self)
@@ -309,19 +323,21 @@ pub trait BorrowedTreeNode<'a>
    /// 
    /// In this traversal, each node will only be traversed before any
    /// of its children have been traversed.
-   /// -        0
-   /// -       / \
-   /// -      1   2
-   /// -     / \ / \
-   /// -    3  4 5  6
-   /// -           /
-   /// -          7
-   /// -           \
-   /// -            8
-   /// -           /
-   /// -          9
-   /// -           \
-   /// -           10
+    /// ```
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
    /// 
     fn dfs_preorder_iter(&'a self) -> BorrowedDFSPreorderIterator<'a, Self> {
         BorrowedDFSPreorderIterator::new(self)
@@ -340,19 +356,21 @@ pub trait BorrowedTreeNode<'a>
     /// 
     /// In this traversal, each node will only be traversed after all
     /// of its children have been traversed.
-    /// -        0
-    /// -       / \
-    /// -      1   2
-    /// -     / \ / \
-    /// -    3  4 5  6
-    /// -           /
-    /// -          7
-    /// -           \
-    /// -            8
-    /// -           /
-    /// -          9
-    /// -           \
-    /// -           10
+    /// ```
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
     /// 
     /// This traversal type guarantees that getChildren() will only be 
     /// called once per node of the tree.
