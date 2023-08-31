@@ -4,6 +4,8 @@ tree-traversers-rs is a library built to provide you with the utilities to easil
 
 ### Benefits
 
+This crate uses no unsafe code!
+
 The largest benefit of using this library is that the various tree traversers are interchangeable in the for loop syntax. This means I can write my code to use a breadth-first-search today and trivially swap it out for a depth-first pre or postorder search tomorrow without significantly changing the structure of my code.
 
 The other benefit of this library is its tight integration with the rest of Rust's iterators. Because each API returns an iterator, you can proceed to use the iterator APIs like filter, map, and reduce.
@@ -218,14 +220,9 @@ println!("{}", result);
 
 ## Attach Ancestors
 
-attach_ancestors() is a method that can be called after each of the following APIs to change the iterator structure into one that returns a slice of all ancestors and the current value in the tree. If one of these are called, the (now streaming) iterator will yield a slice where the item at index 0 is the root value, the item at index len() - 1 is the current value, and everything in between is the other ancestors. As an example, when we are at the value of 10 in our traversal, the slice will look like this: \[0, 2, 6, 7, 8, 9, 10\].
-- bfs_iter() - this will convert the traversal from a queue-based traversal to an iterative deepening traversal, so be careful calling this!
-- dfs_preorder_iter()
-- dfs_postorder_iter()
-- dfs_preorder_iter_mut()
-- dfs_postorder_iter_mut()
+attach_ancestors() is a method that can be called after any of the above APIs to change the iterator structure into one that returns a slice of all ancestors and the current value in the tree. If one of these is called, the (now streaming) iterator will yield a slice where the item at index 0 is the root value, the item at index len() - 1 is the current value, and everything in between is the other ancestors. As an example, when we are at the value of 10 in our traversal, the slice will look like this: \[0, 2, 6, 7, 8, 9, 10\].
 
-For example, I can use this API to filter down to only the values where all of the ancestors are even numbers in the example tree:
+For example, we can use this API to filter down to only the values where all of the ancestors are even numbers in the example tree:
 
 ```rust
 use streaming_iterator::StreamingIterator;
@@ -248,7 +245,7 @@ root.dfs_preorder_iter()
 println!("{}", result);
 ```
 
-I can do the same with the postorder iterator to get the result in reverse:
+We can do the same with the postorder iterator to get the result in reverse:
 
 ```rust
 let root = create_example_tree();
@@ -269,7 +266,7 @@ root.dfs_postorder_iter()
 println!("{}", result);
 ```
 
-And I can do the same with a breadth-first search. This just so happens to yield the same result as the depth first preorder iterator:
+And we can do the same with a breadth-first search. This just so happens to yield the same result as the depth first preorder iterator:
 
 ```rust
 let root = create_example_tree();

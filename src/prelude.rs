@@ -498,22 +498,10 @@ pub (crate) mod tests {
             let mut iter_with_metadata = test_tree.dfs_postorder_iter().attach_ancestors();
             while let Some(value) = iter_with_metadata.next() {
                 assert_eq!(expected[i], *value[value.len() - 1]);
-                
-                let (expected_depth, expected_parent, expected_ancestors) = get_expected_metadata_for_value(*value[value.len() - 1]);
-
-                assert_eq!(expected_depth, value.len() - 1);
-
-                if value.len() > 1 {
-                    assert_eq!(expected_parent.expect("parent to exist"), *value[value.len() - 2]);
-                } else {
-                    assert_eq!(None, expected_parent);
+                let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value[j]);
                 }
-
-                for (j, ancestor) in value.iter().enumerate() {
-                    if j == value.len() - 1 { continue; }
-                    assert_eq!(expected_ancestors[j], **ancestor);
-                }
-
                 i += 1;
             }
         }
@@ -523,22 +511,23 @@ pub (crate) mod tests {
             let mut iter_with_metadata = test_tree.dfs_postorder_iter_mut().attach_ancestors();
             while let Some(value) = iter_with_metadata.next() {
                 assert_eq!(expected[i], *value[value.len() - 1]);
-                
-                let (expected_depth, expected_parent, expected_ancestors) = get_expected_metadata_for_value(*value[value.len() - 1]);
-
-                assert_eq!(expected_depth, value.len() - 1);
-
-                if value.len() > 1 {
-                    assert_eq!(expected_parent.expect("parent to exist"), *value[value.len() - 2]);
-                } else {
-                    assert_eq!(None, expected_parent);
+                let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value[j]);
                 }
+                i += 1;
+            }
+        }
 
-                for (j, ancestor) in value.iter().enumerate() {
-                    if j == value.len() - 1 { continue; }
-                    assert_eq!(expected_ancestors[j], **ancestor);
+        for test_tree in create_trees_for_testing() {
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.dfs_postorder().attach_ancestors();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], value[value.len() - 1]);
+                let expected = get_expected_metadata_for_value(value[value.len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], value[j]);
                 }
-
                 i += 1;
             }
         }
@@ -553,50 +542,39 @@ pub (crate) mod tests {
             let mut iter_with_metadata = test_tree.bfs_iter().attach_ancestors();
             while let Some(value) = iter_with_metadata.next() {
                 assert_eq!(expected[i], *value[value.len() - 1]);
-                
-                let (expected_depth, expected_parent, expected_ancestors) = get_expected_metadata_for_value(*value[value.len() - 1]);
-
-                assert_eq!(expected_depth, value.len() - 1);
-
-                if value.len() > 1 {
-                    assert_eq!(expected_parent.expect("parent to exist"), *value[value.len() - 2]);
-                } else {
-                    assert_eq!(None, expected_parent);
+                let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value[j]);
                 }
-
-                for (j, ancestor) in value.iter().enumerate() {
-                    if j == value.len() - 1 { continue; }
-                    assert_eq!(expected_ancestors[j], **ancestor);
-                }
-
                 i += 1;
             }
         }
 
-        // for mut test_tree in create_trees_for_testing() {
-        //     let mut i = 0;
-        //     let mut iter_with_metadata = test_tree.bfs_iter_mut().attach_ancestors();
-        //     while let Some(value) = iter_with_metadata.next() {
-        //         assert_eq!(expected[i], *value[value.len() - 1]);
-                
-        //         let (expected_depth, expected_parent, expected_ancestors) = get_expected_metadata_for_value(*value[value.len() - 1]);
+        for mut test_tree in create_trees_for_testing() {
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.bfs_iter_mut().attach_ancestors();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], *value[value.len() - 1]);
+                let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value[j]);
+                }
+                i += 1;
+            }
+        }
 
-        //         assert_eq!(expected_depth, value.len() - 1);
-
-        //         if value.len() > 1 {
-        //             assert_eq!(expected_parent.expect("parent to exist"), *value[value.len() - 2]);
-        //         } else {
-        //             assert_eq!(None, expected_parent);
-        //         }
-
-        //         for (j, ancestor) in value.iter().enumerate() {
-        //             if j == value.len() - 1 { continue; }
-        //             assert_eq!(expected_ancestors[j], **ancestor);
-        //         }
-
-        //         i += 1;
-        //     }
-        // }
+        for test_tree in create_trees_for_testing() {
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.bfs().attach_ancestors();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], value[value.len() - 1]);
+                let expected = get_expected_metadata_for_value(value[value.len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], value[j]);
+                }
+                i += 1;
+            }
+        }
     }
 
     #[test]
@@ -608,22 +586,10 @@ pub (crate) mod tests {
             let mut iter_with_metadata = test_tree.dfs_preorder_iter().attach_ancestors();
             while let Some(value) = iter_with_metadata.next() {
                 assert_eq!(expected[i], *value[value.len() - 1]);
-                
-                let (expected_depth, expected_parent, expected_ancestors) = get_expected_metadata_for_value(*value[value.len() - 1]);
-
-                assert_eq!(expected_depth, value.len() - 1);
-
-                if value.len() > 1 {
-                    assert_eq!(expected_parent.expect("parent to exist"), *value[value.len() - 2]);
-                } else {
-                    assert_eq!(None, expected_parent);
+                let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value[j]);
                 }
-
-                for (j, ancestor) in value.iter().enumerate() {
-                    if j == value.len() - 1 { continue; }
-                    assert_eq!(expected_ancestors[j], **ancestor);
-                }
-
                 i += 1;
             }
         }
@@ -633,40 +599,41 @@ pub (crate) mod tests {
             let mut iter_with_metadata = test_tree.dfs_preorder_iter_mut().attach_ancestors();
             while let Some(value) = iter_with_metadata.next() {
                 assert_eq!(expected[i], *value[value.len() - 1]);
-                
-                let (expected_depth, expected_parent, expected_ancestors) = get_expected_metadata_for_value(*value[value.len() - 1]);
-
-                assert_eq!(expected_depth, value.len() - 1);
-
-                if value.len() > 1 {
-                    assert_eq!(expected_parent.expect("parent to exist"), *value[value.len() - 2]);
-                } else {
-                    assert_eq!(None, expected_parent);
+                let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value[j]);
                 }
+                i += 1;
+            }
+        }
 
-                for (j, ancestor) in value.iter().enumerate() {
-                    if j == value.len() - 1 { continue; }
-                    assert_eq!(expected_ancestors[j], **ancestor);
+        for test_tree in create_trees_for_testing() {
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.dfs_preorder().attach_ancestors();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], value[value.len() - 1]);
+                let expected = get_expected_metadata_for_value(value[value.len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], value[j]);
                 }
-
                 i += 1;
             }
         }
     }
 
-    fn get_expected_metadata_for_value(val: usize) -> (usize, Option<usize>, Vec<usize>) {
+    fn get_expected_metadata_for_value(val: usize) -> &'static [usize] {
         match val {
-            0 => (0, None, vec![]),
-            1 => (1, Some(0), vec![0]),
-            2 => (1, Some(0), vec![0]),
-            3 => (2, Some(1), vec![0, 1]),
-            4 => (2, Some(1), vec![0, 1]),
-            5 => (2, Some(2), vec![0, 2]),
-            6 => (2, Some(2), vec![0, 2]),
-            7 => (3, Some(6), vec![0, 2, 6]),
-            8 => (4, Some(7), vec![0, 2, 6, 7]),
-            9 => (5, Some(8), vec![0, 2, 6, 7, 8]),
-            10 => (6, Some(9), vec![0, 2, 6, 7, 8, 9]),
+            0 => &[0],
+            1 => &[0, 1],
+            2 => &[0, 2],
+            3 => &[0, 1, 3],
+            4 => &[0, 1, 4],
+            5 => &[0, 2, 5],
+            6 => &[0, 2, 6],
+            7 => &[0, 2, 6, 7],
+            8 => &[0, 2, 6, 7, 8],
+            9 => &[0, 2, 6, 7, 8, 9],
+            10 => &[0, 2, 6, 7, 8, 9, 10],
             _ => panic!("unexpected value"),
         }
     }

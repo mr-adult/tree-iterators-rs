@@ -1,8 +1,13 @@
 use std::collections::VecDeque;
+use std::ops::ControlFlow;
 use streaming_iterator::StreamingIterator;
 
 use crate::prelude::BorrowedTreeNode;
-use super::bfs_next;
+use super::{
+    bfs_next, 
+    bfs_advance_iterator, 
+    bfs_streaming_iterator_impl
+};
 
 pub struct BorrowedBFSIterator<'a, Node> 
     where Node: BorrowedTreeNode<'a> {
@@ -75,7 +80,7 @@ impl<'a, Node> BorrowedBFSIterator<'a, Node>
     /// 
     pub fn attach_ancestors(self) -> BorrowedBFSIteratorWithAncestors<'a, Node> {
         match self.root {
-            None => panic!(),
+            None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => BorrowedBFSIteratorWithAncestors::new(root)
         }
     }
@@ -92,96 +97,37 @@ pub struct BorrowedBFSIteratorWithAncestors<'a, Node>
     where Node: BorrowedTreeNode<'a> {
     
     current_depth: usize,
-    root: &'a Node,
-    temp_root: Option<&'a Node>,
     item_stack: Vec<Node::BorrowedValue>,
-    traversal_stack: Vec<Node::BorrowedChildren>,
+    traversal_queue_stack: Vec<VecDeque<Option<Node::BorrowedValue>>>,
+    iterator_queue: VecDeque<Option<Option<Node::BorrowedChildren>>>,
+    is_in_middle_of_iterator: bool,
 }
 
 impl<'a, Node> BorrowedBFSIteratorWithAncestors<'a, Node> 
     where Node: BorrowedTreeNode<'a> {
 
     fn new(root: &'a Node) -> BorrowedBFSIteratorWithAncestors<'a, Node> {
+        let mut traversal_queue = VecDeque::new();
+        let mut traversal_queue_stack = Vec::new();
+        let mut iterator_queue = VecDeque::new();
+
+        let (value, children) = root.get_value_and_children_iter();
+
+        let current_depth = 1;
+        traversal_queue.push_back(Some(value));
+        traversal_queue_stack.push(traversal_queue);
+        iterator_queue.push_back(Some(children));
+
         BorrowedBFSIteratorWithAncestors {
-            current_depth: 0,
-            root: root,
-            temp_root: Some(root),
+            current_depth: current_depth,
             item_stack: Vec::new(),
-            traversal_stack: Vec::new(),
+            traversal_queue_stack: traversal_queue_stack,
+            iterator_queue: iterator_queue,
+            is_in_middle_of_iterator: false,
         }
     }
 
-    fn advance_dfs(&mut self) {
-        match std::mem::take(&mut self.temp_root) {
-            Some(next) => {
-                let (value, children) = next.get_value_and_children_iter();
-                match children {
-                    None => {}
-                    Some(children) => {
-                        if self.traversal_stack.len() < self.current_depth {
-                            self.traversal_stack.push(children)
-                        }
-                    }
-                }
-
-                if self.item_stack.len() <= self.current_depth {
-                    self.item_stack.push(value);
-                }
-                return;
-            }
-            None => {
-                let next = self.pop_empty_iterators_until_move();
-                match next {
-                    None => return,
-                    Some(node) => {
-                        let (value, children) = node.get_value_and_children_iter();
-                        match  children {
-                            None => {}
-                            Some(children) => {
-                                if self.traversal_stack.len() < self.current_depth { 
-                                    self.traversal_stack.push(children);
-                                }
-                            }
-                        }
-
-                        if self.item_stack.len() <= self.current_depth {
-                            self.item_stack.push(value);
-                        }
-                        return;
-                    }
-                }
-            }
-        }
-    }
-
-    fn pop_empty_iterators_until_move(&mut self) -> Option<&'a Node> {
-        loop {
-            let stack_len = self.traversal_stack.len();
-            if stack_len == 0 { 
-                if self.item_stack.len() > stack_len {
-                    self.item_stack.pop();
-                }
-                return None; 
-            }
-            match self.traversal_stack.get_mut(stack_len - 1) {
-                None => return None,
-                Some(top) => {
-                    match top.next() {
-                        None => {
-                            self.traversal_stack.pop();
-                            self.item_stack.pop();
-                        }
-                        Some(value) => {
-                            if self.item_stack.len() > stack_len {
-                                self.item_stack.pop();
-                            }
-                            return Some(value);
-                        }
-                    }
-                }
-            }
-        }
-    }
+    bfs_advance_iterator!(get_value_and_children_iter);
 }
 
 impl<'a, Node> StreamingIterator for BorrowedBFSIteratorWithAncestors<'a, Node> 
@@ -189,29 +135,5 @@ impl<'a, Node> StreamingIterator for BorrowedBFSIteratorWithAncestors<'a, Node>
 
     type Item = [Node::BorrowedValue];
 
-    fn advance(&mut self) {
-        self.advance_dfs();
-        if self.item_stack.len() == 0 {
-            self.current_depth += 1;
-        }
-        let mut did_full_traveral = false;
-        while self.item_stack.len() <= self.current_depth {
-            if self.item_stack.len() == 0 {
-                if did_full_traveral {
-                    break;
-                }
-                self.temp_root = Some(self.root);
-                did_full_traveral = true;
-            }
-            self.advance_dfs();
-        }
-    }
-
-    fn get(&self) -> Option<&Self::Item> {
-        if self.item_stack.len() > 0 {
-            Some(self.item_stack.as_slice())
-        } else {
-            None
-        }
-    }
+    bfs_streaming_iterator_impl!();
 }
