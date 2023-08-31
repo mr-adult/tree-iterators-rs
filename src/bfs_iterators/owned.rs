@@ -82,7 +82,7 @@ impl<Node> OwnedBFSIterator<Node>
     /// 
     pub fn attach_ancestors(self) -> OwnedBFSIteratorWithAncestors<Node> {
         match self.root {
-            None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
+            None => panic!("Attempted to attach metadata to a BFSIterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => OwnedBFSIteratorWithAncestors::new(root)
         }
     }

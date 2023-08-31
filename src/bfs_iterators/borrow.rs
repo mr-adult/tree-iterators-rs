@@ -82,7 +82,7 @@ impl<'a, Node> BorrowedBFSIterator<'a, Node>
     /// 
     pub fn attach_ancestors(self) -> BorrowedBFSIteratorWithAncestors<'a, Node> {
         match self.root {
-            None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
+            None => panic!("Attempted to attach metadata to a BFSIterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => BorrowedBFSIteratorWithAncestors::new(root)
         }
     }
