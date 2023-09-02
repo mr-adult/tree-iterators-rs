@@ -1,12 +1,12 @@
-# Tree Traversers
+# Tree Iterators
 
-tree-traversers-rs is a library built to provide you with the utilities to easily work with tree data structures in Rust. It provides a default implementation for the majority use case (Vec-based heap-allocated lists of children) - see the TreeNode struct, but this crate is written such that you can build your own implementations as well using other collection types.
+tree-iterators-rs is a library built to provide you with the utilities to easily work with tree data structures in Rust. It provides a default implementation for the majority use case (Vec-based heap-allocated lists of children - see the [TreeNode struct](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/struct.TreeNode.html)), but this crate is written such that you can build your own implementations as well using other collection types.
 
 ### Benefits
 
 This crate uses no unsafe code!
 
-The largest benefit of using this library is that the various tree traversers are interchangeable in the for loop syntax. This means I can write my code to use a breadth-first-search today and trivially swap it out for a depth-first pre or postorder search tomorrow without significantly changing the structure of my code.
+The largest benefit of using this library is that the various tree iterators are interchangeable in the for loop syntax. This means you can write your code to use a breadth-first-search today and trivially swap it out for a depth-first pre or postorder search tomorrow without significantly changing the structure of your code.
 
 The other benefit of this library is its tight integration with the rest of Rust's iterators. Because each API returns an iterator, you can proceed to use the iterator APIs like filter, map, and reduce.
 
@@ -14,19 +14,18 @@ The other benefit of this library is its tight integration with the rest of Rust
 
 The easiest way to get started is to simply add this crate as a dependency and add a using statement to pull in its prelude (tree_iterators_rs::prelude). You can then create your data structure using the TreeNode struct provided and build on top of it. This struct provides the default implementation of all functionality in this crate. The methods that come attached to this struct include the following (all of which can be found in [this file](https://github.com/mr-adult/tree-iterators-rs/blob/main/src/prelude.rs)):
 - Owned Iterator APIs - these take ownership of the TreeNode similarly to an into_iter() call.
-	- bfs()
-	- dfs_preorder()
-	- dfs_postorder()
+	- [bfs()](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.OwnedTreeNode.html#method.bfs)
+	- [dfs_preorder()](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.OwnedTreeNode.html#method.dfs_preorder)
+	- [dfs_postorder()](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.OwnedTreeNode.html#method.dfs_postorder)
 - Mutable borrow APIs - these do not take ownership and behave similarly to an iter_mut() call.
-	- bfs_iter_mut()
-	- dfs_preorder_iter_mut()
-	- dfs_postorder_iter_mut()
+	- [bfs_iter_mut()](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.MutBorrowedTreeNode.html#method.bfs_iter_mut)
+	- [dfs_preorder_iter_mut()](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.MutBorrowedTreeNode.html#method.dfs_preorder_iter_mut)
+	- [dfs_postorder_iter_mut()](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.MutBorrowedTreeNode.html#method.dfs_postorder_iter_mut)
 - Borrow APIs - these do not take ownership and behave similarly to an iter() call.
-	- bfs_iter()
-	- dfs_preorder_iter()
-	- dfs_postorder_iter()
-- In addition to these APIs, all of the borrowed APIs and both of the dfs mutable borrow APIs have an additional method that can be called. This method changes the iterator to return a slice of references to the current tree value, as well as all of its parent values. For more details, see Examples.
-	- attach_ancestors()
+	- [bfs_iter()](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.BorrowedTreeNode.html#method.bfs_iter)
+	- [dfs_preorder_iter()](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.BorrowedTreeNode.html#method.dfs_preorder_iter)
+	- [dfs_postorder_iter()](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.BorrowedTreeNode.html#method.dfs_postorder_iter)
+- In addition, all of these APIs have an additional method (attach_ancestors()) that can be chained. This method changes the iterator to return a slice of references to the current tree value, as well as all of its parent values. For more details, see Examples.
 
 
 ## Examples
@@ -222,7 +221,9 @@ println!("{}", result);
 
 attach_ancestors() is a method that can be called after any of the above APIs to change the iterator structure into one that returns a slice of all ancestors and the current value in the tree. If one of these is called, the (now streaming) iterator will yield a slice where the item at index 0 is the root value, the item at index len() - 1 is the current value, and everything in between is the other ancestors. As an example, when we are at the value of 10 in our traversal, the slice will look like this: \[0, 2, 6, 7, 8, 9, 10\].
 
-For example, we can use this API to filter down to only the values where all of the ancestors are even numbers in the example tree:
+For example, we can use this API to filter down to only the values where all of the ancestors are even numbers in the example tree. 
+
+NOTE: Be sure to add a use  statement for streaming_iterator::StreamingIterator to pull in the filter, map, reduce, for_each, etc. methods.
 
 ```rust
 use streaming_iterator::StreamingIterator;
@@ -290,9 +291,9 @@ println!("{}", result);
 ## Custom Tree Node Implementations
 
 This crates' APIs are powered by 3 traits. The traits include:
-1. OwnedTreeNode - this trait powers the bfs(), dfs_preorder(), and dfs_postorder() APIs.
-2. MutBorrowedTreeNode - this trait powers the bfs_iter_mut(), dfs_preorder_iter_mut() and dfs_postorder() APIs.
-3. BorrowedTreeNode - this trait powers the bfs_iter(), dfs_preorder_iter(), and dfs_postorder_iter() APIs.
+1. [OwnedTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.OwnedTreeNode.html) - this trait powers the bfs(), dfs_preorder(), and dfs_postorder() APIs.
+2. [MutBorrowedTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.MutBorrowedTreeNode.html) - this trait powers the bfs_iter_mut(), dfs_preorder_iter_mut() and dfs_postorder() APIs.
+3. [BorrowedTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.BorrowedTreeNode.html) - this trait powers the bfs_iter(), dfs_preorder_iter(), and dfs_postorder_iter() APIs.
 
 You may pick and choose which of the traits you implement to suit your needs. They are identical apart from some naming conventions and the ownership of the value returned from their required method implementation.
 
@@ -373,4 +374,4 @@ impl<'a, T> BorrowedTreeNode<'a> for LLTreeNode<T>
     }
 }
 ```
-Now that we have implemented MutBorrowedTreeNode, our type has the bfs_iter(), dfs_preorder_iter(), and dfs_postorder_iter() methods.
+Now that we have implemented BorrowedTreeNode, our type has the bfs_iter(), dfs_preorder_iter(), and dfs_postorder_iter() methods.
