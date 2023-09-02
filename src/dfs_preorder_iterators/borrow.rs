@@ -44,7 +44,7 @@ impl<'a, Node> BorrowedDFSPreorderIterator<'a, Node>
     /// 
     /// In this traversal, each node will only be traversed before any
     /// of its children have been traversed.
-    /// ```
+    /// ```ignore
     ///        0
     ///       / \
     ///      1   2
@@ -77,7 +77,7 @@ impl<'a, Node> BorrowedDFSPreorderIterator<'a, Node>
     /// 
     pub fn attach_ancestors(self) -> BorrowedDFSPreorderIteratorWithAncestors<'a, Node> {
         match self.root {
-            None => panic!("Attempted to attach metadata to a DFSPreOrderIterator in the middle of a tree traversal. This is forbidden."),
+            None => panic!("Attempted to attach metadata to a DFS preorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
                 BorrowedDFSPreorderIteratorWithAncestors::new(root)
             }

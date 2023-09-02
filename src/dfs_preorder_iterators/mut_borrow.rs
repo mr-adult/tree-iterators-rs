@@ -46,7 +46,7 @@ impl<'a, Node> MutBorrowedDFSPreorderIterator<'a, Node>
     /// 
     /// In this traversal, each node will only be traversed before any
     /// of its children have been traversed.
-    /// ```
+    /// ```ignore
     ///        0
     ///       / \
     ///      1   2
@@ -79,7 +79,7 @@ impl<'a, Node> MutBorrowedDFSPreorderIterator<'a, Node>
     /// 
     pub fn attach_ancestors(self) -> MutBorrowedDFSPreorderIteratorWithAncestors<'a, Node> {
         match self.root {
-            None => panic!("Attempted to attach metadata to a DFSPostOrderIterator in the middle of a tree traversal. This is forbidden."),
+            None => panic!("Attempted to attach metadata to a DFS preorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
                 MutBorrowedDFSPreorderIteratorWithAncestors::new(root)
             }

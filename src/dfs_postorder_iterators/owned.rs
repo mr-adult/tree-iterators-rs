@@ -48,7 +48,7 @@ impl<Node> OwnedDFSPostorderIterator<Node>
     /// 
     /// In this traversal, each node will only be traversed after all
     /// of its children have been traversed.
-    /// ```
+    /// ```ignore
     ///        0
     ///       / \
     ///      1   2
@@ -81,7 +81,7 @@ impl<Node> OwnedDFSPostorderIterator<Node>
     /// 
     pub fn attach_ancestors(self) -> OwnedDFSPostorderIteratorWithAncestors<Node> {
         match self.root {
-            None => panic!("Attempted to attach metadata to a DFSPostOrderIterator in the middle of a tree traversal. This is forbidden."),
+            None => panic!("Attempted to attach metadata to a DFS postorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
                 OwnedDFSPostorderIteratorWithAncestors::new(root)
             }

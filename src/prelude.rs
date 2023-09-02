@@ -55,7 +55,7 @@ pub trait OwnedTreeNode
     /// 
     /// In this traversal, we scan each level of the tree from left to
     /// right before going down to the next level.
-    /// ```
+    /// ```ignore
     ///        0
     ///       / \
     ///      1   2
@@ -87,7 +87,7 @@ pub trait OwnedTreeNode
    /// 
    /// In this traversal, each node will only be traversed before any
    /// of its children have been traversed.
-    /// ```
+    /// ```ignore
     ///        0
     ///       / \
     ///      1   2
@@ -120,7 +120,7 @@ pub trait OwnedTreeNode
     /// 
     /// In this traversal, each node will only be traversed after all
     /// of its children have been traversed.
-    /// ```
+    /// ```ignore
     ///        0
     ///       / \
     ///      1   2
@@ -173,7 +173,7 @@ pub trait MutBorrowedTreeNode<'a>
     /// 
     /// In this traversal, we scan each level of the tree from left to
     /// right before going down to the next level.
-    /// ```
+    /// ```ignore
     ///        0
     ///       / \
     ///      1   2
@@ -205,7 +205,7 @@ pub trait MutBorrowedTreeNode<'a>
    /// 
    /// In this traversal, each node will only be traversed before any
    /// of its children have been traversed.
-    /// ```
+    /// ```ignore
     ///        0
     ///       / \
     ///      1   2
@@ -238,7 +238,7 @@ pub trait MutBorrowedTreeNode<'a>
     /// 
     /// In this traversal, each node will only be traversed after all
     /// of its children have been traversed.
-    /// ```
+    /// ```ignore
     ///        0
     ///       / \
     ///      1   2
@@ -291,7 +291,7 @@ pub trait BorrowedTreeNode<'a>
     /// 
     /// In this traversal, we scan each level of the tree from left to
     /// right before going down to the next level.
-    /// ```
+    /// ```ignore
     ///        0
     ///       / \
     ///      1   2
@@ -323,7 +323,7 @@ pub trait BorrowedTreeNode<'a>
    /// 
    /// In this traversal, each node will only be traversed before any
    /// of its children have been traversed.
-    /// ```
+    /// ```ignore
     ///        0
     ///       / \
     ///      1   2
@@ -356,7 +356,7 @@ pub trait BorrowedTreeNode<'a>
     /// 
     /// In this traversal, each node will only be traversed after all
     /// of its children have been traversed.
-    /// ```
+    /// ```ignore
     ///        0
     ///       / \
     ///      1   2
