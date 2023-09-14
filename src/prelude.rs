@@ -2,25 +2,15 @@ use std::iter::FlatMap;
 use std::slice::{Iter, IterMut};
 use std::vec::IntoIter;
 
-use crate::bfs_iterators::borrow::BorrowedBinaryBFSIterator;
-use crate::bfs_iterators::mut_borrow::MutBorrowedBinaryBFSIterator;
-use crate::bfs_iterators::owned::OwnedBinaryBFSIterator;
-use crate::dfs_postorder_iterators::borrow::BorrowedBinaryDFSPostorderIterator;
-use crate::dfs_postorder_iterators::mut_borrow::MutBorrowedBinaryDFSPostorderIterator;
-use crate::dfs_postorder_iterators::owned::OwnedBinaryDFSPostorderIterator;
-use crate::dfs_preorder_iterators::borrow::BorrowedBinaryDFSPreorderIterator;
-use crate::dfs_preorder_iterators::mut_borrow::MutBorrowedBinaryDFSPreorderIterator;
-use crate::dfs_preorder_iterators::owned::OwnedBinaryDFSPreorderIterator;
-
 use super::bfs_iterators::{
-    owned::OwnedBFSIterator,
-    mut_borrow::MutBorrowedBFSIterator,
-    borrow::BorrowedBFSIterator,
+    owned::{OwnedBFSIterator, OwnedBinaryBFSIterator},
+    mut_borrow::{MutBorrowedBFSIterator, MutBorrowedBinaryBFSIterator},
+    borrow::{BorrowedBFSIterator, BorrowedBinaryBFSIterator},
 };
 use super::dfs_preorder_iterators::{
-    owned::OwnedDFSPreorderIterator,
-    mut_borrow::MutBorrowedDFSPreorderIterator,
-    borrow::BorrowedDFSPreorderIterator,
+    owned::{OwnedDFSPreorderIterator, OwnedBinaryDFSPreorderIterator},
+    mut_borrow::{MutBorrowedDFSPreorderIterator, MutBorrowedBinaryDFSPreorderIterator},
+    borrow::{BorrowedDFSPreorderIterator, BorrowedBinaryDFSPreorderIterator}
 };
 use super::dfs_inorder_iterators::{
     owned::OwnedDFSInorderIterator,
@@ -28,9 +18,9 @@ use super::dfs_inorder_iterators::{
     borrow::BorrowedDFSInorderIterator,
 };
 use super::dfs_postorder_iterators::{
-    owned::OwnedDFSPostorderIterator,
-    mut_borrow::MutBorrowedDFSPostorderIterator,
-    borrow::BorrowedDFSPostorderIterator,
+    owned::{OwnedDFSPostorderIterator, OwnedBinaryDFSPostorderIterator},
+    mut_borrow::{MutBorrowedDFSPostorderIterator, MutBorrowedBinaryDFSPostorderIterator},
+    borrow::{BorrowedDFSPostorderIterator, BorrowedBinaryDFSPostorderIterator}
 };
 
 /// A default implemenation of a tree node. This struct 
