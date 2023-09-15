@@ -64,11 +64,11 @@ impl<'a, Node> BorrowedDFSPreorderIterator<'a, Node>
     /// 
     /// This method attaches the ancestors of the node to the iterator.
     /// This operation transforms the iterator into a StreamingIterator,
-    /// meaning that the values can no longer be directly save and used 
+    /// meaning that the values can no longer be directly saved and used 
     /// across loop iterations. The references to the nodes themselves 
     /// are still valid across the entirety of the loop, but you must 
     /// extract them from their containing slice to reuse them. This
-    /// will incure a performance penalty that this library does not
+    /// will incur a performance penalty that this library does not
     /// assume you want.
     /// 
     /// Since this iterator is no longer a Rust Iterator, for loops will
@@ -185,11 +185,11 @@ impl<'a, Node> BorrowedBinaryDFSPreorderIterator<'a, Node>
     /// 
     /// This method attaches the ancestors of the node to the iterator.
     /// This operation transforms the iterator into a StreamingIterator,
-    /// meaning that the values can no longer be directly save and used 
+    /// meaning that the values can no longer be directly saved and used 
     /// across loop iterations. The references to the nodes themselves 
     /// are still valid across the entirety of the loop, but you must 
     /// extract them from their containing slice to reuse them. This
-    /// will incure a performance penalty that this library does not
+    /// will incur a performance penalty that this library does not
     /// assume you want.
     /// 
     /// Since this iterator is no longer a Rust Iterator, for loops will
