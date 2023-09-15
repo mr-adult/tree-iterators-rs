@@ -3,14 +3,32 @@ use std::slice::{Iter, IterMut};
 use std::vec::IntoIter;
 
 use super::bfs_iterators::{
-    owned::{OwnedBFSIterator, OwnedBinaryBFSIterator},
-    mut_borrow::{MutBorrowedBFSIterator, MutBorrowedBinaryBFSIterator},
-    borrow::{BorrowedBFSIterator, BorrowedBinaryBFSIterator},
+    owned::{
+        OwnedBFSIterator, 
+        OwnedBinaryBFSIterator
+    },
+    mut_borrow::{
+        MutBorrowedBFSIterator, 
+        MutBorrowedBinaryBFSIterator
+    },
+    borrow::{
+        BorrowedBFSIterator, 
+        BorrowedBinaryBFSIterator
+    },
 };
 use super::dfs_preorder_iterators::{
-    owned::{OwnedDFSPreorderIterator, OwnedBinaryDFSPreorderIterator},
-    mut_borrow::{MutBorrowedDFSPreorderIterator, MutBorrowedBinaryDFSPreorderIterator},
-    borrow::{BorrowedDFSPreorderIterator, BorrowedBinaryDFSPreorderIterator}
+    owned::{
+        OwnedDFSPreorderIterator, 
+        OwnedBinaryDFSPreorderIterator
+    },
+    mut_borrow::{
+        MutBorrowedDFSPreorderIterator, 
+        MutBorrowedBinaryDFSPreorderIterator
+    },
+    borrow::{
+        BorrowedDFSPreorderIterator, 
+        BorrowedBinaryDFSPreorderIterator
+    }
 };
 use super::dfs_inorder_iterators::{
     owned::OwnedDFSInorderIterator,
@@ -18,10 +36,32 @@ use super::dfs_inorder_iterators::{
     borrow::BorrowedDFSInorderIterator,
 };
 use super::dfs_postorder_iterators::{
-    owned::{OwnedDFSPostorderIterator, OwnedBinaryDFSPostorderIterator},
-    mut_borrow::{MutBorrowedDFSPostorderIterator, MutBorrowedBinaryDFSPostorderIterator},
-    borrow::{BorrowedDFSPostorderIterator, BorrowedBinaryDFSPostorderIterator}
+    owned::{
+        OwnedDFSPostorderIterator, 
+        OwnedBinaryDFSPostorderIterator
+    },
+    mut_borrow::{
+        MutBorrowedDFSPostorderIterator, 
+        MutBorrowedBinaryDFSPostorderIterator
+    },
+    borrow::{
+        BorrowedDFSPostorderIterator, 
+        BorrowedBinaryDFSPostorderIterator
+    }
 };
+
+/// A default implemenation of a binary tree node. This struct 
+/// provides a series of tree traversal utilities to allow 
+/// you to easily work with and modify binary trees.
+#[derive(Clone, Debug)]
+pub struct BinaryTreeNode<T> {
+    /// This node's value
+    pub value: T,
+    /// The left child of the current node.
+    pub left: Option<Box<BinaryTreeNode<T>>>,
+    /// The right child of the current node.
+    pub right: Option<Box<BinaryTreeNode<T>>>,
+}
 
 /// A default implemenation of a tree node. This struct 
 /// provides a series of tree traversal utilities to allow 
@@ -34,13 +74,174 @@ pub struct TreeNode<T> {
     pub children: Option<Vec<TreeNode<T>>>
 }
 
-pub struct BinaryTreeNode<T> {
-    /// This node's value
-    pub value: T,
-    /// The left child of the current node.
-    pub left: Option<Box<BinaryTreeNode<T>>>,
-    /// The right child of the current node.
-    pub right: Option<Box<BinaryTreeNode<T>>>,
+pub (crate) type BinaryChildren<T> = FlatMap<
+    std::array::IntoIter<
+        Option<T>, 
+        2
+    >, 
+    Option<T>, 
+    fn(Option<T>) -> Option<T>   
+>;
+
+pub trait OwnedBinaryTreeNode 
+    where Self: Sized {
+
+    /// The value of each node in the tree.
+    type OwnedValue;
+
+    /// This method gets the value and left and right children from this node, 
+    /// consuming it in the process. The other methods of this trait assume that 
+    /// the children do not contain any circular references. If they do, 
+    /// it will create an infinite loop.
+    fn get_value_and_left_right(self) -> (Self::OwnedValue, [Option<Self>; 2]);
+
+    /// This method gets the value and children from this node, consuming it 
+    /// in the process. The other methods of this trait assume that the 'Children' 
+    /// list does not contain any circular references. If it does, it will create
+    /// an infinite loop.
+    fn get_value_and_children(self) -> (Self::OwnedValue, Option<BinaryChildren<Self>>) {
+        let (value, children) = self.get_value_and_left_right();
+        (
+            value,
+            Some(
+                children.into_iter()
+                    .flat_map(opt_to_opt as fn(Option<Self>) -> Option<Self>)
+            )
+        )
+    }
+
+    /// This method retrieves an iterator that can be used to perform
+    /// Breadth First (Queue - specifically VecDeque-based) searches of a tree.
+    /// 
+    /// A Breadth First Search (BFS) is defined as:
+    /// 
+    /// A tree traversal that involves breadth-first searching a tree 
+    /// from the top down. Given a tree of the following shape, this 
+    /// traversal type would traverse the elements in the order 
+    /// 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10.
+    /// 
+    /// In this traversal, we scan each level of the tree from left to
+    /// right before going down to the next level.
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    fn bfs(self) -> OwnedBinaryBFSIterator<Self> {
+        OwnedBinaryBFSIterator::new(self)
+    }
+
+    /// This method retrieves an iterator that can be used to perform
+    /// Depth First Preorder searches of a tree.
+    /// 
+    /// A Depth First Preorder search is defined as:
+    /// 
+    /// A tree traversal that involves depth-first searching a tree 
+    /// from the top down. Given a tree of the following shape, this 
+    /// traversal type would traverse the elements in the order
+    /// 0, 1, 3, 4, 2, 5, 6, 7, 8, 9, 10.
+    /// 
+    /// In this traversal, each node will only be traversed before any
+    /// of its children have been traversed.
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    fn dfs_preorder(self) -> OwnedBinaryDFSPreorderIterator<Self> {
+        OwnedBinaryDFSPreorderIterator::new(self)
+    }
+
+    /// This method retrieves an iterator that can be used to perform
+    /// Depth First In Order searches of a tree.
+    /// 
+    /// A Depth First In Order search is defined as:
+    /// 
+    /// A tree traversal that involves depth-first searching a tree 
+    /// from the left to the right. Given a tree of the following shape, 
+    /// this traversal type would traverse 
+    /// the elements in the order
+    /// 3, 1, 4, 0, 5, 2, 7, 9, 10, 8, 6.
+    /// 
+    /// In this traversal, each node will be traversed after its left 
+    /// child and before its right child.
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    fn dfs_inorder(self) -> OwnedDFSInorderIterator<Self> {
+        OwnedDFSInorderIterator::new(self)
+    }
+
+    /// This method retrieves an iterable that can be used to perform
+    /// Depth First Postorder searches of a tree.
+    /// 
+    /// A Depth First Postorder search (referred to as DFS Postorder) 
+    /// is defined as:
+    /// 
+    /// A tree traversal that involves depth-first searching a tree 
+    /// from the bottom up. Given a tree of the following shape, this 
+    /// traversal type would traverse the elements in the order 
+    /// 3, 4, 1, 5, 10, 9, 8, 7, 6, 2, 0.
+    /// 
+    /// In this traversal, each node will only be traversed after all
+    /// of its children have been traversed.
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    /// This traversal type guarantees that getChildren() will only be 
+    /// called once per node of the tree.
+    ///
+    fn dfs_postorder(self) -> OwnedBinaryDFSPostorderIterator<Self> {
+        OwnedBinaryDFSPostorderIterator::new(self)
+    }
 }
 
 pub trait OwnedTreeNode 
@@ -48,13 +249,14 @@ pub trait OwnedTreeNode
     
     /// The value of each node in the tree.
     type OwnedValue: Sized;
+
     /// The type of iterator that can be used to iterate over each node's children 
     /// collection.
     type OwnedChildren: Iterator<Item = Self>;
 
     /// This method gets the value and children from this node, consuming it 
     /// in the process. The other methods of this trait assume that the 'Children' 
-    /// list does not contain any circular references. If they do, it will create
+    /// list does not contain any circular references. If it does, it will create
     /// an infinite loop.
     fn get_value_and_children(self) -> (Self::OwnedValue, Option<Self::OwnedChildren>);
 
@@ -159,47 +361,163 @@ pub trait OwnedTreeNode
     }
 }
 
-pub (crate) type BinaryChildren<T> = FlatMap<
-    std::array::IntoIter<
-        Option<T>, 
-        2
-    >, 
-    Option<T>, 
-    fn(Option<T>) -> Option<T>   
->;
+pub trait MutBorrowedBinaryTreeNode<'a>
+    where Self: Sized + 'a {
 
-pub trait OwnedBinaryTreeNode 
-    where Self: Sized {
+    /// A mutable reference to the value of each node in the tree.
+    type MutBorrowedValue;
 
-    type OwnedValue;
+    /// This method gets the value and left and right children from this node, 
+    /// borrowing it as mutable in the process. The other methods of this trait 
+    /// assume that the children do not contain any circular references. If they do, 
+    /// it will create an infinite loop.
+    fn get_value_and_left_right_iter_mut(&'a mut self) -> (Self::MutBorrowedValue, [Option<&'a mut Self>; 2]);
 
-    fn get_value_and_left_right(self) -> (Self::OwnedValue, [Option<Self>; 2]);
-
-    fn get_value_and_children(self) -> (Self::OwnedValue, Option<BinaryChildren<Self>>) {
-        let (value, children) = self.get_value_and_left_right();
+    /// This method gets the value and children from this node. The other 
+    /// methods of this trait assume that the 'Children' list does not contain 
+    /// any circular references. If there are, an inifite loop will result.
+    fn get_value_and_children_iter_mut(&'a mut self) -> (Self::MutBorrowedValue, Option<BinaryChildren<&'a mut Self>>) {
+        let (value, children) = self.get_value_and_left_right_iter_mut();
         (
             value,
             Some(
                 children.into_iter()
-                    .flat_map(opt_to_opt as fn(Option<Self>) -> Option<Self>)
+                    .flat_map(opt_to_opt as fn(Option<&'a mut Self>) -> Option<&'a mut Self>)
             )
         )
     }
 
-    fn bfs(self) -> OwnedBinaryBFSIterator<Self> {
-        OwnedBinaryBFSIterator::new(self)
+    /// This method retrieves an iterator that can be used to perform
+    /// Breadth First (Queue - specifically VecDeque-based) searches of a tree.
+    /// 
+    /// A Breadth First Search (BFS) is defined as:
+    /// 
+    /// A tree traversal that involves breadth-first searching a tree 
+    /// from the top down. Given a tree of the following shape, this 
+    /// traversal type would traverse the elements in the order 
+    /// 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10.
+    /// 
+    /// In this traversal, we scan each level of the tree from left to
+    /// right before going down to the next level.
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    fn bfs_iter_mut(&'a mut self) -> MutBorrowedBinaryBFSIterator<'a, Self> {
+        MutBorrowedBinaryBFSIterator::new(self)
     }
 
-    fn dfs_preorder(self) -> OwnedBinaryDFSPreorderIterator<Self> {
-        OwnedBinaryDFSPreorderIterator::new(self)
+    /// This method retrieves an iterator that can be used to perform
+    /// Depth First Preorder searches of a tree.
+    /// 
+    /// A Depth First Preorder search is defined as:
+    /// 
+    /// A tree traversal that involves depth-first searching a tree 
+    /// from the top down. Given a tree of the following shape, this 
+    /// traversal type would traverse the elements in the order
+    /// 0, 1, 3, 4, 2, 5, 6, 7, 8, 9, 10.
+    /// 
+    /// In this traversal, each node will only be traversed before any
+    /// of its children have been traversed.
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    fn dfs_preorder_iter_mut(&'a mut self) -> MutBorrowedBinaryDFSPreorderIterator<'a, Self> {
+        MutBorrowedBinaryDFSPreorderIterator::new(self)
     }
 
-    fn dfs_inorder(self) -> OwnedDFSInorderIterator<Self> {
-        OwnedDFSInorderIterator::new(self)
+    /// This method retrieves an iterator that can be used to perform
+    /// Depth First In Order searches of a tree.
+    /// 
+    /// A Depth First In Order search is defined as:
+    /// 
+    /// A tree traversal that involves depth-first searching a tree 
+    /// from the left to the right. Given a tree of the following shape, 
+    /// this traversal type would traverse 
+    /// the elements in the order
+    /// 3, 1, 4, 0, 5, 2, 7, 9, 10, 8, 6.
+    /// 
+    /// In this traversal, each node will be traversed after its left 
+    /// child and before its right child.
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    fn dfs_inorder_iter_mut(&'a mut self) -> MutBorrowedDFSInorderIterator<Self> {
+        MutBorrowedDFSInorderIterator::new(self)
     }
 
-    fn dfs_postorder(self) -> OwnedBinaryDFSPostorderIterator<Self> {
-        OwnedBinaryDFSPostorderIterator::new(self)
+    /// This method retrieves an iterable that can be used to perform
+    /// Depth First Postorder searches of a tree.
+    /// 
+    /// A Depth First Postorder search (referred to as DFS Postorder) 
+    /// is defined as:
+    /// 
+    /// A tree traversal that involves depth-first searching a tree 
+    /// from the bottom up. Given a tree of the following shape, this 
+    /// traversal type would traverse the elements in the order 
+    /// 3, 4, 1, 5, 10, 9, 8, 7, 6, 2, 0.
+    /// 
+    /// In this traversal, each node will only be traversed after all
+    /// of its children have been traversed.
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    /// This traversal type guarantees that getChildren() will only be 
+    /// called once per node of the tree.
+    ///
+    fn dfs_postorder_iter_mut(&'a mut self) -> MutBorrowedBinaryDFSPostorderIterator<'a, Self> {
+        MutBorrowedBinaryDFSPostorderIterator::new(self)
     }
 }
 
@@ -208,6 +526,7 @@ pub trait MutBorrowedTreeNode<'a>
     
     /// A mutable reference to the value of each node in the tree.
     type MutBorrowedValue: Sized;
+
     /// The type of iterator that can be used to iterate over each node's children 
     /// collection.
     type MutBorrowedChildren: Iterator<Item = &'a mut Self>;
@@ -321,38 +640,163 @@ pub trait MutBorrowedTreeNode<'a>
     }
 }
 
-pub trait MutBorrowedBinaryTreeNode<'a>
+pub trait BorrowedBinaryTreeNode<'a>
     where Self: Sized + 'a {
 
-    type MutBorrowedValue;
+    /// A reference to the value of each node in the tree.
+    type BorrowedValue;
 
-    fn get_value_and_left_right_iter_mut(&'a mut self) -> (Self::MutBorrowedValue, [Option<&'a mut Self>; 2]);
+    /// This method gets the value and left and right children from this node, 
+    /// borrowing it in the process. The other methods of this trait 
+    /// assume that the children do not contain any circular references. If they do, 
+    /// it will create an infinite loop.
+    fn get_value_and_left_right_iter(&'a self) -> (Self::BorrowedValue, [Option<&'a Self>; 2]);
 
-    fn get_value_and_children_iter_mut(&'a mut self) -> (Self::MutBorrowedValue, Option<BinaryChildren<&'a mut Self>>) {
-        let (value, children) = self.get_value_and_left_right_iter_mut();
+    /// This method gets the value and children from this node, consuming it 
+    /// in the process. The other methods of this trait assume that the 'Children' 
+    /// list does not contain and circular references back to parent nodes.
+    fn get_value_and_children_iter(&'a self) -> (Self::BorrowedValue, Option<BinaryChildren<&'a Self>>) {
+        let (value, children) = self.get_value_and_left_right_iter();
         (
             value,
             Some(
                 children.into_iter()
-                    .flat_map(opt_to_opt as fn(Option<&'a mut Self>) -> Option<&'a mut Self>)
+                    .flat_map(opt_to_opt as fn(Option<&'a Self>) -> Option<&'a Self>)
             )
         )
     }
 
-    fn bfs_iter_mut(&'a mut self) -> MutBorrowedBinaryBFSIterator<'a, Self> {
-        MutBorrowedBinaryBFSIterator::new(self)
+    /// This method retrieves an iterator that can be used to perform
+    /// Breadth First (Queue - specifically VecDeque-based) searches of a tree.
+    /// 
+    /// A Breadth First Search (BFS) is defined as:
+    /// 
+    /// A tree traversal that involves breadth-first searching a tree 
+    /// from the top down. Given a tree of the following shape, this 
+    /// traversal type would traverse the elements in the order 
+    /// 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10.
+    /// 
+    /// In this traversal, we scan each level of the tree from left to
+    /// right before going down to the next level.
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    fn bfs_iter(&'a self) -> BorrowedBinaryBFSIterator<'a, Self> {
+        BorrowedBinaryBFSIterator::new(self)
     }
 
-    fn dfs_preorder_iter_mut(&'a mut self) -> MutBorrowedBinaryDFSPreorderIterator<'a, Self> {
-        MutBorrowedBinaryDFSPreorderIterator::new(self)
+    /// This method retrieves an iterator that can be used to perform
+    /// Depth First Preorder searches of a tree.
+    /// 
+    /// A Depth First Preorder search is defined as:
+    /// 
+    /// A tree traversal that involves depth-first searching a tree 
+    /// from the top down. Given a tree of the following shape, this 
+    /// traversal type would traverse the elements in the order
+    /// 0, 1, 3, 4, 2, 5, 6, 7, 8, 9, 10.
+    /// 
+    /// In this traversal, each node will only be traversed before any
+    /// of its children have been traversed.
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    fn dfs_preorder_iter(&'a self) -> BorrowedBinaryDFSPreorderIterator<'a, Self> {
+        BorrowedBinaryDFSPreorderIterator::new(self)
     }
 
-    fn dfs_inorder_iter_mut(&'a mut self) -> MutBorrowedDFSInorderIterator<Self> {
-        MutBorrowedDFSInorderIterator::new(self)
+    /// This method retrieves an iterator that can be used to perform
+    /// Depth First In Order searches of a tree.
+    /// 
+    /// A Depth First In Order search is defined as:
+    /// 
+    /// A tree traversal that involves depth-first searching a tree 
+    /// from the left to the right. Given a tree of the following shape, 
+    /// this traversal type would traverse 
+    /// the elements in the order
+    /// 3, 1, 4, 0, 5, 2, 7, 9, 10, 8, 6.
+    /// 
+    /// In this traversal, each node will be traversed after its left 
+    /// child and before its right child.
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    fn dfs_inorder_iter(&'a self) -> BorrowedDFSInorderIterator<Self> {
+        BorrowedDFSInorderIterator::new(self)
     }
 
-    fn dfs_postorder_iter_mut(&'a mut self) -> MutBorrowedBinaryDFSPostorderIterator<'a, Self> {
-        MutBorrowedBinaryDFSPostorderIterator::new(self)
+    /// This method retrieves an iterable that can be used to perform
+    /// Depth First Postorder searches of a tree.
+    /// 
+    /// A Depth First Postorder search (referred to as DFS Postorder) 
+    /// is defined as:
+    /// 
+    /// A tree traversal that involves depth-first searching a tree 
+    /// from the bottom up. Given a tree of the following shape, this 
+    /// traversal type would traverse the elements in the order 
+    /// 3, 4, 1, 5, 10, 9, 8, 7, 6, 2, 0.
+    /// 
+    /// In this traversal, each node will only be traversed after all
+    /// of its children have been traversed.
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    /// This traversal type guarantees that getChildren() will only be 
+    /// called once per node of the tree.
+    ///
+    fn dfs_postorder_iter(&'a self) -> BorrowedBinaryDFSPostorderIterator<'a, Self> {
+        BorrowedBinaryDFSPostorderIterator::new(self)
     }
 }
 
@@ -474,41 +918,6 @@ pub trait BorrowedTreeNode<'a>
     }
 }
 
-pub trait BorrowedBinaryTreeNode<'a>
-    where Self: Sized + 'a {
-
-    type BorrowedValue;
-
-    fn get_value_and_left_right_iter(&'a self) -> (Self::BorrowedValue, [Option<&'a Self>; 2]);
-
-    fn get_value_and_children_iter(&'a self) -> (Self::BorrowedValue, Option<BinaryChildren<&'a Self>>) {
-        let (value, children) = self.get_value_and_left_right_iter();
-        (
-            value,
-            Some(
-                children.into_iter()
-                    .flat_map(opt_to_opt as fn(Option<&'a Self>) -> Option<&'a Self>)
-            )
-        )
-    }
-
-    fn bfs_iter(&'a self) -> BorrowedBinaryBFSIterator<'a, Self> {
-        BorrowedBinaryBFSIterator::new(self)
-    }
-
-    fn dfs_preorder_iter(&'a self) -> BorrowedBinaryDFSPreorderIterator<'a, Self> {
-        BorrowedBinaryDFSPreorderIterator::new(self)
-    }
-
-    fn dfs_inorder_iter(&'a self) -> BorrowedDFSInorderIterator<Self> {
-        BorrowedDFSInorderIterator::new(self)
-    }
-
-    fn dfs_postorder_iter(&'a self) -> BorrowedBinaryDFSPostorderIterator<'a, Self> {
-        BorrowedBinaryDFSPostorderIterator::new(self)
-    }
-}
-
 impl<T> OwnedTreeNode for TreeNode<T> {
     type OwnedValue = T;
     type OwnedChildren = IntoIter<Self>;
@@ -589,6 +998,7 @@ impl<T> OwnedBinaryTreeNode for BinaryTreeNode<T> {
 impl<'a, T> MutBorrowedBinaryTreeNode<'a> for BinaryTreeNode<T> 
     where Self: 'a {
 
+    /// A mutable reference to the value of each node in the tree.
     type MutBorrowedValue = &'a mut T;
 
     fn get_value_and_left_right_iter_mut(&'a mut self) -> (Self::MutBorrowedValue, [Option<&'a mut Self>; 2]) {
@@ -686,7 +1096,16 @@ pub (crate) mod tests {
     #[test]
     fn dfs_inorder_has_correct_order() {
         let expected = get_expected_order_dfs_inorder();
-        for (i, value) in create_binary_tree_for_testing().dfs_inorder().enumerate() {
+        let mut test_tree = create_binary_tree_for_testing();
+        for (i, value) in test_tree.dfs_inorder_iter().enumerate() {
+            assert_eq!(expected[i], *value);
+        }
+
+        for (i, value) in test_tree.dfs_inorder_iter_mut().enumerate() {
+            assert_eq!(expected[i], *value);
+        }
+
+        for (i, value) in test_tree.dfs_inorder().enumerate() {
             assert_eq!(expected[i], value);
         }
     }
@@ -842,6 +1261,47 @@ pub (crate) mod tests {
                 }
                 i += 1;
             }
+        }
+    }
+
+    #[test]
+    fn dfs_inorder_attach_ancestors_works() {
+        let expected = get_expected_order_dfs_inorder();
+
+        let mut i = 0;
+        let test_tree = create_binary_tree_for_testing();
+        let mut iter_with_metadata = test_tree.dfs_inorder_iter().attach_ancestors();
+        while let Some(value) = iter_with_metadata.next() {
+            assert_eq!(expected[i], *value[value.len() - 1]);
+            let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+            for j in 0..expected.len() {
+                assert_eq!(expected[j], *value[j]);
+            }
+            i += 1;
+        }
+
+        let mut i = 0;
+        let mut test_tree = create_binary_tree_for_testing();
+        let mut iter_mut_with_metadata = test_tree.dfs_inorder_iter_mut().attach_ancestors();
+        while let Some(value) = iter_mut_with_metadata.next() {
+            assert_eq!(expected[i], *value[value.len() - 1]);
+            let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+            for j in 0..expected.len() {
+                assert_eq!(expected[j], *value[j]);
+            }
+            i += 1;
+        }
+
+        let mut i = 0;
+        let test_tree = create_binary_tree_for_testing();
+        let mut iter_with_metadata = test_tree.dfs_inorder().attach_ancestors();
+        while let Some(value) = iter_with_metadata.next() {
+            assert_eq!(expected[i], value[value.len() - 1]);
+            let expected = get_expected_metadata_for_value(value[value.len() - 1]);
+            for j in 0..expected.len() {
+                assert_eq!(expected[j], value[j]);
+            }
+            i += 1;
         }
     }
 
