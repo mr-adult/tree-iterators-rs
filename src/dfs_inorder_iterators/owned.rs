@@ -1,7 +1,11 @@
 use crate::prelude::OwnedBinaryTreeNode;
 use streaming_iterator::StreamingIterator;
 
-use super::{dfs_inorder_next, dfs_inorder_streaming_iterator_impl};
+use super::{
+    dfs_inorder_next, 
+    dfs_inorder_streaming_iterator_impl,
+    TraversalStatus
+};
 
 pub struct OwnedDFSInorderIterator<Node> 
     where Node: OwnedBinaryTreeNode {
@@ -104,8 +108,7 @@ pub struct OwnedDFSInorderIteratorWithAncestors<Node>
     
     right_stack: Vec<Option<Node>>,
     item_stack: Vec<Node::OwnedValue>,
-    has_gone_right_stack: Vec<bool>,
-    last_iteration_was_just_a_pop: bool,
+    status_stack: Vec<TraversalStatus>,
 }
 
 impl<Node> OwnedDFSInorderIteratorWithAncestors<Node> 
@@ -116,10 +119,9 @@ impl<Node> OwnedDFSInorderIteratorWithAncestors<Node>
         right_stack.push(Some(root));
 
         OwnedDFSInorderIteratorWithAncestors {
-            last_iteration_was_just_a_pop: false,
             right_stack,
             item_stack: Vec::new(),
-            has_gone_right_stack: Vec::new(),
+            status_stack: Vec::new(),
         }
     }
 }

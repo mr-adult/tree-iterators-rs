@@ -116,6 +116,59 @@ mod tests {
     }
 
     #[test]
+    fn dfs_inorder_example() {
+        // Tree creation (see above documentation)
+        let root = create_example_binary_tree();
+
+        let mut result = String::new();
+        for value in root.dfs_inorder() {
+            result.push_str(&value.to_string());
+            result.push_str(", ");
+        }
+
+        // result: 3, 1, 4, 0, 5, 2, 7, 9, 10, 8, 6,
+        println!("{}", result);
+    }
+
+    #[test]
+    fn dfs_inorder_iterator_example() {
+        // Tree creation (see above documentation)
+        let root = create_example_binary_tree();
+
+        let mut result = String::new();
+        for value in root.dfs_inorder() {
+            result.push_str(&value.to_string());
+            result.push_str(", ");
+        }
+
+        // result: 3, 1, 4, 0, 5, 2, 7, 9, 10, 8, 6,
+        println!("{}", result);
+    }
+
+    #[test]
+    fn dfs_postorder_equivalent_example() {        
+        fn dfs_postorder(node: TreeNode<usize>, result: &mut String) {
+            if let Some(children) = node.children {
+                for child in children {
+                    dfs_postorder(child, result);
+                }
+            }
+
+            result.push_str(", ");
+            result.push_str(&node.value.to_string());
+        }
+
+        // Tree creation (see above documentation)
+        let root = create_example_tree();
+
+        let mut result = String::new();
+        dfs_postorder(root, &mut result);
+
+        // result: 3, 4, 1, 5, 10, 9, 8, 7, 6, 2, 0,
+        println!("{}", result);
+    }
+
+    #[test]
     fn dfs_postorder_example() {
         // Tree creation (see above documentation)
         let root = create_example_tree();
@@ -146,25 +199,26 @@ mod tests {
     }
 
     #[test]
-    fn dfs_postorder_equivalent_example() {        
-        fn dfs_postorder(node: TreeNode<usize>, result: &mut String) {
-            if let Some(children) = node.children {
-                for child in children {
-                    dfs_postorder(child, result);
+    fn dfs_inorder_equivalent_example() {        
+        fn dfs_inorder(node: Option<Box<BinaryTreeNode<usize>>>, result: &mut String) {
+            match node {
+                None => {}
+                Some(node) => {
+                    dfs_inorder(node.left, result);
+                    result.push_str(&node.value.to_string());
+                    result.push_str(", ");
+                    dfs_inorder(node.right, result)
                 }
-            }
-
-            result.push_str(", ");
-            result.push_str(&node.value.to_string());
+            }            
         }
 
         // Tree creation (see above documentation)
-        let root = create_example_tree();
+        let root = create_example_binary_tree();
 
         let mut result = String::new();
-        dfs_postorder(root, &mut result);
+        dfs_inorder(Some(Box::new(root)), &mut result);
 
-        // result: 3, 4, 1, 5, 10, 9, 8, 7, 6, 2, 0,
+        // result: 3, 1, 4, 0, 5, 2, 7, 9, 10, 8, 6,
         println!("{}", result);
     }
 
@@ -211,6 +265,26 @@ mod tests {
     }
 
     #[test]
+    fn dfs_inorder_attach_ancestors_example() {
+        let root = create_example_binary_tree();
+        let mut result = String::new();
+
+        root.dfs_inorder_iter()
+            .attach_ancestors()
+            .filter(|slice| 
+                slice.iter().all(|value| **value % 2 == 0)
+            )
+            .map(|slice| slice[slice.len() - 1])
+            .for_each(|value| {
+                result.push(' ');
+                result.push_str(&value.to_string())
+            });
+        
+        // result: 6 2 0
+        println!("{}", result);
+    }
+
+    #[test]
     fn bfs_attach_ancestors_example() {
         let root = create_example_tree();
         let mut result = String::new();
@@ -231,8 +305,146 @@ mod tests {
     }
 
 
+    fn create_example_binary_tree() -> BinaryTreeNode<usize> {
+        BinaryTreeNode { 
+            value: 0, 
+            left: Some(
+                Box::new(
+                    BinaryTreeNode {
+                        value: 1,
+                        left: Some(
+                            Box::new(
+                                BinaryTreeNode {
+                                    value: 3,
+                                    left: None,
+                                    right: None,
+                                }
+                            )
+                        ),
+                        right: Some(
+                            Box::new(
+                                BinaryTreeNode {
+                                    value: 4,
+                                    left: None,
+                                    right: None,
+                                }
+                            )
+                        ),
+                    }
+                )
+            ), 
+            right: Some(
+                Box::new(
+                    BinaryTreeNode {
+                        value: 2,
+                        left: Some(
+                            Box::new(
+                                BinaryTreeNode {
+                                    value: 5,
+                                    left: None,
+                                    right: None,
+                                }
+                            )
+                        ),
+                        right: Some(
+                            Box::new(
+                                BinaryTreeNode {
+                                    value: 6,
+                                    left: Some(
+                                        Box::new(
+                                            BinaryTreeNode { 
+                                                value: 7, 
+                                                left: None, 
+                                                right: Some(
+                                                    Box::new(
+                                                        BinaryTreeNode { 
+                                                            value: 8, 
+                                                            left: Some(
+                                                                Box::new(
+                                                                    BinaryTreeNode {
+                                                                        value: 9,
+                                                                        left: None,
+                                                                        right: Some(
+                                                                            Box::new(
+                                                                                BinaryTreeNode { 
+                                                                                    value: 10, 
+                                                                                    left: None, 
+                                                                                    right: None 
+                                                                                }
+                                                                            )
+                                                                        )
+                                                                    }
+                                                                )
+                                                            ), 
+                                                            right: None 
+                                                        }
+                                                    )
+                                                ) 
+                                            }
+                                        )
+                                    ),
+                                    right: None,
+                                }
+                            )
+                        )
+                    }
+                )
+            ) 
+        }
+    }
+
     fn create_example_tree() -> TreeNode<usize> {
-        create_tree_for_testing(None)
+        TreeNode {
+            value: 0,
+            children: Some(vec![
+                TreeNode {
+                    value: 1,
+                    children: Some(vec![
+                        TreeNode {
+                            value: 3,
+                            children: None
+                        },
+                        TreeNode {
+                            value: 4,
+                            children: None
+                        }
+                    ])
+                },
+                TreeNode {
+                    value: 2,
+                    children: Some(vec![
+                        TreeNode {
+                            value: 5,
+                            children: None
+                        },
+                        TreeNode {
+                            value: 6,
+                            children: Some(vec![
+                                TreeNode {
+                                    value: 7,
+                                    children: Some(vec![
+                                        TreeNode {
+                                            value: 8,
+                                            children: Some(vec![
+                                                TreeNode {
+                                                    value: 9,
+                                                    children: Some(vec![
+                                                        TreeNode {
+                                                            value: 10,
+                                                            children: None
+                                                        }
+                                                    ])
+                                                }
+                                            ])
+                                        }
+                                    ])
+                                }
+                            ])
+                        }
+                    ])
+                }
+            ])
+        }
     }
 }
 

@@ -1047,185 +1047,117 @@ fn opt_to_opt<T>(opt: Option<T>) -> Option<T> {
 #[cfg(test)]
 pub (crate) mod tests {
     use super::*;
-    use streaming_iterator::StreamingIterator;
 
-    #[test]
-    fn dfs_preorder_has_correct_order() {
-        let expected = get_expected_order_dfs_preorder();
-        for test_tree in create_trees_for_testing() {
-            for (i, value) in test_tree.dfs_preorder().enumerate() {
+    #[cfg(test)]
+    mod dfs_preorder_tests {
+        use crate::prelude::*;
+        use super::{
+            assert_len,
+            create_trees_for_testing,
+            create_binary_tree_for_testing,
+            get_expected_metadata_for_value
+        };
+        use streaming_iterator::StreamingIterator;
+
+        fn get_expected_order_dfs_preorder() -> [usize; 11] {
+            [0,1,3,4,2,5,6,7,8,9,10]
+        }
+
+        #[test]
+        fn dfs_preorder_has_correct_order() {
+            let expected = get_expected_order_dfs_preorder();
+            for test_tree in create_trees_for_testing() {
+                for (i, value) in test_tree.clone().dfs_preorder().enumerate() {
+                    assert_eq!(expected[i], value);
+                }
+                assert_len!(expected.len(), test_tree.clone().dfs_preorder());
+
+                for (i, value) in test_tree.clone().dfs_preorder_iter_mut().enumerate() {
+                    assert_eq!(expected[i], *value);
+                }
+                assert_len!(expected.len(), test_tree.clone().dfs_preorder_iter_mut());
+
+                for (i, value) in test_tree.dfs_preorder_iter().enumerate() {
+                    assert_eq!(expected[i], *value);
+                }
+                assert_len!(expected.len(), test_tree.dfs_preorder_iter());
+            }
+        }
+
+        #[test]
+        fn binary_dfs_preorder_has_correct_order() {
+            let expected = get_expected_order_dfs_preorder();
+            let test_tree = create_binary_tree_for_testing();
+            
+            for (i, value) in test_tree.clone().dfs_preorder().enumerate() {
                 assert_eq!(expected[i], value);
             }
-        }
+            assert_len!(expected.len(), test_tree.clone().dfs_preorder());
 
-        for mut test_tree in create_trees_for_testing() {
-            for (i, value) in test_tree.dfs_preorder_iter_mut().enumerate() {
+            for (i, value) in test_tree.clone().dfs_preorder_iter_mut().enumerate() {
                 assert_eq!(expected[i], *value);
             }
-        }
-
-        for test_tree in create_trees_for_testing() {
+            assert_len!(expected.len(), test_tree.clone().dfs_preorder_iter_mut());
+            
             for (i, value) in test_tree.dfs_preorder_iter().enumerate() {
                 assert_eq!(expected[i], *value);
             }
-        }
-    }
-
-    #[test]
-    fn bfs_has_correct_order() {
-        let expected = get_expected_order_bfs();
-        for test_tree in create_trees_for_testing() {
-            for (i, value) in test_tree.bfs().enumerate() {
-                assert_eq!(expected[i], value);
-            }
+            assert_len!(expected.len(), test_tree.dfs_preorder_iter());
         }
 
-        for mut test_tree in create_trees_for_testing() {
-            for (i, value) in test_tree.bfs_iter_mut().enumerate() {
-                assert_eq!(expected[i], *value);
-            }
-        }
+        #[test]
+        fn dfs_preorder_attach_ancestors_works() {
+            let expected = get_expected_order_dfs_preorder();
 
-        for test_tree in create_trees_for_testing() {
-            for (i, value) in test_tree.bfs_iter().enumerate() {
-                assert_eq!(expected[i], *value);
-            }
-        }
-    }
-
-    #[test]
-    fn dfs_inorder_has_correct_order() {
-        let expected = get_expected_order_dfs_inorder();
-        let mut test_tree = create_binary_tree_for_testing();
-        for (i, value) in test_tree.dfs_inorder_iter().enumerate() {
-            assert_eq!(expected[i], *value);
-        }
-
-        for (i, value) in test_tree.dfs_inorder_iter_mut().enumerate() {
-            assert_eq!(expected[i], *value);
-        }
-
-        for (i, value) in test_tree.dfs_inorder().enumerate() {
-            assert_eq!(expected[i], value);
-        }
-    }
-
-    #[test]
-    fn dfs_postorder_has_correct_order() {
-        let expected = get_expected_order_dfs_postorder();
-        for test_tree in create_trees_for_testing() {
-            for (i, value) in test_tree.dfs_postorder().enumerate() {
-                assert_eq!(expected[i], value);
-            }
-        }
-
-        for mut test_tree in create_trees_for_testing() {
-            for (i, value) in test_tree.dfs_postorder_iter_mut().enumerate() {
-                assert_eq!(expected[i], *value);
-            }
-        }
-
-        for test_tree in create_trees_for_testing() {
-            for (i, value) in test_tree.dfs_postorder_iter().enumerate() {
-                assert_eq!(expected[i], *value);
-            }
-        }
-    }
-
-    #[test]
-    fn dfs_postorder_attach_ancestors_works() {
-        let expected = get_expected_order_dfs_postorder();
-
-        for test_tree in create_trees_for_testing() {
-            let mut i = 0;
-            let mut iter_with_metadata = test_tree.dfs_postorder_iter().attach_ancestors();
-            while let Some(value) = iter_with_metadata.next() {
-                assert_eq!(expected[i], *value[value.len() - 1]);
-                let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
-                for j in 0..expected.len() {
-                    assert_eq!(expected[j], *value[j]);
+            for test_tree in create_trees_for_testing() {
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.dfs_preorder_iter().attach_ancestors();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], *value[value.len() - 1]);
+                    let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], *value[j]);
+                    }
+                    i += 1;
                 }
-                i += 1;
+                assert_eq!(expected.len(), i);
             }
-        }
 
-        for mut test_tree in create_trees_for_testing() {
-            let mut i = 0;
-            let mut iter_with_metadata = test_tree.dfs_postorder_iter_mut().attach_ancestors();
-            while let Some(value) = iter_with_metadata.next() {
-                assert_eq!(expected[i], *value[value.len() - 1]);
-                let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
-                for j in 0..expected.len() {
-                    assert_eq!(expected[j], *value[j]);
+            for mut test_tree in create_trees_for_testing() {
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.dfs_preorder_iter_mut().attach_ancestors();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], *value[value.len() - 1]);
+                    let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], *value[j]);
+                    }
+                    i += 1;
                 }
-                i += 1;
+                assert_eq!(expected.len(), i);
             }
-        }
 
-        for test_tree in create_trees_for_testing() {
-            let mut i = 0;
-            let mut iter_with_metadata = test_tree.dfs_postorder().attach_ancestors();
-            while let Some(value) = iter_with_metadata.next() {
-                assert_eq!(expected[i], value[value.len() - 1]);
-                let expected = get_expected_metadata_for_value(value[value.len() - 1]);
-                for j in 0..expected.len() {
-                    assert_eq!(expected[j], value[j]);
+            for test_tree in create_trees_for_testing() {
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.dfs_preorder().attach_ancestors();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], value[value.len() - 1]);
+                    let expected = get_expected_metadata_for_value(value[value.len() - 1]);
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], value[j]);
+                    }
+                    i += 1;
                 }
-                i += 1;
-            }
-        }
-    }
-
-    #[test]
-    fn bfs_attach_ancestors_works() {
-        let expected = get_expected_order_bfs();
-
-        for test_tree in create_trees_for_testing() {
-            let mut i = 0;
-            let mut iter_with_metadata = test_tree.bfs_iter().attach_ancestors();
-            while let Some(value) = iter_with_metadata.next() {
-                assert_eq!(expected[i], *value[value.len() - 1]);
-                let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
-                for j in 0..expected.len() {
-                    assert_eq!(expected[j], *value[j]);
-                }
-                i += 1;
+                assert_eq!(expected.len(), i);
             }
         }
 
-        for mut test_tree in create_trees_for_testing() {
-            let mut i = 0;
-            let mut iter_with_metadata = test_tree.bfs_iter_mut().attach_ancestors();
-            while let Some(value) = iter_with_metadata.next() {
-                assert_eq!(expected[i], *value[value.len() - 1]);
-                let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
-                for j in 0..expected.len() {
-                    assert_eq!(expected[j], *value[j]);
-                }
-                i += 1;
-            }
-        }
+        #[test]
+        fn binary_dfs_preorder_attach_ancestors_works() {
+            let expected = get_expected_order_dfs_preorder();
 
-        for test_tree in create_trees_for_testing() {
             let mut i = 0;
-            let mut iter_with_metadata = test_tree.bfs().attach_ancestors();
-            while let Some(value) = iter_with_metadata.next() {
-                assert_eq!(expected[i], value[value.len() - 1]);
-                let expected = get_expected_metadata_for_value(value[value.len() - 1]);
-                for j in 0..expected.len() {
-                    assert_eq!(expected[j], value[j]);
-                }
-                i += 1;
-            }
-        }
-    }
-
-    #[test]
-    fn dfs_preorder_attach_ancestors_works() {
-        let expected = get_expected_order_dfs_preorder();
-
-        for test_tree in create_trees_for_testing() {
-            let mut i = 0;
+            let test_tree = create_binary_tree_for_testing();
             let mut iter_with_metadata = test_tree.dfs_preorder_iter().attach_ancestors();
             while let Some(value) = iter_with_metadata.next() {
                 assert_eq!(expected[i], *value[value.len() - 1]);
@@ -1235,10 +1167,10 @@ pub (crate) mod tests {
                 }
                 i += 1;
             }
-        }
+            assert_eq!(expected.len(), i);
 
-        for mut test_tree in create_trees_for_testing() {
             let mut i = 0;
+            let mut test_tree = create_binary_tree_for_testing();
             let mut iter_with_metadata = test_tree.dfs_preorder_iter_mut().attach_ancestors();
             while let Some(value) = iter_with_metadata.next() {
                 assert_eq!(expected[i], *value[value.len() - 1]);
@@ -1248,11 +1180,227 @@ pub (crate) mod tests {
                 }
                 i += 1;
             }
+            assert_eq!(expected.len(), i);
+
+            let mut i = 0;
+            let mut iter_with_metadata = create_binary_tree_for_testing().dfs_preorder().attach_ancestors();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], value[value.len() - 1]);
+                let expected = get_expected_metadata_for_value(value[value.len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], value[j]);
+                }
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
+        }
+    }
+    
+    #[cfg(test)]
+    mod dfs_inorder_tests {
+        use crate::prelude::*;
+        use super::{
+            assert_len,
+            create_binary_tree_for_testing,
+            get_expected_metadata_for_value
+        };
+        use streaming_iterator::StreamingIterator;  
+
+        fn get_expected_order_dfs_inorder() -> [usize; 11] {
+            [3,1,4,0,5,2,7,9,10,8,6]
         }
 
-        for test_tree in create_trees_for_testing() {
+        #[test]
+        fn dfs_inorder_has_correct_order() {
+            let expected = get_expected_order_dfs_inorder();
+            let mut test_tree = create_binary_tree_for_testing();
+            for (i, value) in test_tree.dfs_inorder_iter().enumerate() {
+                assert_eq!(expected[i], *value);
+            }
+            assert_len!(expected.len(), test_tree.dfs_inorder_iter());
+
+            for (i, value) in test_tree.dfs_inorder_iter_mut().enumerate() {
+                assert_eq!(expected[i], *value);
+            }
+            assert_len!(expected.len(), test_tree.dfs_inorder_iter_mut());
+
+            for (i, value) in test_tree.clone().dfs_inorder().enumerate() {
+                assert_eq!(expected[i], value);
+            }
+            assert_len!(expected.len(), test_tree.dfs_inorder());
+        } 
+
+        #[test]
+        fn dfs_inorder_attach_ancestors_works() {
+            let expected = get_expected_order_dfs_inorder();
+
             let mut i = 0;
-            let mut iter_with_metadata = test_tree.dfs_preorder().attach_ancestors();
+            let test_tree = create_binary_tree_for_testing();
+            let mut iter_with_metadata = test_tree.dfs_inorder_iter().attach_ancestors();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], *value[value.len() - 1]);
+                let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value[j]);
+                }
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
+
+            let mut i = 0;
+            let mut test_tree = create_binary_tree_for_testing();
+            let mut iter_mut_with_metadata = test_tree.dfs_inorder_iter_mut().attach_ancestors();
+            while let Some(value) = iter_mut_with_metadata.next() {
+                assert_eq!(expected[i], *value[value.len() - 1]);
+                let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value[j]);
+                }
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
+
+            let mut i = 0;
+            let test_tree = create_binary_tree_for_testing();
+            let mut iter_with_metadata = test_tree.dfs_inorder().attach_ancestors();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], value[value.len() - 1]);
+                let expected = get_expected_metadata_for_value(value[value.len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], value[j]);
+                }
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
+        }
+    }
+
+    mod dfs_postorder_tests {
+        use crate::prelude::*;
+        use super::{
+            assert_len,
+            create_trees_for_testing,
+            create_binary_tree_for_testing,
+            get_expected_metadata_for_value
+        };
+        use streaming_iterator::StreamingIterator;  
+
+        fn get_expected_order_dfs_postorder() -> [usize; 11] {
+            [3,4,1,5,10,9,8,7,6,2,0]
+        }
+
+        #[test]
+        fn dfs_postorder_has_correct_order() {
+            let expected = get_expected_order_dfs_postorder();
+            for test_tree in create_trees_for_testing() {
+                for (i, value) in test_tree.dfs_postorder().enumerate() {
+                    assert_eq!(expected[i], value);
+                }
+            }
+    
+            for mut test_tree in create_trees_for_testing() {
+                for (i, value) in test_tree.dfs_postorder_iter_mut().enumerate() {
+                    assert_eq!(expected[i], *value);
+                }
+            }
+    
+            for test_tree in create_trees_for_testing() {
+                for (i, value) in test_tree.dfs_postorder_iter().enumerate() {
+                    assert_eq!(expected[i], *value);
+                }
+            }
+        }
+    
+        #[test]
+        fn dfs_postorder_attach_ancestors_works() {
+            let expected = get_expected_order_dfs_postorder();
+    
+            for test_tree in create_trees_for_testing() {
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.dfs_postorder_iter().attach_ancestors();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], *value[value.len() - 1]);
+                    let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], *value[j]);
+                    }
+                    i += 1;
+                }
+            }
+    
+            for mut test_tree in create_trees_for_testing() {
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.dfs_postorder_iter_mut().attach_ancestors();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], *value[value.len() - 1]);
+                    let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], *value[j]);
+                    }
+                    i += 1;
+                }
+            }
+    
+            for test_tree in create_trees_for_testing() {
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.dfs_postorder().attach_ancestors();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], value[value.len() - 1]);
+                    let expected = get_expected_metadata_for_value(value[value.len() - 1]);
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], value[j]);
+                    }
+                    i += 1;
+                }
+            }
+        }
+
+        #[test]
+        fn binary_dfs_postorder_has_correct_order() {
+            let expected = get_expected_order_dfs_postorder();
+            for (i, value) in create_binary_tree_for_testing().dfs_postorder().enumerate() {
+                assert_eq!(expected[i], value);
+            }
+    
+            for (i, value) in create_binary_tree_for_testing().dfs_postorder_iter_mut().enumerate() {
+                assert_eq!(expected[i], *value);
+            }
+    
+            for (i, value) in create_binary_tree_for_testing().dfs_postorder_iter().enumerate() {
+                assert_eq!(expected[i], *value);
+            }
+        }
+    
+        #[test]
+        fn binary_dfs_postorder_attach_ancestors_works() {
+            let expected = get_expected_order_dfs_postorder();
+    
+            let mut i = 0;
+            let test_tree = create_binary_tree_for_testing();
+            let mut iter_with_metadata = test_tree.dfs_postorder_iter().attach_ancestors();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], *value[value.len() - 1]);
+                let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value[j]);
+                }
+                i += 1;
+            }
+    
+            let mut i = 0;
+            let mut test_tree = create_binary_tree_for_testing();
+            let mut iter_with_metadata = test_tree.dfs_postorder_iter_mut().attach_ancestors();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], *value[value.len() - 1]);
+                let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value[j]);
+                }
+                i += 1;
+            }
+    
+            let mut i = 0;
+            let mut iter_with_metadata = create_binary_tree_for_testing().dfs_postorder().attach_ancestors();
             while let Some(value) = iter_with_metadata.next() {
                 assert_eq!(expected[i], value[value.len() - 1]);
                 let expected = get_expected_metadata_for_value(value[value.len() - 1]);
@@ -1264,213 +1412,157 @@ pub (crate) mod tests {
         }
     }
 
-    #[test]
-    fn dfs_inorder_attach_ancestors_works() {
-        let expected = get_expected_order_dfs_inorder();
+    mod bfs_tests {
+        use crate::prelude::*;
+        use super::{
+            assert_len,
+            create_trees_for_testing,
+            create_binary_tree_for_testing,
+            get_expected_metadata_for_value
+        };
+        use streaming_iterator::StreamingIterator;  
 
-        let mut i = 0;
-        let test_tree = create_binary_tree_for_testing();
-        let mut iter_with_metadata = test_tree.dfs_inorder_iter().attach_ancestors();
-        while let Some(value) = iter_with_metadata.next() {
-            assert_eq!(expected[i], *value[value.len() - 1]);
-            let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
-            for j in 0..expected.len() {
-                assert_eq!(expected[j], *value[j]);
-            }
-            i += 1;
+        fn get_expected_order_bfs() -> [usize; 11] {
+            [0,1,2,3,4,5,6,7,8,9,10]
         }
 
-        let mut i = 0;
-        let mut test_tree = create_binary_tree_for_testing();
-        let mut iter_mut_with_metadata = test_tree.dfs_inorder_iter_mut().attach_ancestors();
-        while let Some(value) = iter_mut_with_metadata.next() {
-            assert_eq!(expected[i], *value[value.len() - 1]);
-            let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
-            for j in 0..expected.len() {
-                assert_eq!(expected[j], *value[j]);
+        #[test]
+        fn bfs_has_correct_order() {
+            let expected = get_expected_order_bfs();
+            for mut test_tree in create_trees_for_testing() {
+                for (i, value) in test_tree.bfs_iter().enumerate() {
+                    assert_eq!(expected[i], *value);
+                }
+                assert_len!(expected.len(), test_tree.bfs_iter());
+
+                for (i, value) in test_tree.bfs_iter_mut().enumerate() {
+                    assert_eq!(expected[i], *value);
+                }
+                assert_len!(expected.len(), test_tree.bfs_iter_mut());
+
+                for (i, value) in test_tree.clone().bfs().enumerate() {
+                    assert_eq!(expected[i], value);
+                }
+                assert_len!(expected.len(), test_tree.bfs());
             }
-            i += 1;
         }
 
-        let mut i = 0;
-        let test_tree = create_binary_tree_for_testing();
-        let mut iter_with_metadata = test_tree.dfs_inorder().attach_ancestors();
-        while let Some(value) = iter_with_metadata.next() {
-            assert_eq!(expected[i], value[value.len() - 1]);
-            let expected = get_expected_metadata_for_value(value[value.len() - 1]);
-            for j in 0..expected.len() {
-                assert_eq!(expected[j], value[j]);
+        #[test]
+        fn bfs_attach_ancestors_works() {
+            let expected = get_expected_order_bfs();
+
+            for mut test_tree in create_trees_for_testing() {
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.bfs_iter().attach_ancestors();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], *value[value.len() - 1]);
+                    let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], *value[j]);
+                    }
+                    i += 1;
+                }
+                assert_eq!(expected.len(), i);
+
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.bfs_iter_mut().attach_ancestors();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], *value[value.len() - 1]);
+                    let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], *value[j]);
+                    }
+                    i += 1;
+                }
+                assert_eq!(expected.len(), i);
+
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.bfs().attach_ancestors();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], value[value.len() - 1]);
+                    let expected = get_expected_metadata_for_value(value[value.len() - 1]);
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], value[j]);
+                    }
+                    i += 1;
+                }
+                assert_eq!(expected.len(), i);
             }
-            i += 1;
+        }
+
+        #[test]
+        fn binary_bfs_has_correct_order() {
+            let expected = get_expected_order_bfs();
+            let mut test_tree = create_binary_tree_for_testing();
+
+            for (i, value) in test_tree.bfs_iter().enumerate() {
+                assert_eq!(expected[i], *value);
+            }
+            assert_len!(expected.len(), test_tree.bfs_iter());
+
+            for (i, value) in test_tree.bfs_iter_mut().enumerate() {
+                assert_eq!(expected[i], *value);
+            }
+            assert_len!(expected.len(), test_tree.bfs_iter_mut());
+
+            for (i, value) in test_tree.clone().bfs().enumerate() {
+                assert_eq!(expected[i], value);
+            }
+            assert_len!(expected.len(), test_tree.bfs());
+        }
+    
+        #[test]
+        fn binary_bfs_attach_ancestors_works() {
+            let expected = get_expected_order_bfs();
+    
+            let mut i = 0;
+            let test_tree = create_binary_tree_for_testing();
+            let mut iter_with_metadata = test_tree.bfs_iter().attach_ancestors();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], *value[value.len() - 1]);
+                let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value[j]);
+                }
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
+    
+            let mut i = 0;
+            let mut test_tree = create_binary_tree_for_testing();
+            let mut iter_with_metadata = test_tree.bfs_iter_mut().attach_ancestors();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], *value[value.len() - 1]);
+                let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value[j]);
+                }
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
+    
+            let mut i = 0;
+            let mut iter_with_metadata = create_binary_tree_for_testing().bfs().attach_ancestors();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], value[value.len() - 1]);
+                let expected = get_expected_metadata_for_value(value[value.len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], value[j]);
+                }
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
         }
     }
 
-    #[test]
-    fn binary_dfs_preorder_has_correct_order() {
-        let expected = get_expected_order_dfs_preorder();
-        for (i, value) in create_binary_tree_for_testing().dfs_preorder().enumerate() {
-            assert_eq!(expected[i], value);
-        }
-        for (i, value) in create_binary_tree_for_testing().dfs_preorder_iter_mut().enumerate() {
-            assert_eq!(expected[i], *value);
-        }
-        
-        for (i, value) in create_binary_tree_for_testing().dfs_preorder_iter().enumerate() {
-            assert_eq!(expected[i], *value);
-        }
+    macro_rules! assert_len {
+        ($expected: expr, $iter: expr) => {
+            let mut count = 0;
+            $iter.for_each(|_| count += 1);
+            assert_eq!($expected, count);
+        };
     }
-
-    #[test]
-    fn binary_bfs_has_correct_order() {
-        let expected = get_expected_order_bfs();
-        for (i, value) in create_binary_tree_for_testing().bfs().enumerate() {
-            assert_eq!(expected[i], value);
-        }
-
-        for (i, value) in create_binary_tree_for_testing().bfs_iter_mut().enumerate() {
-            assert_eq!(expected[i], *value);
-        }
-         
-        for (i, value) in create_binary_tree_for_testing().bfs_iter().enumerate() {
-            assert_eq!(expected[i], *value);
-        }
-    }
-
-    #[test]
-    fn binary_dfs_postorder_has_correct_order() {
-        let expected = get_expected_order_dfs_postorder();
-        for (i, value) in create_binary_tree_for_testing().dfs_postorder().enumerate() {
-            assert_eq!(expected[i], value);
-        }
-
-        for (i, value) in create_binary_tree_for_testing().dfs_postorder_iter_mut().enumerate() {
-            assert_eq!(expected[i], *value);
-        }
-
-        for (i, value) in create_binary_tree_for_testing().dfs_postorder_iter().enumerate() {
-            assert_eq!(expected[i], *value);
-        }
-    }
-
-    #[test]
-    fn binary_dfs_postorder_attach_ancestors_works() {
-        let expected = get_expected_order_dfs_postorder();
-
-        let mut i = 0;
-        let test_tree = create_binary_tree_for_testing();
-        let mut iter_with_metadata = test_tree.dfs_postorder_iter().attach_ancestors();
-        while let Some(value) = iter_with_metadata.next() {
-            assert_eq!(expected[i], *value[value.len() - 1]);
-            let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
-            for j in 0..expected.len() {
-                assert_eq!(expected[j], *value[j]);
-            }
-            i += 1;
-        }
-
-        let mut i = 0;
-        let mut test_tree = create_binary_tree_for_testing();
-        let mut iter_with_metadata = test_tree.dfs_postorder_iter_mut().attach_ancestors();
-        while let Some(value) = iter_with_metadata.next() {
-            assert_eq!(expected[i], *value[value.len() - 1]);
-            let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
-            for j in 0..expected.len() {
-                assert_eq!(expected[j], *value[j]);
-            }
-            i += 1;
-        }
-
-        let mut i = 0;
-        let mut iter_with_metadata = create_binary_tree_for_testing().dfs_postorder().attach_ancestors();
-        while let Some(value) = iter_with_metadata.next() {
-            assert_eq!(expected[i], value[value.len() - 1]);
-            let expected = get_expected_metadata_for_value(value[value.len() - 1]);
-            for j in 0..expected.len() {
-                assert_eq!(expected[j], value[j]);
-            }
-            i += 1;
-        }
-    }
-
-    #[test]
-    fn binary_bfs_attach_ancestors_works() {
-        let expected = get_expected_order_bfs();
-
-        let mut i = 0;
-        let test_tree = create_binary_tree_for_testing();
-        let mut iter_with_metadata = test_tree.bfs_iter().attach_ancestors();
-        while let Some(value) = iter_with_metadata.next() {
-            assert_eq!(expected[i], *value[value.len() - 1]);
-            let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
-            for j in 0..expected.len() {
-                assert_eq!(expected[j], *value[j]);
-            }
-            i += 1;
-        }
-
-        let mut i = 0;
-        let mut test_tree = create_binary_tree_for_testing();
-        let mut iter_with_metadata = test_tree.bfs_iter_mut().attach_ancestors();
-        while let Some(value) = iter_with_metadata.next() {
-            assert_eq!(expected[i], *value[value.len() - 1]);
-            let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
-            for j in 0..expected.len() {
-                assert_eq!(expected[j], *value[j]);
-            }
-            i += 1;
-        }
-
-        let mut i = 0;
-        let mut iter_with_metadata = create_binary_tree_for_testing().bfs().attach_ancestors();
-        while let Some(value) = iter_with_metadata.next() {
-            assert_eq!(expected[i], value[value.len() - 1]);
-            let expected = get_expected_metadata_for_value(value[value.len() - 1]);
-            for j in 0..expected.len() {
-                assert_eq!(expected[j], value[j]);
-            }
-            i += 1;
-        }
-    }
-
-    #[test]
-    fn binary_dfs_preorder_attach_ancestors_works() {
-        let expected = get_expected_order_dfs_preorder();
-
-        let mut i = 0;
-        let test_tree = create_binary_tree_for_testing();
-        let mut iter_with_metadata = test_tree.dfs_preorder_iter().attach_ancestors();
-        while let Some(value) = iter_with_metadata.next() {
-            assert_eq!(expected[i], *value[value.len() - 1]);
-            let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
-            for j in 0..expected.len() {
-                assert_eq!(expected[j], *value[j]);
-            }
-            i += 1;
-        }
-
-        let mut i = 0;
-        let mut test_tree = create_binary_tree_for_testing();
-        let mut iter_with_metadata = test_tree.dfs_preorder_iter_mut().attach_ancestors();
-        while let Some(value) = iter_with_metadata.next() {
-            assert_eq!(expected[i], *value[value.len() - 1]);
-            let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
-            for j in 0..expected.len() {
-                assert_eq!(expected[j], *value[j]);
-            }
-            i += 1;
-        }
-
-        let mut i = 0;
-        let mut iter_with_metadata = create_binary_tree_for_testing().dfs_preorder().attach_ancestors();
-        while let Some(value) = iter_with_metadata.next() {
-            assert_eq!(expected[i], value[value.len() - 1]);
-            let expected = get_expected_metadata_for_value(value[value.len() - 1]);
-            for j in 0..expected.len() {
-                assert_eq!(expected[j], value[j]);
-            }
-            i += 1;
-        }
-    }
+    pub (crate) use assert_len;
 
     fn get_expected_metadata_for_value(val: usize) -> &'static [usize] {
         match val {
@@ -1487,22 +1579,6 @@ pub (crate) mod tests {
             10 => &[0, 2, 6, 7, 8, 9, 10],
             _ => panic!("unexpected value"),
         }
-    }
-
-    fn get_expected_order_dfs_preorder() -> [usize; 11] {
-        [0,1,3,4,2,5,6,7,8,9,10]
-    }
-
-    fn get_expected_order_bfs() -> [usize; 11] {
-        [0,1,2,3,4,5,6,7,8,9,10]
-    }
-
-    fn get_expected_order_dfs_inorder() -> [usize; 11] {
-        [3,1,4,0,5,2,7,9,10,8,6]
-    }
-
-    fn get_expected_order_dfs_postorder() -> [usize; 11] {
-        [3,4,1,5,10,9,8,7,6,2,0]
     }
 
     fn create_trees_for_testing() -> Vec<TreeNode<usize>> {
