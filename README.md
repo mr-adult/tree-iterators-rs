@@ -59,8 +59,8 @@ H --> S{None}
 H --> I{8}
 I --> J{9}
 I --> R{None}
-J --> K{10}
 J --> Q{None}
+J --> K{10}
 K --> P{None}
 K --> O{None}
 ``` 
