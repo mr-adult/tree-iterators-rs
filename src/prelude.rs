@@ -66,7 +66,7 @@ pub struct BinaryTreeNode<T> {
 
 /// A default implemenation of a tree node. This struct 
 /// provides a series of tree traversal utilities to allow 
-/// you to easily work with and modify trees.
+/// you to easily work with and modify arbitrary trees.
 #[derive(Clone, Debug, Default)]
 pub struct TreeNode<T> {
     /// This node's value
@@ -75,6 +75,8 @@ pub struct TreeNode<T> {
     pub children: Option<Vec<TreeNode<T>>>
 }
 
+/// Helper type to define the BinaryTreeNode's
+/// Children iterator type.
 pub (crate) type BinaryChildren<T> = FlatMap<
     std::array::IntoIter<
         Option<T>, 
@@ -84,6 +86,7 @@ pub (crate) type BinaryChildren<T> = FlatMap<
     fn(Option<T>) -> Option<T>   
 >;
 
+/// A binary tree node where getting its children consumes its value.
 pub trait OwnedBinaryTreeNode 
     where Self: Sized {
 
@@ -94,14 +97,14 @@ pub trait OwnedBinaryTreeNode
     /// consuming it in the process. The other methods of this trait assume that 
     /// the children do not contain any circular references. If they do, 
     /// it will create an infinite loop.
-    fn get_value_and_left_right(self) -> (Self::OwnedValue, [Option<Self>; 2]);
+    fn get_value_and_children_binary(self) -> (Self::OwnedValue, [Option<Self>; 2]);
 
     /// This method gets the value and children from this node, consuming it 
     /// in the process. The other methods of this trait assume that the 'Children' 
     /// list does not contain any circular references. If it does, it will create
     /// an infinite loop.
     fn get_value_and_children(self) -> (Self::OwnedValue, Option<BinaryChildren<Self>>) {
-        let (value, children) = self.get_value_and_left_right();
+        let (value, children) = self.get_value_and_children_binary();
         (
             value,
             Some(
@@ -245,6 +248,7 @@ pub trait OwnedBinaryTreeNode
     }
 }
 
+/// A tree node where getting its children consumes its value.
 pub trait OwnedTreeNode 
     where Self: Sized {
     
@@ -362,6 +366,7 @@ pub trait OwnedTreeNode
     }
 }
 
+/// A binary tree node where getting its children mutably borrows its value.
 pub trait MutBorrowedBinaryTreeNode<'a>
     where Self: Sized + 'a {
 
@@ -372,13 +377,13 @@ pub trait MutBorrowedBinaryTreeNode<'a>
     /// borrowing it as mutable in the process. The other methods of this trait 
     /// assume that the children do not contain any circular references. If they do, 
     /// it will create an infinite loop.
-    fn get_value_and_left_right_iter_mut(&'a mut self) -> (Self::MutBorrowedValue, [Option<&'a mut Self>; 2]);
+    fn get_value_and_children_binary_iter_mut(&'a mut self) -> (Self::MutBorrowedValue, [Option<&'a mut Self>; 2]);
 
     /// This method gets the value and children from this node. The other 
     /// methods of this trait assume that the 'Children' list does not contain 
     /// any circular references. If there are, an inifite loop will result.
     fn get_value_and_children_iter_mut(&'a mut self) -> (Self::MutBorrowedValue, Option<BinaryChildren<&'a mut Self>>) {
-        let (value, children) = self.get_value_and_left_right_iter_mut();
+        let (value, children) = self.get_value_and_children_binary_iter_mut();
         (
             value,
             Some(
@@ -522,6 +527,7 @@ pub trait MutBorrowedBinaryTreeNode<'a>
     }
 }
 
+/// A tree node where getting its children mutably borrows its value.
 pub trait MutBorrowedTreeNode<'a> 
     where Self: Sized + 'a {
     
@@ -641,6 +647,7 @@ pub trait MutBorrowedTreeNode<'a>
     }
 }
 
+/// A binary tree node where getting its children borrows its value.
 pub trait BorrowedBinaryTreeNode<'a>
     where Self: Sized + 'a {
 
@@ -651,13 +658,13 @@ pub trait BorrowedBinaryTreeNode<'a>
     /// borrowing it in the process. The other methods of this trait 
     /// assume that the children do not contain any circular references. If they do, 
     /// it will create an infinite loop.
-    fn get_value_and_left_right_iter(&'a self) -> (Self::BorrowedValue, [Option<&'a Self>; 2]);
+    fn get_value_and_children_binary_iter(&'a self) -> (Self::BorrowedValue, [Option<&'a Self>; 2]);
 
     /// This method gets the value and children from this node, consuming it 
     /// in the process. The other methods of this trait assume that the 'Children' 
     /// list does not contain and circular references back to parent nodes.
     fn get_value_and_children_iter(&'a self) -> (Self::BorrowedValue, Option<BinaryChildren<&'a Self>>) {
-        let (value, children) = self.get_value_and_left_right_iter();
+        let (value, children) = self.get_value_and_children_binary_iter();
         (
             value,
             Some(
@@ -801,6 +808,7 @@ pub trait BorrowedBinaryTreeNode<'a>
     }
 }
 
+/// A tree node where getting its children borrows its value.
 pub trait BorrowedTreeNode<'a> 
     where Self: Sized + 'a {
     
@@ -979,7 +987,7 @@ impl<T> OwnedBinaryTreeNode for BinaryTreeNode<T> {
 
     type OwnedValue = T;
 
-    fn get_value_and_left_right(self) -> (Self::OwnedValue, [Option<Self>; 2]) {
+    fn get_value_and_children_binary(self) -> (Self::OwnedValue, [Option<Self>; 2]) {
         (
             self.value,
             [
@@ -998,11 +1006,10 @@ impl<T> OwnedBinaryTreeNode for BinaryTreeNode<T> {
 
 impl<'a, T> MutBorrowedBinaryTreeNode<'a> for BinaryTreeNode<T> 
     where Self: 'a {
-
-    /// A mutable reference to the value of each node in the tree.
+        
     type MutBorrowedValue = &'a mut T;
 
-    fn get_value_and_left_right_iter_mut(&'a mut self) -> (Self::MutBorrowedValue, [Option<&'a mut Self>; 2]) {
+    fn get_value_and_children_binary_iter_mut(&'a mut self) -> (Self::MutBorrowedValue, [Option<&'a mut Self>; 2]) {
         (
             &mut self.value,
             [
@@ -1024,7 +1031,7 @@ impl<'a, T> BorrowedBinaryTreeNode<'a> for BinaryTreeNode<T>
 
     type BorrowedValue = &'a T;
 
-    fn get_value_and_left_right_iter(&'a self) -> (Self::BorrowedValue, [Option<&'a Self>; 2]) {
+    fn get_value_and_children_binary_iter(&'a self) -> (Self::BorrowedValue, [Option<&'a Self>; 2]) {
         (
             &self.value,
             [

@@ -100,7 +100,7 @@ impl<Node> Iterator for OwnedDFSInorderIterator<Node>
     
     type Item = Node::OwnedValue;
     
-    dfs_inorder_next!(get_value_and_left_right);
+    dfs_inorder_next!(get_value_and_children_binary);
 }
 
 pub struct OwnedDFSInorderIteratorWithAncestors<Node> 
@@ -131,5 +131,5 @@ impl<Node> StreamingIterator for OwnedDFSInorderIteratorWithAncestors<Node>
     
     type Item = [Node::OwnedValue];
     
-    dfs_inorder_streaming_iterator_impl!(get_value_and_left_right);
+    dfs_inorder_streaming_iterator_impl!(get_value_and_children_binary);
 }

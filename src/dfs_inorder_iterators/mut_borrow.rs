@@ -101,7 +101,7 @@ impl<'a, Node> Iterator for MutBorrowedDFSInorderIterator<'a, Node>
     
     type Item = Node::MutBorrowedValue;
     
-    dfs_inorder_next!(get_value_and_left_right_iter_mut);
+    dfs_inorder_next!(get_value_and_children_binary_iter_mut);
 }
 
 pub struct MutBorrowedDFSInorderIteratorWithAncestors<'a, Node> 
@@ -132,5 +132,5 @@ impl<'a, Node> StreamingIterator for MutBorrowedDFSInorderIteratorWithAncestors<
     
     type Item = [Node::MutBorrowedValue];
     
-    dfs_inorder_streaming_iterator_impl!(get_value_and_left_right_iter_mut);
+    dfs_inorder_streaming_iterator_impl!(get_value_and_children_binary_iter_mut);
 }

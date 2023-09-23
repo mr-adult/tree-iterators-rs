@@ -101,7 +101,7 @@ impl<'a, Node> Iterator for BorrowedDFSInorderIterator<'a, Node>
     
     type Item = Node::BorrowedValue;
     
-    dfs_inorder_next!(get_value_and_left_right_iter);
+    dfs_inorder_next!(get_value_and_children_binary_iter);
 }
 
 pub struct BorrowedDFSInorderIteratorWithAncestors<'a, Node> 
@@ -132,5 +132,5 @@ impl<'a, Node> StreamingIterator for BorrowedDFSInorderIteratorWithAncestors<'a,
     
     type Item = [Node::BorrowedValue];
     
-    dfs_inorder_streaming_iterator_impl!(get_value_and_left_right_iter);
+    dfs_inorder_streaming_iterator_impl!(get_value_and_children_binary_iter);
 }
