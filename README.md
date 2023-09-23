@@ -1,6 +1,8 @@
-# Tree Iterators
+# tree_iterators_rs
 
-tree-iterators-rs is a library built to provide you with the utilities/iterators to easily work with tree data structures in Rust. It provides a default implementation for the majority use cases. These include:
+If you enjoy using this crate, please star the [github repo](https://github.com/mr-adult/tree-iterators-rs) so I as the author can feel good about releasing it as open source.
+
+tree_iterators_rs is a library built to provide you with the utilities/iterators to easily work with tree data structures in Rust. It provides a default implementation for the majority use cases. These include:
 1. TreeNode<T> - This struct has a vec-based heap-allocated list of children. [documentation](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/struct.TreeNode.html)
 2. BinaryTreeNode<T> - This struct contains an optional boxed reference to a left and right node. [documentation](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/struct.BinaryTreeNode.html)
 
@@ -10,13 +12,13 @@ This crate is written such that you can build your own implementations as well u
 
 This crate uses no unsafe code!
 
-The largest benefit of using this library is that the various tree iterators are interchangeable in the for/while loop syntax. This means you can write your code to use a breadth-first-search today and trivially swap it out for a depth-first pre or postorder search tomorrow without significantly changing the structure of your code. Syntactically, this library is also able to hide a lot of complexity and provide a friendly interface.
+The largest benefit of using this library other than the amount of complexity it can effectively abstract away is that the various tree iterators are interchangeable in the for/while loop syntax. This means you can write your code to use a breadth-first-search today and trivially swap it out for a depth-first pre or postorder search tomorrow without significantly changing the structure of your code. Syntactically, this library is also able to hide a lot of complexity and provide a friendly interface.
 
-The other benefit of this library is its tight integration with the rest of Rust's iterators. Because each API returns an iterator, you can proceed to use the iterator APIs like filter, map, and reduce.
+The other benefit of this library is its tight integration with the rest of Rust's iterators. Because each API returns an iterator, you can proceed to use the iterator APIs like filter, map, and reduce on your trees which can very powerfully simplify code.
 
 ## Getting Started
 
-The easiest way to get started is to simply add this crate as a dependency and add a using statement to pull in its prelude (tree_iterators_rs::prelude::*). You can then create your data structure using the BinaryTreeNode or TreeNode struct provided and build on top of it. These structs provide default implementations of all functionality in this crate. The methods that come attached to these structs include the following (all of which can be found in [this file](https://github.com/mr-adult/tree-iterators-rs/blob/main/src/prelude.rs)):
+The easiest way to get started is to simply add this crate as a dependency and add a using statement to pull in its prelude (tree_iterators_rs::prelude::*). You can then create your data structure using the BinaryTreeNode or TreeNode structs provided and build on top of it. These structs provide default implementations of all functionality in this crate. The methods that come attached to these structs include the following (all of which have open source code that can be found in [this file](https://github.com/mr-adult/tree-iterators-rs/blob/main/src/prelude.rs)):
 - Owned Iterator APIs - these take ownership of the TreeNode similarly to an into_iter() call.
 	- [bfs()](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.OwnedTreeNode.html#method.bfs)
 	- [dfs_preorder()](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.OwnedTreeNode.html#method.dfs_preorder)
@@ -217,7 +219,7 @@ fn create_example_tree() -> TreeNode<usize> {
 
 ### Breadth-First-Search (BFS)
 
-All 3 APIs' usages are identical other than their borrowing model, so only one example will be given.
+All 3 APIs' usages are identical other than their borrowing model, so only one example will be given. Say we want to join all of the values in our test tree into a string. We can do this as follows:
 ```rust
 // Tree creation (see above documentation)
 let root = create_example_tree();
@@ -275,7 +277,7 @@ println!("{}", result);
 
 ### Depth-First Preorder Search (DFS Preorder)
 
-Similarly to the BFS example, all 3 APIs' usages are identical other than their borrowing model, so only one example will be given.
+Similarly to the BFS example, all 3 APIs' usages are identical other than their borrowing model, so only one example will be given. Say we want to join all of the values in our test tree into a string. We can do this as follows:
 
 ```rust
 // Tree creation (see above documentation)
@@ -334,7 +336,7 @@ println!("{}", result);
 
 ### Binary Trees Only - Depth First In Order Search (DFS In Order)
 
-Similarly to the other examples, all 3 APIs' usages are identical other than their borrowing model, so only one example will be given.
+Similarly to the other examples, all 3 APIs' usages are identical other than their borrowing model, so only one example will be given. Say we want to join all of the values in our test tree into a string. We can do this as follows:
 ```rust
 // Tree creation (see above documentation)
 let root = create_example_binary_tree();
@@ -353,11 +355,10 @@ This code could also be written using Rust's iterator APIs:
 // Tree creation (see above documentation)
 let root = create_example_binary_tree();
 
-let mut result = String::new();
-for value in root.dfs_inorder() {
-	result.push_str(&value.to_string());
-	result.push_str(", ");
-}
+let mut result = root.dfs_preorder()
+	.map(|val| val.to_string())
+	.collect::<Vec<String>>()
+	.join(", ");
 
 // result: 3, 1, 4, 0, 5, 2, 7, 9, 10, 8, 6,
 println!("{}", result);
@@ -388,7 +389,7 @@ println!("{}", result);
 
 ### Depth First Postorder Search (DFS Postorder)
 
-Similarly to the BFS and DFS preorder examples, all 3 APIs' usages are identical other than their borrowing model, so only one example will be given.
+Similarly to the BFS and other DFS examples, all 3 APIs' usages are identical other than their borrowing model, so only one example will be given. Say we want to join all of the values in our test tree into a string. We can do this as follows:
 ```rust
 // Tree creation (see above documentation)
 let root = create_example_tree();
@@ -442,11 +443,11 @@ println!("{}", result);
 
 ## Attach Ancestors
 
-attach_ancestors() is a method that can be called after any of the above APIs to change the iterator structure into one that returns a slice of all ancestors and the current value in the tree. If one of these is called, the (now streaming) iterator will yield a slice where the item at index 0 is the root value, the item at index len() - 1 is the current value, and everything in between is the other ancestors. As an example, when we are at the value of 10 in our traversal, the slice will look like this: \[0, 2, 6, 7, 8, 9, 10\].
+attach_ancestors() is a method that can be called after any of the above APIs to change the iterator structure into one that returns a slice of all ancestors and the current value in the tree. If one of these is called, the (now streaming) iterator will yield a slice where the item at index 0 is the root value, the item at index len() - 1 is the current value, and everything in between is the other ancestors. As an example, when we are at the value of 10 in our traversal (see above documentation), the slice will look like this: \[0, 2, 6, 7, 8, 9, 10\].
 
-For example, we can use this API to filter down to only the values where all of the ancestors are even numbers in the example tree. 
+For example, we can use this API to filter down to only the values where all of the ancestors and the current node are even numbers in the example tree. 
 
-NOTE: Be sure to add a use  statement for streaming_iterator::StreamingIterator to pull in the filter, map, reduce, for_each, etc. methods.
+NOTE: Be sure to add a use  statement for streaming_iterator::StreamingIterator to pull in the filter, map, reduce, for_each, etc. methods from the streaming_iterator crate.
 
 ```rust
 use streaming_iterator::StreamingIterator;
@@ -469,9 +470,11 @@ root.dfs_preorder_iter()
 println!("{}", result);
 ```
 
-We can do the same with the in order iterator:
+We can do the same with the in order iterator if we use a binary tree:
 
 ```rust
+use streaming_iterator::StreamingIterator;
+
 let root = create_example_binary_tree();
 let mut result = String::new();
 
@@ -493,6 +496,8 @@ println!("{}", result);
 We can do the same with the postorder iterator to get the result in reverse:
 
 ```rust
+use streaming_iterator::StreamingIterator;
+
 let root = create_example_tree();
 let mut result = String::new();
 
@@ -514,6 +519,8 @@ println!("{}", result);
 And we can do the same with a breadth-first search. This just so happens to yield the same result as the depth first preorder iterator:
 
 ```rust
+use streaming_iterator::StreamingIterator;
+
 let root = create_example_tree();
 let mut result = String::new();
 
@@ -535,9 +542,9 @@ println!("{}", result);
 ## Custom Tree Node Implementations
 
 This crates' APIs are powered by 3 traits. The traits include:
-1. [OwnedTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.OwnedTreeNode.html)/[OwnedBinaryTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.OwnedBinaryTreeNode.html) - this trait powers the bfs(), dfs_preorder(), and dfs_postorder() APIs.
-2. [MutBorrowedTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.MutBorrowedTreeNode.html)/[MutBorrowedBinaryTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.MutBorrowedBinaryTreeNode.html) - this trait powers the bfs_iter_mut(), dfs_preorder_iter_mut() and dfs_postorder() APIs.
-3. [BorrowedTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.BorrowedTreeNode.html)/[BorrowedBinaryTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.BorrowedBinaryTreeNode.html) - this trait powers the bfs_iter(), dfs_preorder_iter(), and dfs_postorder_iter() APIs.
+1. [OwnedTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.OwnedTreeNode.html)/[OwnedBinaryTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.OwnedBinaryTreeNode.html) - these traits powers the bfs(), dfs_preorder(), dfs_inorder() and dfs_postorder() APIs.
+2. [MutBorrowedTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.MutBorrowedTreeNode.html)/[MutBorrowedBinaryTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.MutBorrowedBinaryTreeNode.html) - these traits powers the bfs_iter_mut(), dfs_preorder_iter_mut(), dfs_inorder_iter_mut and dfs_postorder() APIs.
+3. [BorrowedTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.BorrowedTreeNode.html)/[BorrowedBinaryTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.BorrowedBinaryTreeNode.html) - these traits powers the bfs_iter(), dfs_preorder_iter(), dfs_inorder_iter() and dfs_postorder_iter() APIs.
 
 You may pick and choose which of the traits you implement to suit your needs. They are identical apart from some naming conventions and the ownership of the value returned from their required method implementation.
 
@@ -619,3 +626,7 @@ impl<'a, T> BorrowedTreeNode<'a> for LLTreeNode<T>
 }
 ```
 Now that we have implemented BorrowedTreeNode, our type has the bfs_iter(), dfs_preorder_iter(), and dfs_postorder_iter() methods.
+
+### Exotic Use Cases
+
+This library is purposely very loose in its trait declarations, so it opens the door to some pretty exotic data transformations and use cases. Each iterator is as lazy as possible and only calls the get_value_and_children method variant once per node in the tree. This means you are able to lazily build/generate the tree as traversal progresses if you choose to. This opens the door to using this library to do some crazy things. I would love to hear about any use cases like this that you come up with. Please leave a note/issue on the github repo!

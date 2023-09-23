@@ -135,11 +135,10 @@ mod tests {
         // Tree creation (see above documentation)
         let root = create_example_binary_tree();
 
-        let mut result = String::new();
-        for value in root.dfs_inorder() {
-            result.push_str(&value.to_string());
-            result.push_str(", ");
-        }
+        let mut result = root.dfs_preorder()
+            .map(|val| val.to_string())
+            .collect::<Vec<String>>()
+            .join(", ");
 
         // result: 3, 1, 4, 0, 5, 2, 7, 9, 10, 8, 6,
         println!("{}", result);
