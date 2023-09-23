@@ -86,7 +86,7 @@ impl<Node> OwnedDFSInorderIterator<Node>
     /// no longer work. See details on how to work around this in the 
     /// [streaming-iterator](https://crates.io/crates/streaming-iterator) crate.
     /// 
-    pub (crate) fn attach_ancestors(mut self) -> OwnedDFSInorderIteratorWithAncestors<Node> {
+    pub fn attach_ancestors(mut self) -> OwnedDFSInorderIteratorWithAncestors<Node> {
         let root = self.right_stack.pop();
         match self.moved {
             true => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
