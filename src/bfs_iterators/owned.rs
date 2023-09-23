@@ -1,12 +1,16 @@
 use std::collections::VecDeque;
-use std::ops::ControlFlow;
 use streaming_iterator::StreamingIterator;
 
-use crate::prelude::{OwnedTreeNode, BinaryChildren, OwnedBinaryTreeNode};
+use crate::prelude::{
+    OwnedTreeNode, 
+    BinaryChildren, 
+    OwnedBinaryTreeNode
+};
 use super::{
     bfs_next, 
     bfs_advance_iterator, 
-    bfs_streaming_iterator_impl
+    bfs_streaming_iterator_impl,
+    TreeNodeVecDeque,
 };
 
 pub struct OwnedBFSIterator<Node> 
@@ -98,34 +102,34 @@ impl<Node> Iterator for OwnedBFSIterator<Node>
 pub struct OwnedBFSIteratorWithAncestors<Node> 
     where Node: OwnedTreeNode {
     
-    current_depth: usize,
+    is_root: bool,
     item_stack: Vec<Node::OwnedValue>,
-    traversal_queue_stack: Vec<VecDeque<Option<Node::OwnedValue>>>,
-    iterator_queue: VecDeque<Option<Option<Node::OwnedChildren>>>,
-    is_in_middle_of_iterator: bool,
+    tree_cache: TreeNodeVecDeque<Node::OwnedValue>,
+    traversal_stack: Vec<TreeNodeVecDeque<Node::OwnedValue>>,
+    iterator_queue: VecDeque<Option<Node::OwnedChildren>>,
 }
 
 impl<'a, Node> OwnedBFSIteratorWithAncestors<Node> 
     where Node: OwnedTreeNode {
 
     fn new(root: Node) -> OwnedBFSIteratorWithAncestors<Node> {
-        let mut traversal_queue = VecDeque::new();
-        let mut traversal_queue_stack = Vec::new();
-        let mut iterator_queue = VecDeque::new();
-
         let (value, children) = root.get_value_and_children();
+        let tree_cache = TreeNodeVecDeque {
+            value: None,
+            children: None,
+        };
+        let mut iterator_queue = VecDeque::new();
+        let mut item_stack = Vec::new();
 
-        let current_depth = 1;
-        traversal_queue.push_back(Some(value));
-        traversal_queue_stack.push(traversal_queue);
-        iterator_queue.push_back(Some(children));
+        item_stack.push(value);
+        iterator_queue.push_back(children);
 
         OwnedBFSIteratorWithAncestors {
-            current_depth: current_depth,
-            item_stack: Vec::new(),
-            traversal_queue_stack: traversal_queue_stack,
-            iterator_queue: iterator_queue,
-            is_in_middle_of_iterator: false,
+            is_root: true,
+            item_stack,
+            iterator_queue,
+            traversal_stack: Vec::new(),
+            tree_cache,
         }
     }
 
@@ -137,7 +141,7 @@ impl<'a, Node> StreamingIterator for OwnedBFSIteratorWithAncestors<Node>
 
     type Item = [Node::OwnedValue];
 
-    bfs_streaming_iterator_impl!();
+    bfs_streaming_iterator_impl!(get_value_and_children);
 }
 
 pub struct OwnedBinaryBFSIterator<Node> 
@@ -229,34 +233,34 @@ impl<Node> Iterator for OwnedBinaryBFSIterator<Node>
 pub struct OwnedBinaryBFSIteratorWithAncestors<Node> 
     where Node: OwnedBinaryTreeNode {
     
-    current_depth: usize,
+    is_root: bool,
     item_stack: Vec<Node::OwnedValue>,
-    traversal_queue_stack: Vec<VecDeque<Option<Node::OwnedValue>>>,
-    iterator_queue: VecDeque<Option<Option<BinaryChildren<Node>>>>,
-    is_in_middle_of_iterator: bool,
+    tree_cache: TreeNodeVecDeque<Node::OwnedValue>,
+    traversal_stack: Vec<TreeNodeVecDeque<Node::OwnedValue>>,
+    iterator_queue: VecDeque<Option<BinaryChildren<Node>>>,
 }
 
 impl<'a, Node> OwnedBinaryBFSIteratorWithAncestors<Node> 
     where Node: OwnedBinaryTreeNode {
 
     fn new(root: Node) -> OwnedBinaryBFSIteratorWithAncestors<Node> {
-        let mut traversal_queue = VecDeque::new();
-        let mut traversal_queue_stack = Vec::new();
-        let mut iterator_queue = VecDeque::new();
-
         let (value, children) = root.get_value_and_children();
+        let tree_cache = TreeNodeVecDeque {
+            value: None,
+            children: None,
+        };
+        let mut iterator_queue = VecDeque::new();
+        let mut item_stack = Vec::new();
 
-        let current_depth = 1;
-        traversal_queue.push_back(Some(value));
-        traversal_queue_stack.push(traversal_queue);
-        iterator_queue.push_back(Some(children));
+        item_stack.push(value);
+        iterator_queue.push_back(children);
 
         OwnedBinaryBFSIteratorWithAncestors {
-            current_depth: current_depth,
-            item_stack: Vec::new(),
-            traversal_queue_stack: traversal_queue_stack,
-            iterator_queue: iterator_queue,
-            is_in_middle_of_iterator: false,
+            is_root: true,
+            item_stack,
+            iterator_queue,
+            traversal_stack: Vec::new(),
+            tree_cache,
         }
     }
 
@@ -268,5 +272,5 @@ impl<'a, Node> StreamingIterator for OwnedBinaryBFSIteratorWithAncestors<Node>
 
     type Item = [Node::OwnedValue];
 
-    bfs_streaming_iterator_impl!();
+    bfs_streaming_iterator_impl!(get_value_and_children);
 }

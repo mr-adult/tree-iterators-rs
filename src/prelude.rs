@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::iter::FlatMap;
 use std::slice::{Iter, IterMut};
 use std::vec::IntoIter;
@@ -53,7 +54,7 @@ use super::dfs_postorder_iterators::{
 /// A default implemenation of a binary tree node. This struct 
 /// provides a series of tree traversal utilities to allow 
 /// you to easily work with and modify binary trees.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct BinaryTreeNode<T> {
     /// This node's value
     pub value: T,
@@ -66,7 +67,7 @@ pub struct BinaryTreeNode<T> {
 /// A default implemenation of a tree node. This struct 
 /// provides a series of tree traversal utilities to allow 
 /// you to easily work with and modify trees.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct TreeNode<T> {
     /// This node's value
     pub value: T,
@@ -1066,43 +1067,44 @@ pub (crate) mod tests {
         #[test]
         fn dfs_preorder_has_correct_order() {
             let expected = get_expected_order_dfs_preorder();
-            for test_tree in create_trees_for_testing() {
-                for (i, value) in test_tree.clone().dfs_preorder().enumerate() {
-                    assert_eq!(expected[i], value);
-                }
-                assert_len!(expected.len(), test_tree.clone().dfs_preorder());
 
-                for (i, value) in test_tree.clone().dfs_preorder_iter_mut().enumerate() {
-                    assert_eq!(expected[i], *value);
-                }
-                assert_len!(expected.len(), test_tree.clone().dfs_preorder_iter_mut());
-
+            for mut test_tree in create_trees_for_testing() {
                 for (i, value) in test_tree.dfs_preorder_iter().enumerate() {
                     assert_eq!(expected[i], *value);
                 }
                 assert_len!(expected.len(), test_tree.dfs_preorder_iter());
+                
+                for (i, value) in test_tree.dfs_preorder_iter_mut().enumerate() {
+                    assert_eq!(expected[i], *value);
+                }
+                assert_len!(expected.len(), test_tree.dfs_preorder_iter_mut());
+
+                for (i, value) in test_tree.clone().dfs_preorder().enumerate() {
+                    assert_eq!(expected[i], value);
+                }
+                assert_len!(expected.len(), test_tree.dfs_preorder());
             }
         }
 
         #[test]
         fn binary_dfs_preorder_has_correct_order() {
             let expected = get_expected_order_dfs_preorder();
-            let test_tree = create_binary_tree_for_testing();
-            
-            for (i, value) in test_tree.clone().dfs_preorder().enumerate() {
-                assert_eq!(expected[i], value);
-            }
-            assert_len!(expected.len(), test_tree.clone().dfs_preorder());
 
-            for (i, value) in test_tree.clone().dfs_preorder_iter_mut().enumerate() {
-                assert_eq!(expected[i], *value);
-            }
-            assert_len!(expected.len(), test_tree.clone().dfs_preorder_iter_mut());
-            
+            let mut test_tree = create_binary_tree_for_testing();
             for (i, value) in test_tree.dfs_preorder_iter().enumerate() {
                 assert_eq!(expected[i], *value);
             }
             assert_len!(expected.len(), test_tree.dfs_preorder_iter());
+            
+            for (i, value) in test_tree.dfs_preorder_iter_mut().enumerate() {
+                assert_eq!(expected[i], *value);
+            }
+            assert_len!(expected.len(), test_tree.dfs_preorder_iter_mut());
+            
+            for (i, value) in test_tree.clone().dfs_preorder().enumerate() {
+                assert_eq!(expected[i], value);
+            }
+            assert_len!(expected.len(), test_tree.dfs_preorder());
         }
 
         #[test]
@@ -1213,6 +1215,7 @@ pub (crate) mod tests {
         #[test]
         fn dfs_inorder_has_correct_order() {
             let expected = get_expected_order_dfs_inorder();
+
             let mut test_tree = create_binary_tree_for_testing();
             for (i, value) in test_tree.dfs_inorder_iter().enumerate() {
                 assert_eq!(expected[i], *value);
@@ -1292,23 +1295,43 @@ pub (crate) mod tests {
         #[test]
         fn dfs_postorder_has_correct_order() {
             let expected = get_expected_order_dfs_postorder();
-            for test_tree in create_trees_for_testing() {
-                for (i, value) in test_tree.dfs_postorder().enumerate() {
-                    assert_eq!(expected[i], value);
-                }
-            }
-    
             for mut test_tree in create_trees_for_testing() {
-                for (i, value) in test_tree.dfs_postorder_iter_mut().enumerate() {
-                    assert_eq!(expected[i], *value);
-                }
-            }
-    
-            for test_tree in create_trees_for_testing() {
                 for (i, value) in test_tree.dfs_postorder_iter().enumerate() {
                     assert_eq!(expected[i], *value);
                 }
+                assert_len!(expected.len(), test_tree.dfs_postorder_iter());
+
+                for (i, value) in test_tree.dfs_postorder_iter_mut().enumerate() {
+                    assert_eq!(expected[i], *value);
+                }
+                assert_len!(expected.len(), test_tree.dfs_postorder_iter_mut());
+
+                for (i, value) in test_tree.clone().dfs_postorder().enumerate() {
+                    assert_eq!(expected[i], value);
+                }
+                assert_len!(expected.len(), test_tree.dfs_postorder());
             }
+        }
+
+        #[test]
+        fn binary_dfs_postorder_has_correct_order() {
+            let expected = get_expected_order_dfs_postorder();
+            let mut test_tree = create_binary_tree_for_testing();
+            
+            for (i, value) in test_tree.dfs_postorder_iter().enumerate() {
+                assert_eq!(expected[i], *value);
+            }
+            assert_len!(expected.len(), test_tree.dfs_postorder_iter());
+            
+            for (i, value) in test_tree.dfs_postorder_iter_mut().enumerate() {
+                assert_eq!(expected[i], *value);
+            }
+            assert_len!(expected.len(), test_tree.dfs_postorder_iter_mut());
+            
+            for (i, value) in test_tree.clone().dfs_postorder().enumerate() {
+                assert_eq!(expected[i], value);
+            }
+            assert_len!(expected.len(), test_tree.dfs_postorder());
         }
     
         #[test]
@@ -1326,6 +1349,7 @@ pub (crate) mod tests {
                     }
                     i += 1;
                 }
+                assert_eq!(expected.len(), i);
             }
     
             for mut test_tree in create_trees_for_testing() {
@@ -1339,6 +1363,7 @@ pub (crate) mod tests {
                     }
                     i += 1;
                 }
+                assert_eq!(expected.len(), i);
             }
     
             for test_tree in create_trees_for_testing() {
@@ -1352,22 +1377,7 @@ pub (crate) mod tests {
                     }
                     i += 1;
                 }
-            }
-        }
-
-        #[test]
-        fn binary_dfs_postorder_has_correct_order() {
-            let expected = get_expected_order_dfs_postorder();
-            for (i, value) in create_binary_tree_for_testing().dfs_postorder().enumerate() {
-                assert_eq!(expected[i], value);
-            }
-    
-            for (i, value) in create_binary_tree_for_testing().dfs_postorder_iter_mut().enumerate() {
-                assert_eq!(expected[i], *value);
-            }
-    
-            for (i, value) in create_binary_tree_for_testing().dfs_postorder_iter().enumerate() {
-                assert_eq!(expected[i], *value);
+                assert_eq!(expected.len(), i);
             }
         }
     
@@ -1386,6 +1396,7 @@ pub (crate) mod tests {
                 }
                 i += 1;
             }
+            assert_eq!(expected.len(), i);
     
             let mut i = 0;
             let mut test_tree = create_binary_tree_for_testing();
@@ -1398,6 +1409,7 @@ pub (crate) mod tests {
                 }
                 i += 1;
             }
+            assert_eq!(expected.len(), i);
     
             let mut i = 0;
             let mut iter_with_metadata = create_binary_tree_for_testing().dfs_postorder().attach_ancestors();
@@ -1409,6 +1421,7 @@ pub (crate) mod tests {
                 }
                 i += 1;
             }
+            assert_eq!(expected.len(), i);
         }
     }
 

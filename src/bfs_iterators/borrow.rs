@@ -1,12 +1,16 @@
 use std::collections::VecDeque;
-use std::ops::ControlFlow;
 use streaming_iterator::StreamingIterator;
 
-use crate::prelude::{BorrowedTreeNode, BorrowedBinaryTreeNode, BinaryChildren};
+use crate::prelude::{
+    BorrowedTreeNode, 
+    BinaryChildren, 
+    BorrowedBinaryTreeNode
+};
 use super::{
     bfs_next, 
     bfs_advance_iterator, 
-    bfs_streaming_iterator_impl
+    bfs_streaming_iterator_impl,
+    TreeNodeVecDeque,
 };
 
 pub struct BorrowedBFSIterator<'a, Node> 
@@ -98,34 +102,34 @@ impl<'a, Node> Iterator for BorrowedBFSIterator<'a, Node>
 pub struct BorrowedBFSIteratorWithAncestors<'a, Node> 
     where Node: BorrowedTreeNode<'a> {
     
-    current_depth: usize,
+    is_root: bool,
     item_stack: Vec<Node::BorrowedValue>,
-    traversal_queue_stack: Vec<VecDeque<Option<Node::BorrowedValue>>>,
-    iterator_queue: VecDeque<Option<Option<Node::BorrowedChildren>>>,
-    is_in_middle_of_iterator: bool,
+    tree_cache: TreeNodeVecDeque<Node::BorrowedValue>,
+    traversal_stack: Vec<TreeNodeVecDeque<Node::BorrowedValue>>,
+    iterator_queue: VecDeque<Option<Node::BorrowedChildren>>,
 }
 
 impl<'a, Node> BorrowedBFSIteratorWithAncestors<'a, Node> 
     where Node: BorrowedTreeNode<'a> {
 
     fn new(root: &'a Node) -> BorrowedBFSIteratorWithAncestors<'a, Node> {
-        let mut traversal_queue = VecDeque::new();
-        let mut traversal_queue_stack = Vec::new();
-        let mut iterator_queue = VecDeque::new();
-
         let (value, children) = root.get_value_and_children_iter();
+        let tree_cache = TreeNodeVecDeque {
+            value: None,
+            children: None,
+        };
+        let mut iterator_queue = VecDeque::new();
+        let mut item_stack = Vec::new();
 
-        let current_depth = 1;
-        traversal_queue.push_back(Some(value));
-        traversal_queue_stack.push(traversal_queue);
-        iterator_queue.push_back(Some(children));
+        item_stack.push(value);
+        iterator_queue.push_back(children);
 
         BorrowedBFSIteratorWithAncestors {
-            current_depth: current_depth,
-            item_stack: Vec::new(),
-            traversal_queue_stack: traversal_queue_stack,
-            iterator_queue: iterator_queue,
-            is_in_middle_of_iterator: false,
+            is_root: true,
+            item_stack,
+            iterator_queue,
+            traversal_stack: Vec::new(),
+            tree_cache,
         }
     }
 
@@ -137,7 +141,7 @@ impl<'a, Node> StreamingIterator for BorrowedBFSIteratorWithAncestors<'a, Node>
 
     type Item = [Node::BorrowedValue];
 
-    bfs_streaming_iterator_impl!();
+    bfs_streaming_iterator_impl!(get_value_and_children_iter);
 }
 
 pub struct BorrowedBinaryBFSIterator<'a, Node> 
@@ -229,34 +233,34 @@ impl<'a, Node> Iterator for BorrowedBinaryBFSIterator<'a, Node>
 pub struct BorrowedBinaryBFSIteratorWithAncestors<'a, Node> 
     where Node: BorrowedBinaryTreeNode<'a> {
     
-    current_depth: usize,
+    is_root: bool,
     item_stack: Vec<Node::BorrowedValue>,
-    traversal_queue_stack: Vec<VecDeque<Option<Node::BorrowedValue>>>,
-    iterator_queue: VecDeque<Option<Option<BinaryChildren<&'a Node>>>>,
-    is_in_middle_of_iterator: bool,
+    tree_cache: TreeNodeVecDeque<Node::BorrowedValue>,
+    traversal_stack: Vec<TreeNodeVecDeque<Node::BorrowedValue>>,
+    iterator_queue: VecDeque<Option<BinaryChildren<&'a Node>>>,
 }
 
 impl<'a, Node> BorrowedBinaryBFSIteratorWithAncestors<'a, Node> 
     where Node: BorrowedBinaryTreeNode<'a> {
 
     fn new(root: &'a Node) -> BorrowedBinaryBFSIteratorWithAncestors<'a, Node> {
-        let mut traversal_queue = VecDeque::new();
-        let mut traversal_queue_stack = Vec::new();
-        let mut iterator_queue = VecDeque::new();
-
         let (value, children) = root.get_value_and_children_iter();
+        let tree_cache = TreeNodeVecDeque {
+            value: None,
+            children: None,
+        };
+        let mut iterator_queue = VecDeque::new();
+        let mut item_stack = Vec::new();
 
-        let current_depth = 1;
-        traversal_queue.push_back(Some(value));
-        traversal_queue_stack.push(traversal_queue);
-        iterator_queue.push_back(Some(children));
+        item_stack.push(value);
+        iterator_queue.push_back(children);
 
         BorrowedBinaryBFSIteratorWithAncestors {
-            current_depth: current_depth,
-            item_stack: Vec::new(),
-            traversal_queue_stack: traversal_queue_stack,
-            iterator_queue: iterator_queue,
-            is_in_middle_of_iterator: false,
+            is_root: true,
+            item_stack,
+            iterator_queue,
+            traversal_stack: Vec::new(),
+            tree_cache,
         }
     }
 
@@ -268,5 +272,5 @@ impl<'a, Node> StreamingIterator for BorrowedBinaryBFSIteratorWithAncestors<'a, 
 
     type Item = [Node::BorrowedValue];
 
-    bfs_streaming_iterator_impl!();
+    bfs_streaming_iterator_impl!(get_value_and_children_iter);
 }

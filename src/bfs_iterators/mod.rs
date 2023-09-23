@@ -46,34 +46,64 @@ macro_rules! bfs_next {
 
 macro_rules! bfs_advance_iterator {
     ($get_value_and_children: ident) => {
-        fn advance_iterator(&mut self) -> ControlFlow<(), ()> {
-            let mut next_iter = self.iterator_queue.get_mut(0);
+        fn advance_dfs(&mut self) {
+            let mut stack_len = self.traversal_stack.len();
+            let starting_depth = self.item_stack.len();
             loop {
-                match next_iter {
-                    None => {
-                        self.item_stack.clear();
-                        return ControlFlow::Break(());
-                    }
-                    Some(children_opt) => {
-                        match children_opt {
+                let tree_node = if stack_len == 0 {
+                    &mut self.tree_cache
+                } else {
+                    self.traversal_stack.get_mut(stack_len - 1).unwrap()
+                };
+    
+                match tree_node.children.as_mut() {
+                    None => break,
+                    Some(children) => {
+                        match children.pop_front() {
                             None => {
-                                self.increase_depth_and_reset();
-                                return ControlFlow::Continue(());
+                                tree_node.children = None;
+                                // just let the value get dropped
                             }
-                            Some(children_opt) => {
-                                if let Some(children) = children_opt {
-                                    loop {
-                                        match children.next() {
-                                            None => {
-                                                break;
-                                            }
-                                            Some(item) => {
-                                                let (value, children) = item.$get_value_and_children();
-                                                self.item_stack.push(value);
-                                                self.iterator_queue.push_back(Some(children));
-                                                self.is_in_middle_of_iterator = true;
-                                                return ControlFlow::Break(());
-                                            }
+                            Some(child) => {
+                                match child {
+                                    None => {
+                                        if children.len() != 0 {
+                                            children.push_back(None);
+                                        } else {
+                                            tree_node.children = None;
+                                            // let the child be dropped from memory
+                                        }
+    
+                                        if self.item_stack.len() > 1 {
+                                            let target = self.traversal_stack.get_mut(stack_len - 1).unwrap();
+                                            target.value = self.item_stack.pop();
+                                        }
+                                        
+    
+                                        if self.traversal_stack.len() == 0 { continue; }
+                                        let popped = self.traversal_stack.pop().unwrap();
+                                        stack_len -= 1;
+    
+                                        let parent = if stack_len < 1 {
+                                            &mut self.tree_cache
+                                        } else {
+                                            self.traversal_stack.get_mut(stack_len - 1).unwrap()
+                                        };
+    
+                                        parent.children
+                                            .as_mut()
+                                            .unwrap()
+                                            .push_back(Some(popped));
+                                    }
+                                    Some(mut value) => {
+                                        self.item_stack.push(std::mem::take(&mut value.value).unwrap());
+                                        let has_children = !value.children.is_none();
+                                        self.traversal_stack.push(value);
+                                        stack_len += 1;
+                                        if !has_children && self.item_stack.len() >= starting_depth {
+                                            break;
+                                        } else {
+                                            continue;
                                         }
                                     }
                                 }
@@ -81,93 +111,119 @@ macro_rules! bfs_advance_iterator {
                         }
                     }
                 }
-    
-                let num_queues = self.traversal_queue_stack.len();
-                self.traversal_queue_stack
-                    .get_mut(num_queues - 1)
-                    .expect("there to be at least 1 queue")
-                    .push_back(None);
-                self.iterator_queue.pop_front();
-                next_iter = self.iterator_queue.get_mut(0);
-                self.is_in_middle_of_iterator = false;
-            }      
+            }
         }
     
-        fn increase_depth_and_reset(&mut self) {
-            self.current_depth += 1;
-            self.iterator_queue.push_back(None);
-            let items = std::mem::take(&mut self.item_stack);
-            for (index, item) in items.into_iter().enumerate() {
-                self.traversal_queue_stack.get_mut(index)
-                    .expect("item stack to have a value at depth")
-                    .push_back(Some(item));
-            }
+        fn pop_from_item_stack(&mut self) {
+            if self.item_stack.len() == 1 { return; }
+            let tree_node = match self.item_stack.len() {
+                0 | 1 => panic!("item stack len should never be 0 or 1 here!"),
+                2 => {
+                    &mut self.tree_cache
+                }
+                _ => {
+                    self.traversal_stack.get_mut(
+                        self.item_stack.len() - 3
+                    ).unwrap()
+                }
+            };
+    
+            let children = match &mut tree_node.children {
+                None => {
+                    tree_node.children = Some(VecDeque::new());
+                    tree_node.children.as_mut().unwrap()
+                }
+                Some(children) => {
+                    children
+                }
+            };
+    
+            children.push_back(
+                Some(
+                    TreeNodeVecDeque { 
+                        value: Some(self.item_stack.pop().unwrap()), 
+                        children: None, 
+                    }
+                )
+            );
+            
         }
     };
 }
 
 macro_rules! bfs_streaming_iterator_impl {
-    () => {
+    ($get_value_and_children: ident) => {
         fn advance(&mut self) {
-            loop {
-                if self.is_in_middle_of_iterator {
-                    let depth = self.item_stack.len() - 1;
-                    match self.traversal_queue_stack.get_mut(depth) {
-                        None => {
-                            let mut new_vecdeque = VecDeque::new();
-                            new_vecdeque.push_back(Some(self.item_stack.pop().expect("there to be an item in the item stack")));
-                            self.traversal_queue_stack.push(new_vecdeque);
-                        }
-                        Some(vecdeque) => {
-                            vecdeque.push_back(Some(self.item_stack.pop().expect("there to be an item in the item stack")));
-                        }
-                    }
+            if self.is_root {
+                self.is_root = false;
+                return;
+            }
     
-                    match self.advance_iterator() {
-                        ControlFlow::Break(_) => break,
-                        ControlFlow::Continue(_) => continue,
-                    }
-                }
-                let depth = self.traversal_queue_stack.len();
-                match self.traversal_queue_stack
-                        .get_mut(depth - 1)
-                        .expect("stack to have an item")
-                        .pop_front()
-                        .expect("front of queue to always have a value") {
+            loop {
+                match self.iterator_queue.get_mut(0) {
                     None => {
-                        self.increase_depth_and_reset();
+                        self.item_stack.clear();
+                        return;
                     }
-                    Some(item) => {
-                        let depth = self.traversal_queue_stack.len();
-                        if depth == self.current_depth {
-                            self.traversal_queue_stack
-                                .get_mut(depth - 1)
-                                .expect("there to be a queue at index depth - 1")
-                                .push_back(None);
+                    Some(iter) => {
+                        if let Some(iter) = iter {
+                            if let Some(next) = iter.next() {
+                                if self.item_stack.len() == self.traversal_stack.len() + 2 {
+                                    self.pop_from_item_stack();
+                                }
+                                let (value, children) = next.$get_value_and_children();
+                                self.item_stack.push(value);
+                                self.iterator_queue.push_back(children);
+                                break;
+                            }
                         }
-            
-                        if depth == self.current_depth - 1 {
-                            self.item_stack.push(item);
-                            self.advance_iterator();          
-                            return;
+
+                        if self.item_stack.len() == self.traversal_stack.len() + 2 {
+                            self.pop_from_item_stack();
                         }
-            
-                        if depth < self.current_depth {
-                            self.item_stack.push(item);
-                        } else if depth == self.current_depth {
-                            self.item_stack.push(item);
-                            return;
+
+                        let top_of_traversal_stack = if self.traversal_stack.len() == 0 {
+                            &mut self.tree_cache
+                        } else {
+                            let stack_len = self.traversal_stack.len();
+                            self.traversal_stack.get_mut(stack_len - 1).unwrap()
+                        };
+                        
+                        match &mut top_of_traversal_stack.children {
+                            Some(children) => children.push_front(None),
+                            // used up all the value, so just pop it
+                            None => {
+                                while self.traversal_stack.len() > 0 
+                                    && (self.traversal_stack
+                                        .get(self.traversal_stack.len() - 1)
+                                        .unwrap()
+                                        .children
+                                        .is_none() 
+                                    || self.traversal_stack
+                                        .get(self.traversal_stack.len() - 1)
+                                        .unwrap()
+                                        .children
+                                        .as_ref()
+                                        .unwrap()
+                                        .len() == 1) {
+                                    self.traversal_stack.pop();
+                                    self.item_stack.pop();
+                                }
+                            }
                         }
+
+                        self.advance_dfs();
+                        self.iterator_queue.pop_front();
                     }
                 }
             }
         }
-
+    
         fn get(&self) -> Option<&Self::Item> {
-            if self.item_stack.len() > 0 {
-                Some(self.item_stack.as_slice())
-            } else {
+            if self.item_stack.len() == 0 {
                 None
+            } else {
+                Some(self.item_stack.as_slice())
             }
         }
     };
@@ -176,3 +232,9 @@ macro_rules! bfs_streaming_iterator_impl {
 pub(crate) use bfs_next;
 pub(crate) use bfs_advance_iterator;
 pub(crate) use bfs_streaming_iterator_impl;
+
+#[derive(Debug, Default, Clone)]
+struct TreeNodeVecDeque<T> {
+    value: Option<T>,
+    children: Option<std::collections::VecDeque<Option<Self>>>,
+}
