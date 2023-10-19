@@ -3,6 +3,19 @@ use std::iter::FlatMap;
 use std::slice::{Iter, IterMut};
 use std::vec::IntoIter;
 
+use super::leaves_iterators::owned::{
+    OwnedLeavesIterator, 
+    OwnedBinaryLeavesIterator
+};
+use super::leaves_iterators::mut_borrow::{
+    MutBorrowedLeavesIterator, 
+    MutBorrowedBinaryLeavesIterator
+};
+use super::leaves_iterators::borrow::{
+    BorrowedLeavesIterator, 
+    BorrowedBinaryLeavesIterator
+};
+
 use super::bfs_iterators::{
     owned::{
         OwnedBFSIterator, 
@@ -211,7 +224,7 @@ pub trait OwnedBinaryTreeNode
         OwnedDFSInorderIterator::new(self)
     }
 
-    /// This method retrieves an iterable that can be used to perform
+    /// This method retrieves an iterator that can be used to perform
     /// Depth First Postorder searches of a tree.
     /// 
     /// A Depth First Postorder search (referred to as DFS Postorder) 
@@ -245,6 +258,10 @@ pub trait OwnedBinaryTreeNode
     ///
     fn dfs_postorder(self) -> OwnedBinaryDFSPostorderIterator<Self> {
         OwnedBinaryDFSPostorderIterator::new(self)
+    }
+
+    fn leaves(self) -> OwnedBinaryLeavesIterator<Self> {
+        OwnedBinaryLeavesIterator::new(self)
     }
 }
 
@@ -329,7 +346,7 @@ pub trait OwnedTreeNode
         OwnedDFSPreorderIterator::new(self)
     }
 
-    /// This method retrieves an iterable that can be used to perform
+    /// This method retrieves an iterator that can be used to perform
     /// Depth First Postorder searches of a tree.
     /// 
     /// A Depth First Postorder search (referred to as DFS Postorder) 
@@ -363,6 +380,10 @@ pub trait OwnedTreeNode
     ///
     fn dfs_postorder(self) -> OwnedDFSPostorderIterator<Self> {
         OwnedDFSPostorderIterator::new(self)
+    }
+
+    fn leaves(self) -> OwnedLeavesIterator<Self> {
+        OwnedLeavesIterator::new(self)
     }
 }
 
@@ -490,7 +511,7 @@ pub trait MutBorrowedBinaryTreeNode<'a>
         MutBorrowedDFSInorderIterator::new(self)
     }
 
-    /// This method retrieves an iterable that can be used to perform
+    /// This method retrieves an iterator that can be used to perform
     /// Depth First Postorder searches of a tree.
     /// 
     /// A Depth First Postorder search (referred to as DFS Postorder) 
@@ -524,6 +545,10 @@ pub trait MutBorrowedBinaryTreeNode<'a>
     ///
     fn dfs_postorder_iter_mut(&'a mut self) -> MutBorrowedBinaryDFSPostorderIterator<'a, Self> {
         MutBorrowedBinaryDFSPostorderIterator::new(self)
+    }
+
+    fn leaves_iter_mut(&'a mut self) -> MutBorrowedBinaryLeavesIterator<'a, Self> {
+        MutBorrowedBinaryLeavesIterator::new(self)
     }
 }
 
@@ -610,7 +635,7 @@ pub trait MutBorrowedTreeNode<'a>
         MutBorrowedDFSPreorderIterator::new(self)
     }
 
-    /// This method retrieves an iterable that can be used to perform
+    /// This method retrieves an iterator that can be used to perform
     /// Depth First Postorder searches of a tree.
     /// 
     /// A Depth First Postorder search (referred to as DFS Postorder) 
@@ -644,6 +669,10 @@ pub trait MutBorrowedTreeNode<'a>
     ///
     fn dfs_postorder_iter_mut(&'a mut self) -> MutBorrowedDFSPostorderIterator<'a, Self> {
         MutBorrowedDFSPostorderIterator::new(self)
+    }
+
+    fn leaves_iter_mut(&'a mut self) -> MutBorrowedLeavesIterator<'a, Self> {
+        MutBorrowedLeavesIterator::new(self)
     }
 }
 
@@ -771,7 +800,7 @@ pub trait BorrowedBinaryTreeNode<'a>
         BorrowedDFSInorderIterator::new(self)
     }
 
-    /// This method retrieves an iterable that can be used to perform
+    /// This method retrieves an iterator that can be used to perform
     /// Depth First Postorder searches of a tree.
     /// 
     /// A Depth First Postorder search (referred to as DFS Postorder) 
@@ -805,6 +834,10 @@ pub trait BorrowedBinaryTreeNode<'a>
     ///
     fn dfs_postorder_iter(&'a self) -> BorrowedBinaryDFSPostorderIterator<'a, Self> {
         BorrowedBinaryDFSPostorderIterator::new(self)
+    }
+
+    fn leaves_iter(&'a self) -> BorrowedBinaryLeavesIterator<'a, Self> {
+        BorrowedBinaryLeavesIterator::new(self)
     }
 }
 
@@ -890,7 +923,7 @@ pub trait BorrowedTreeNode<'a>
         BorrowedDFSPreorderIterator::new(self)
     }
 
-    /// This method retrieves an iterable that can be used to perform
+    /// This method retrieves an iterator that can be used to perform
     /// Depth First Postorder searches of a tree.
     /// 
     /// A Depth First Postorder search (referred to as DFS Postorder) 
@@ -924,6 +957,10 @@ pub trait BorrowedTreeNode<'a>
     ///
     fn dfs_postorder_iter(&'a self) -> BorrowedDFSPostorderIterator<'a, Self> {
         BorrowedDFSPostorderIterator::new(self)
+    }
+
+    fn leaves_iter(&'a self) -> BorrowedLeavesIterator<'a, Self> {
+        BorrowedLeavesIterator::new(self)
     }
 }
 
@@ -1572,6 +1609,61 @@ pub (crate) mod tests {
                 i += 1;
             }
             assert_eq!(expected.len(), i);
+        }
+    }
+
+    mod leaves_tests {
+        use crate::prelude::*;
+        use super::{
+            assert_len,
+            create_trees_for_testing,
+            create_binary_tree_for_testing,
+        };
+
+        fn get_expected_order_leaves() -> [usize; 4] {
+            [3,4,5,10]
+        }
+
+        #[test]
+        fn leaves_have_correct_order() {
+            let expected = get_expected_order_leaves();
+            for mut test_tree in create_trees_for_testing() {
+                for (i, value) in test_tree.leaves_iter().enumerate() {
+                    assert_eq!(expected[i], *value);
+                }
+                assert_len!(expected.len(), test_tree.leaves_iter());
+
+                for (i, value) in test_tree.leaves_iter_mut().enumerate() {
+                    assert_eq!(expected[i], *value);
+                }
+                assert_len!(expected.len(), test_tree.leaves_iter_mut());
+
+                for (i, value) in test_tree.clone().leaves().enumerate() {
+                    assert_eq!(expected[i], value);
+                }
+                assert_len!(expected.len(), test_tree.leaves());
+            }
+        }
+
+        #[test]
+        fn binary_leaves_has_correct_order() {
+            let expected = get_expected_order_leaves();
+            let mut test_tree = create_binary_tree_for_testing();
+
+            for (i, value) in test_tree.leaves_iter().enumerate() {
+                assert_eq!(expected[i], *value);
+            }
+            assert_len!(expected.len(), test_tree.leaves_iter());
+
+            for (i, value) in test_tree.leaves_iter_mut().enumerate() {
+                assert_eq!(expected[i], *value);
+            }
+            assert_len!(expected.len(), test_tree.leaves_iter_mut());
+
+            for (i, value) in test_tree.clone().leaves().enumerate() {
+                assert_eq!(expected[i], value);
+            }
+            assert_len!(expected.len(), test_tree.leaves());
         }
     }
 
