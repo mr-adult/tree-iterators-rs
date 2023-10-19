@@ -11,3 +11,8 @@ documentation = "https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/"
 
 [dependencies]
 streaming-iterator = "0.1.9"
+serde = { version = "1.0.189",  optional = true }
+serde_derive = { version = "1.0.189",  optional = true }
+
+[features]
+serde = ["dep:serde", "dep:serde_derive"]

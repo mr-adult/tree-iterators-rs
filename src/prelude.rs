@@ -3,6 +3,9 @@ use std::iter::FlatMap;
 use std::slice::{Iter, IterMut};
 use std::vec::IntoIter;
 
+#[cfg(feature = "serde")]
+use serde_derive::{Serialize, Deserialize};
+
 use super::leaves_iterators::owned::{
     OwnedLeavesIterator, 
     OwnedBinaryLeavesIterator
@@ -68,6 +71,7 @@ use super::dfs_postorder_iterators::{
 /// provides a series of tree traversal utilities to allow 
 /// you to easily work with and modify binary trees.
 #[derive(Clone, Debug, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BinaryTreeNode<T> {
     /// This node's value
     pub value: T,
@@ -81,6 +85,7 @@ pub struct BinaryTreeNode<T> {
 /// provides a series of tree traversal utilities to allow 
 /// you to easily work with and modify arbitrary trees.
 #[derive(Clone, Debug, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct TreeNode<T> {
     /// This node's value
     pub value: T,
