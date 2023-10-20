@@ -1,7 +1,20 @@
 use streaming_iterator::StreamingIterator;
-use crate::prelude::{OwnedTreeNode, BinaryChildren, OwnedBinaryTreeNode};
+use crate::{
+    prelude::{
+        OwnedTreeNode, 
+        BinaryChildren, 
+        OwnedBinaryTreeNode
+    }, 
+    leaves_iterators::depth_first::owned::{
+        OwnedLeavesIterator, 
+        OwnedBinaryLeavesIterator
+    }
+};
 
-use super::{dfs_postorder_next, postorder_streaming_iterator_impl};
+use super::{
+    dfs_postorder_next, 
+    postorder_streaming_iterator_impl
+};
 
 pub struct OwnedDFSPostorderIterator<Node> 
     where Node: OwnedTreeNode {
@@ -19,6 +32,41 @@ impl<Node> OwnedDFSPostorderIterator<Node>
             root: Some(root),
             item_stack: Vec::new(), 
             traversal_stack: Vec::new() 
+        }
+    }
+
+    /// This method converts the current Depth First Search iterator into 
+    /// an iterator that will yield only the leaves of the tree. Iteration
+    /// proceeds in a Depth First Postorder Search order.
+    /// 
+    /// A leaf is defined as:
+    /// 
+    /// Any tree node that has no children. Given a tree of the following shape, 
+    /// this iterator would yield values in the following order:
+    /// 3, 4, 5, 10
+    /// 
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    pub fn leaves(self) -> OwnedLeavesIterator<Node> {
+        OwnedLeavesIterator { 
+            root: self.root,
+            traversal_stack_bottom: self.traversal_stack,
+            traversal_stack_top: Vec::new(),
+            item_stack: Vec::new()
         }
     }
 
@@ -116,12 +164,10 @@ impl<'a, Node> OwnedDFSPostorderIteratorWithAncestors<Node>
     }
 }
 
-type TreeValueStack<T> = [T];
-
 impl<'a, Node> StreamingIterator for OwnedBinaryDFSPostorderIteratorWithAncestors<Node> 
     where Node: OwnedBinaryTreeNode {
 
-    type Item = TreeValueStack<Node::OwnedValue>;
+    type Item = [Node::OwnedValue];
     postorder_streaming_iterator_impl!(get_value_and_children);
 }
 
@@ -141,6 +187,41 @@ impl<Node> OwnedBinaryDFSPostorderIterator<Node>
             root: Some(root),
             item_stack: Vec::new(), 
             traversal_stack: Vec::new() 
+        }
+    }
+
+    /// This method converts the current Depth First Search iterator into 
+    /// an iterator that will yield only the leaves of the tree. Iteration
+    /// proceeds in a Depth First Postorder Search order.
+    /// 
+    /// A leaf is defined as:
+    /// 
+    /// Any tree node that has no children. Given a tree of the following shape, 
+    /// this iterator would yield values in the following order:
+    /// 3, 4, 5, 10
+    /// 
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    pub fn leaves(self) -> OwnedBinaryLeavesIterator<Node, BinaryChildren<Node>> {
+        OwnedBinaryLeavesIterator { 
+            root: self.root, 
+            traversal_stack_bottom: self.traversal_stack,
+            traversal_stack_top: Vec::new(),
+            item_stack: Vec::new(),
         }
     }
 
@@ -241,6 +322,6 @@ impl<'a, Node> OwnedBinaryDFSPostorderIteratorWithAncestors<Node>
 impl<'a, Node> StreamingIterator for OwnedDFSPostorderIteratorWithAncestors<Node> 
     where Node: OwnedTreeNode {
 
-    type Item = TreeValueStack<Node::OwnedValue>;
+    type Item = [Node::OwnedValue];
     postorder_streaming_iterator_impl!(get_value_and_children);
 }

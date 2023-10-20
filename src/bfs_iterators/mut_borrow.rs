@@ -1,10 +1,16 @@
 use std::collections::VecDeque;
 use streaming_iterator::StreamingIterator;
 
-use crate::prelude::{
-    MutBorrowedTreeNode, 
-    BinaryChildren, 
-    MutBorrowedBinaryTreeNode
+use crate::{
+    prelude::{
+        MutBorrowedTreeNode, 
+        BinaryChildren, 
+        MutBorrowedBinaryTreeNode
+    }, 
+    leaves_iterators::breadth_first::mut_borrow::{
+        MutBorrowedLeavesIterator, 
+        MutBorrowedBinaryLeavesIterator
+    },
 };
 use super::{
     bfs_next, 
@@ -28,6 +34,40 @@ impl<'a, Node> MutBorrowedBFSIterator<'a, Node>
         MutBorrowedBFSIterator { 
             root: Some(root), 
             traversal_queue: VecDeque::new() 
+        }
+    }
+
+    /// This method converts the current Breadth First Search iterator into 
+    /// an iterator that will yield only the leaves of the tree. Iteration
+    /// still proceeds in a Breadth First Search order.
+    /// 
+    /// A leaf is defined as:
+    /// 
+    /// Any tree node that has no children. Given a tree of the following shape, 
+    /// this iterator would yield values in the following order:
+    /// 3, 4, 5, 10
+    /// 
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    pub fn leaves(self) -> MutBorrowedLeavesIterator<'a, Node> {
+        MutBorrowedLeavesIterator { 
+            root: self.root, 
+            old_traversal_queue: self.traversal_queue,
+            new_traversal_queue: VecDeque::new() 
         }
     }
 
@@ -159,6 +199,40 @@ impl<'a, Node> MutBorrowedBinaryBFSIterator<'a, Node>
         MutBorrowedBinaryBFSIterator { 
             root: Some(root), 
             traversal_queue: VecDeque::new() 
+        }
+    }
+
+    /// This method converts the current Breadth First Search iterator into 
+    /// an iterator that will yield only the leaves of the tree. Iteration
+    /// still proceeds in a Breadth First Search order.
+    /// 
+    /// A leaf is defined as:
+    /// 
+    /// Any tree node that has no children. Given a tree of the following shape, 
+    /// this iterator would yield values in the following order:
+    /// 3, 4, 5, 10
+    /// 
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    pub fn leaves(self) -> MutBorrowedBinaryLeavesIterator<'a, Node, BinaryChildren<&'a mut Node>> {
+        MutBorrowedBinaryLeavesIterator { 
+            root: self.root, 
+            old_traversal_queue: self.traversal_queue,
+            new_traversal_queue: VecDeque::new(),
         }
     }
 

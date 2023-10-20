@@ -1,7 +1,20 @@
 use streaming_iterator::StreamingIterator;
-use crate::prelude::{MutBorrowedTreeNode, BinaryChildren, MutBorrowedBinaryTreeNode};
+use crate::{
+    prelude::{
+        MutBorrowedTreeNode, 
+        BinaryChildren, 
+        MutBorrowedBinaryTreeNode
+    }, 
+    leaves_iterators::depth_first::mut_borrow::{
+        MutBorrowedLeavesIterator, 
+        MutBorrowedBinaryLeavesIterator
+    }
+};
 
-use super::{dfs_postorder_next, postorder_streaming_iterator_impl};
+use super::{
+    dfs_postorder_next, 
+    postorder_streaming_iterator_impl
+};
 
 pub struct MutBorrowedDFSPostorderIterator<'a, Node> 
     where Node: MutBorrowedTreeNode<'a> {
@@ -19,6 +32,41 @@ impl<'a, Node> MutBorrowedDFSPostorderIterator<'a, Node>
             root: Some(root),
             item_stack: Vec::new(), 
             traversal_stack: Vec::new() 
+        }
+    }
+
+    /// This method converts the current Depth First Search iterator into 
+    /// an iterator that will yield only the leaves of the tree. Iteration
+    /// proceeds in a Depth First Postorder Search order.
+    /// 
+    /// A leaf is defined as:
+    /// 
+    /// Any tree node that has no children. Given a tree of the following shape, 
+    /// this iterator would yield values in the following order:
+    /// 3, 4, 5, 10
+    /// 
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    pub fn leaves(self) -> MutBorrowedLeavesIterator<'a, Node, Node::MutBorrowedChildren> {
+        MutBorrowedLeavesIterator { 
+            root: self.root,
+            traversal_stack_bottom: self.traversal_stack,
+            traversal_stack_top: Vec::new(),
+            item_stack: Vec::new()
         }
     }
 
@@ -116,12 +164,10 @@ impl<'a, Node> MutBorrowedDFSPostorderIteratorWithAncestors<'a, Node>
     }
 }
 
-type TreeValueStack<T> = [T];
-
 impl<'a, Node> StreamingIterator for MutBorrowedDFSPostorderIteratorWithAncestors<'a, Node> 
     where Node: MutBorrowedTreeNode<'a> {
 
-    type Item = TreeValueStack<Node::MutBorrowedValue>;
+    type Item = [Node::MutBorrowedValue];
     postorder_streaming_iterator_impl!(get_value_and_children_iter_mut);
 }
 
@@ -141,6 +187,41 @@ impl<'a, Node> MutBorrowedBinaryDFSPostorderIterator<'a, Node>
             root: Some(root),
             item_stack: Vec::new(), 
             traversal_stack: Vec::new() 
+        }
+    }
+
+    /// This method converts the current Depth First Search iterator into 
+    /// an iterator that will yield only the leaves of the tree. Iteration
+    /// proceeds in a Depth First Postorder Search order.
+    /// 
+    /// A leaf is defined as:
+    /// 
+    /// Any tree node that has no children. Given a tree of the following shape, 
+    /// this iterator would yield values in the following order:
+    /// 3, 4, 5, 10
+    /// 
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    pub fn leaves(self) -> MutBorrowedBinaryLeavesIterator<'a, Node, BinaryChildren<&'a mut Node>> {
+        MutBorrowedBinaryLeavesIterator { 
+            root: self.root, 
+            traversal_stack_bottom: self.traversal_stack,
+            traversal_stack_top: Vec::new(),
+            item_stack: Vec::new()
         }
     }
 
@@ -241,6 +322,6 @@ impl<'a, Node> MutBorrowedBinaryDFSPostorderIteratorWithAncestors<'a, Node>
 impl<'a, Node> StreamingIterator for MutBorrowedBinaryDFSPostorderIteratorWithAncestors<'a, Node> 
     where Node: MutBorrowedBinaryTreeNode<'a> {
 
-    type Item = TreeValueStack<Node::MutBorrowedValue>;
+    type Item = [Node::MutBorrowedValue];
     postorder_streaming_iterator_impl!(get_value_and_children_iter_mut);
 }

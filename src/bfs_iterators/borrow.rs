@@ -1,11 +1,18 @@
 use std::collections::VecDeque;
 use streaming_iterator::StreamingIterator;
 
-use crate::prelude::{
-    BorrowedTreeNode, 
-    BinaryChildren, 
-    BorrowedBinaryTreeNode
+use crate::{
+    prelude::{
+        BorrowedTreeNode, 
+        BinaryChildren, 
+        BorrowedBinaryTreeNode
+    }, 
+    leaves_iterators::breadth_first::borrow::{
+        BorrowedLeavesIterator, 
+        BorrowedBinaryLeavesIterator
+    }
 };
+
 use super::{
     bfs_next, 
     bfs_advance_iterator, 
@@ -27,6 +34,40 @@ impl<'a, Node> BorrowedBFSIterator<'a, Node>
         BorrowedBFSIterator { 
             root: Some(root), 
             traversal_queue: VecDeque::new() 
+        }
+    }
+
+    /// This method converts the current Breadth First Search iterator into 
+    /// an iterator that will yield only the leaves of the tree. Iteration
+    /// still proceeds in a Breadth First Search order.
+    /// 
+    /// A leaf is defined as:
+    /// 
+    /// Any tree node that has no children. Given a tree of the following shape, 
+    /// this iterator would yield values in the following order:
+    /// 3, 4, 5, 10
+    /// 
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    pub fn leaves(self) -> BorrowedLeavesIterator<'a, Node> {
+        BorrowedLeavesIterator {
+            root: self.root, 
+            old_traversal_queue: self.traversal_queue,
+            new_traversal_queue: VecDeque::new(),
         }
     }
 
@@ -158,6 +199,40 @@ impl<'a, Node> BorrowedBinaryBFSIterator<'a, Node>
         BorrowedBinaryBFSIterator { 
             root: Some(root), 
             traversal_queue: VecDeque::new() 
+        }
+    }
+
+    /// This method converts the current Breadth First Search iterator into 
+    /// an iterator that will yield only the leaves of the tree. Iteration
+    /// still proceeds in a Breadth First Search order.
+    /// 
+    /// A leaf is defined as:
+    /// 
+    /// Any tree node that has no children. Given a tree of the following shape, 
+    /// this iterator would yield values in the following order:
+    /// 3, 4, 5, 10
+    /// 
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    pub fn leaves(self) -> BorrowedBinaryLeavesIterator<'a, Node> {
+        BorrowedBinaryLeavesIterator { 
+            root: self.root, 
+            old_traversal_queue: self.traversal_queue,
+            new_traversal_queue: VecDeque::new(),
         }
     }
 

@@ -1,10 +1,16 @@
 use std::collections::VecDeque;
 use streaming_iterator::StreamingIterator;
 
-use crate::prelude::{
-    OwnedTreeNode, 
-    BinaryChildren, 
-    OwnedBinaryTreeNode
+use crate::{
+    prelude::{
+        OwnedTreeNode, 
+        BinaryChildren, 
+        OwnedBinaryTreeNode
+    }, 
+    leaves_iterators::breadth_first::owned::{
+        OwnedBinaryLeavesIterator, 
+        OwnedLeavesIterator
+    }
 };
 use super::{
     bfs_next, 
@@ -27,6 +33,40 @@ impl<Node> OwnedBFSIterator<Node>
         OwnedBFSIterator { 
             root: Some(root), 
             traversal_queue: VecDeque::new() 
+        }
+    }
+
+    /// This method converts the current Breadth First Search iterator into 
+    /// an iterator that will yield only the leaves of the tree. Iteration
+    /// still proceeds in a Breadth First Search order.
+    /// 
+    /// A leaf is defined as:
+    /// 
+    /// Any tree node that has no children. Given a tree of the following shape, 
+    /// this iterator would yield values in the following order:
+    /// 3, 4, 5, 10
+    /// 
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    pub fn leaves(self) -> OwnedLeavesIterator<Node, Node::OwnedChildren> {
+        OwnedLeavesIterator { 
+            root: self.root, 
+            old_traversal_queue: self.traversal_queue,
+            new_traversal_queue: VecDeque::new(),
         }
     }
 
@@ -158,6 +198,40 @@ impl<Node> OwnedBinaryBFSIterator<Node>
         OwnedBinaryBFSIterator { 
             root: Some(root), 
             traversal_queue: VecDeque::new() 
+        }
+    }
+
+    /// This method converts the current Breadth First Search iterator into 
+    /// an iterator that will yield only the leaves of the tree. Iteration
+    /// still proceeds in a Breadth First Search order.
+    /// 
+    /// A leaf is defined as:
+    /// 
+    /// Any tree node that has no children. Given a tree of the following shape, 
+    /// this iterator would yield values in the following order:
+    /// 3, 4, 5, 10
+    /// 
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    pub fn leaves(self) -> OwnedBinaryLeavesIterator<Node, BinaryChildren<Node>> {
+        OwnedBinaryLeavesIterator { 
+            root: self.root, 
+            old_traversal_queue: self.traversal_queue,
+            new_traversal_queue: VecDeque::new(),
         }
     }
 

@@ -1,6 +1,21 @@
 use streaming_iterator::StreamingIterator;
-use crate::prelude::{BorrowedTreeNode, BinaryChildren, BorrowedBinaryTreeNode};
-use super::{preorder_streaming_iterator_impl, dfs_preorder_next, advance_dfs};
+use crate::{
+    prelude::{
+        BorrowedTreeNode, 
+        BinaryChildren, 
+        BorrowedBinaryTreeNode
+    }, 
+    leaves_iterators::depth_first::borrow::{
+        BorrowedLeavesIterator, 
+        BorrowedBinaryLeavesIterator
+    },
+};
+
+use super::{
+    preorder_streaming_iterator_impl, 
+    dfs_preorder_next, 
+    advance_dfs
+};
 
 pub struct BorrowedDFSPreorderIterator<'a, Node>
     where Node: BorrowedTreeNode<'a> {
@@ -16,6 +31,43 @@ impl<'a, Node> BorrowedDFSPreorderIterator<'a, Node>
         BorrowedDFSPreorderIterator { 
             root: Some(root),
             traversal_stack: Vec::new()
+        }
+    }
+
+    /// This method converts the current Depth First Search iterator into 
+    /// an iterator that will yield only the leaves of the tree. Iteration
+    /// proceeds in a Depth First Postorder Search order. This may not make
+    /// intuitive sense at first, but in order for the lazy iterators of this 
+    /// library to know a node is a leaf of the tree, postorder must be used.
+    /// 
+    /// A leaf is defined as:
+    /// 
+    /// Any tree node that has no children. Given a tree of the following shape, 
+    /// this iterator would yield values in the following order:
+    /// 3, 4, 5, 10
+    /// 
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    pub fn leaves(self) -> BorrowedLeavesIterator<'a, Node, Node::BorrowedChildren> {
+        BorrowedLeavesIterator {
+            root: self.root,
+            traversal_stack_bottom: self.traversal_stack,
+            traversal_stack_top: Vec::new(),
+            item_stack: Vec::new(),
         }
     }
 
@@ -137,6 +189,43 @@ impl<'a, Node> BorrowedBinaryDFSPreorderIterator<'a, Node>
         BorrowedBinaryDFSPreorderIterator { 
             root: Some(root),
             traversal_stack: Vec::new()
+        }
+    }
+
+    /// This method converts the current Depth First Search iterator into 
+    /// an iterator that will yield only the leaves of the tree. Iteration
+    /// proceeds in a Depth First Postorder Search order. This may not make
+    /// intuitive sense at first, but in order for the lazy iterators of this 
+    /// library to know a node is a leaf of the tree, postorder must be used.
+    /// 
+    /// A leaf is defined as:
+    /// 
+    /// Any tree node that has no children. Given a tree of the following shape, 
+    /// this iterator would yield values in the following order:
+    /// 3, 4, 5, 10
+    /// 
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    pub fn leaves(self) -> BorrowedBinaryLeavesIterator<'a, Node, BinaryChildren<&'a Node>> {
+        BorrowedBinaryLeavesIterator {
+            root: self.root,
+            traversal_stack_bottom: self.traversal_stack,
+            traversal_stack_top: Vec::new(),
+            item_stack: Vec::new(),
         }
     }
 

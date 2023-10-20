@@ -1,4 +1,7 @@
-use crate::prelude::OwnedBinaryTreeNode;
+use crate::{
+    prelude::OwnedBinaryTreeNode, 
+    leaves_iterators::depth_first::owned::OwnedBinaryLeavesIterator,
+};
 use streaming_iterator::StreamingIterator;
 
 use super::{
@@ -26,6 +29,48 @@ impl<Node> OwnedDFSInorderIterator<Node>
             right_stack,
             item_stack: Vec::new(),
             moved: false,
+        }
+    }
+
+    /// This method converts the current Depth First Search iterator into 
+    /// an iterator that will yield only the leaves of the tree. Iteration
+    /// proceeds in a Depth First Postorder Search order. This may not make
+    /// intuitive sense at first, but in order for the lazy iterators of this 
+    /// library to know a node is a leaf of the tree, postorder must be used.
+    /// 
+    /// A leaf is defined as:
+    /// 
+    /// Any tree node that has no children. Given a tree of the following shape, 
+    /// this iterator would yield values in the following order:
+    /// 3, 4, 5, 10
+    /// 
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    pub fn leaves(self) -> OwnedBinaryLeavesIterator<Node, core::option::IntoIter<Node>> {
+        let mut traversal_stack_bottom = Vec::with_capacity(self.right_stack.capacity());
+        for opt in self.right_stack {
+            traversal_stack_bottom.push(opt.into_iter());
+        }
+
+        OwnedBinaryLeavesIterator {
+            root: None,
+            traversal_stack_bottom: traversal_stack_bottom,
+            traversal_stack_top: Vec::new(),
+            item_stack: Vec::new(),
         }
     }
 

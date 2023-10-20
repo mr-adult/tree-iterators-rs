@@ -6,19 +6,6 @@ use std::vec::IntoIter;
 #[cfg(feature = "serde")]
 use serde_derive::{Serialize, Deserialize};
 
-use super::leaves_iterators::owned::{
-    OwnedLeavesIterator, 
-    OwnedBinaryLeavesIterator
-};
-use super::leaves_iterators::mut_borrow::{
-    MutBorrowedLeavesIterator, 
-    MutBorrowedBinaryLeavesIterator
-};
-use super::leaves_iterators::borrow::{
-    BorrowedLeavesIterator, 
-    BorrowedBinaryLeavesIterator
-};
-
 use super::bfs_iterators::{
     owned::{
         OwnedBFSIterator, 
@@ -33,6 +20,7 @@ use super::bfs_iterators::{
         BorrowedBinaryBFSIterator
     },
 };
+
 use super::dfs_preorder_iterators::{
     owned::{
         OwnedDFSPreorderIterator, 
@@ -47,11 +35,13 @@ use super::dfs_preorder_iterators::{
         BorrowedBinaryDFSPreorderIterator
     }
 };
+
 use super::dfs_inorder_iterators::{
     owned::OwnedDFSInorderIterator,
     mut_borrow::MutBorrowedDFSInorderIterator,
     borrow::BorrowedDFSInorderIterator,
 };
+
 use super::dfs_postorder_iterators::{
     owned::{
         OwnedDFSPostorderIterator, 
@@ -264,10 +254,6 @@ pub trait OwnedBinaryTreeNode
     fn dfs_postorder(self) -> OwnedBinaryDFSPostorderIterator<Self> {
         OwnedBinaryDFSPostorderIterator::new(self)
     }
-
-    fn leaves(self) -> OwnedBinaryLeavesIterator<Self> {
-        OwnedBinaryLeavesIterator::new(self)
-    }
 }
 
 /// A tree node where getting its children consumes its value.
@@ -385,10 +371,6 @@ pub trait OwnedTreeNode
     ///
     fn dfs_postorder(self) -> OwnedDFSPostorderIterator<Self> {
         OwnedDFSPostorderIterator::new(self)
-    }
-
-    fn leaves(self) -> OwnedLeavesIterator<Self> {
-        OwnedLeavesIterator::new(self)
     }
 }
 
@@ -551,10 +533,6 @@ pub trait MutBorrowedBinaryTreeNode<'a>
     fn dfs_postorder_iter_mut(&'a mut self) -> MutBorrowedBinaryDFSPostorderIterator<'a, Self> {
         MutBorrowedBinaryDFSPostorderIterator::new(self)
     }
-
-    fn leaves_iter_mut(&'a mut self) -> MutBorrowedBinaryLeavesIterator<'a, Self> {
-        MutBorrowedBinaryLeavesIterator::new(self)
-    }
 }
 
 /// A tree node where getting its children mutably borrows its value.
@@ -674,10 +652,6 @@ pub trait MutBorrowedTreeNode<'a>
     ///
     fn dfs_postorder_iter_mut(&'a mut self) -> MutBorrowedDFSPostorderIterator<'a, Self> {
         MutBorrowedDFSPostorderIterator::new(self)
-    }
-
-    fn leaves_iter_mut(&'a mut self) -> MutBorrowedLeavesIterator<'a, Self> {
-        MutBorrowedLeavesIterator::new(self)
     }
 }
 
@@ -840,10 +814,6 @@ pub trait BorrowedBinaryTreeNode<'a>
     fn dfs_postorder_iter(&'a self) -> BorrowedBinaryDFSPostorderIterator<'a, Self> {
         BorrowedBinaryDFSPostorderIterator::new(self)
     }
-
-    fn leaves_iter(&'a self) -> BorrowedBinaryLeavesIterator<'a, Self> {
-        BorrowedBinaryLeavesIterator::new(self)
-    }
 }
 
 /// A tree node where getting its children borrows its value.
@@ -962,10 +932,6 @@ pub trait BorrowedTreeNode<'a>
     ///
     fn dfs_postorder_iter(&'a self) -> BorrowedDFSPostorderIterator<'a, Self> {
         BorrowedDFSPostorderIterator::new(self)
-    }
-
-    fn leaves_iter(&'a self) -> BorrowedLeavesIterator<'a, Self> {
-        BorrowedLeavesIterator::new(self)
     }
 }
 
@@ -1630,24 +1596,77 @@ pub (crate) mod tests {
         }
 
         #[test]
-        fn leaves_have_correct_order() {
+        fn leaves_has_correct_order() {
             let expected = get_expected_order_leaves();
             for mut test_tree in create_trees_for_testing() {
-                for (i, value) in test_tree.leaves_iter().enumerate() {
-                    assert_eq!(expected[i], *value);
+                for borrowed_iter in get_borrowed_leaves_iters(&test_tree) {
+                    for (i, value) in borrowed_iter.enumerate() {
+                        assert_eq!(expected[i], *value);
+                    }
                 }
-                assert_len!(expected.len(), test_tree.leaves_iter());
 
-                for (i, value) in test_tree.leaves_iter_mut().enumerate() {
-                    assert_eq!(expected[i], *value);
+                for borrowed_iter in get_borrowed_leaves_iters(&test_tree) {
+                    let mut count = 0;
+                    borrowed_iter.for_each(|_| count += 1);
+                    println!("{}", count);
                 }
-                assert_len!(expected.len(), test_tree.leaves_iter_mut());
 
-                for (i, value) in test_tree.clone().leaves().enumerate() {
-                    assert_eq!(expected[i], value);
+                for borrowed_iter in get_borrowed_leaves_iters(&test_tree) {
+                    assert_len!(expected.len(), borrowed_iter);
                 }
-                assert_len!(expected.len(), test_tree.leaves());
+
+                for mut_borrowed_iter in get_mut_borrowed_leaves_iters(&mut test_tree) {
+                    for (i, value) in mut_borrowed_iter.enumerate() {
+                        assert_eq!(expected[i], *value);
+                    }
+                }
+
+                for mut_borrowed_iter in get_mut_borrowed_leaves_iters(&mut test_tree) {
+                    assert_len!(expected.len(), mut_borrowed_iter);
+                }
+
+                for owned_iter in get_owned_leaves_iters(test_tree.clone()) {
+                    for (i, value) in owned_iter.enumerate() {
+                        assert_eq!(expected[i], value);
+                    }
+                }
+
+                for owned_iter in get_owned_leaves_iters(test_tree) {
+                    assert_len!(expected.len(), owned_iter);
+                }
+
+                println!("finished first round");
             }
+        }
+
+        fn get_borrowed_leaves_iters<T>(test_tree: &TreeNode<T>) -> impl Iterator<Item = Box<dyn Iterator<Item = &T> + '_>> + '_ {
+            [
+                Box::new(test_tree.dfs_preorder_iter().leaves()) as Box<dyn Iterator<Item = &T>>,
+                Box::new(test_tree.dfs_postorder_iter().leaves()),
+                Box::new(test_tree.bfs_iter().leaves()),
+            ].into_iter()
+        }
+
+        fn get_mut_borrowed_leaves_iters<T>(test_tree: &mut TreeNode<T>) -> impl Iterator<Item = Box<dyn Iterator<Item = &mut T> + '_>> + '_ {
+            // Rust doesn't like this, but we know that only 1 iterator will be accessed at a time 
+            // and no reallocations will be done as we are doing a readonly test, 
+            // so we are still within the "safe" rust system with only 1 active mutable reference.
+            // This also makes the test much nicer to write.
+            unsafe {
+                [
+                    Box::new((*(test_tree as *mut TreeNode<T>)).dfs_preorder_iter_mut().leaves()) as Box<dyn Iterator<Item = &mut T>>,
+                    Box::new((*(test_tree as *mut TreeNode<T>)).dfs_postorder_iter_mut().leaves()),
+                    Box::new((*(test_tree as *mut TreeNode<T>)).bfs_iter_mut().leaves()),
+                ].into_iter()
+            }
+        }
+
+        fn get_owned_leaves_iters<T: Clone + 'static>(test_tree: TreeNode<T>) -> [Box<dyn Iterator<Item = T>>; 3] {
+            [
+                Box::new(test_tree.clone().dfs_preorder().leaves()) as Box<dyn Iterator<Item = T>>,
+                Box::new(test_tree.clone().dfs_postorder().leaves()),
+                Box::new(test_tree.clone().bfs().leaves())
+            ]
         }
 
         #[test]
@@ -1655,20 +1674,64 @@ pub (crate) mod tests {
             let expected = get_expected_order_leaves();
             let mut test_tree = create_binary_tree_for_testing();
 
-            for (i, value) in test_tree.leaves_iter().enumerate() {
-                assert_eq!(expected[i], *value);
+            for borrowed_iter in get_borrowed_leaves_binary_iters(&test_tree) {
+                for (i, value) in borrowed_iter.enumerate() {
+                    assert_eq!(expected[i], *value);
+                }
             }
-            assert_len!(expected.len(), test_tree.leaves_iter());
 
-            for (i, value) in test_tree.leaves_iter_mut().enumerate() {
-                assert_eq!(expected[i], *value);
+            for borrowed_iter in get_borrowed_leaves_binary_iters(&test_tree) {
+                assert_len!(expected.len(), borrowed_iter);
             }
-            assert_len!(expected.len(), test_tree.leaves_iter_mut());
 
-            for (i, value) in test_tree.clone().leaves().enumerate() {
-                assert_eq!(expected[i], value);
+            for mut_borrowed_iter in get_mut_borrowed_leaves_binary_iters(&mut test_tree) {
+                for (i, value) in mut_borrowed_iter.enumerate() {
+                    assert_eq!(expected[i], *value);
+                }
             }
-            assert_len!(expected.len(), test_tree.leaves());
+
+            for mut_borrowed_iter in get_mut_borrowed_leaves_binary_iters(&mut test_tree) {
+                assert_len!(expected.len(), mut_borrowed_iter);
+            }
+
+            for owned_iter in get_owned_leaves_binary_iters(test_tree.clone()) {
+                for (i, value) in owned_iter.enumerate() {
+                    assert_eq!(expected[i], value);
+                }
+            }
+
+            for owned_iter in get_owned_leaves_binary_iters(test_tree) {
+                assert_len!(expected.len(), owned_iter);
+            }
+        }
+
+        fn get_borrowed_leaves_binary_iters<T>(test_tree: &BinaryTreeNode<T>) -> [Box<dyn Iterator<Item = &T> + '_>; 4] {   
+            [
+                Box::new(test_tree.dfs_preorder_iter().leaves()) as Box<dyn Iterator<Item = &T>>,
+                Box::new(test_tree.dfs_inorder_iter().leaves()),
+                Box::new(test_tree.dfs_postorder_iter().leaves()),
+                Box::new(test_tree.bfs_iter().leaves())
+            ]
+        }
+
+        fn get_mut_borrowed_leaves_binary_iters<T>(test_tree: &mut BinaryTreeNode<T>) -> impl Iterator<Item = Box<dyn Iterator<Item = &mut T> + '_>> {
+            unsafe {
+                [
+                    Box::new((*(test_tree as *mut BinaryTreeNode<T>)).dfs_preorder_iter_mut().leaves()) as Box<dyn Iterator<Item = &mut T>>,
+                    Box::new((*(test_tree as *mut BinaryTreeNode<T>)).dfs_inorder_iter_mut().leaves()),
+                    Box::new((*(test_tree as *mut BinaryTreeNode<T>)).dfs_postorder_iter_mut().leaves()),
+                    Box::new((*(test_tree as *mut BinaryTreeNode<T>)).bfs_iter_mut().leaves()),
+                ].into_iter()
+            }
+        }
+
+        fn get_owned_leaves_binary_iters<T: Clone + 'static>(test_tree: BinaryTreeNode<T>) -> [Box<dyn Iterator<Item = T>>; 4] {
+            [
+                Box::new(test_tree.clone().dfs_preorder().leaves()) as Box<dyn Iterator<Item = T>>,
+                Box::new(test_tree.clone().dfs_inorder().leaves()),
+                Box::new(test_tree.clone().dfs_postorder().leaves()),
+                Box::new(test_tree.clone().bfs().leaves())
+            ]
         }
     }
 
@@ -1679,7 +1742,7 @@ pub (crate) mod tests {
             assert_eq!($expected, count);
         };
     }
-    pub (crate) use assert_len;
+    use assert_len;
 
     fn get_expected_metadata_for_value(val: usize) -> &'static [usize] {
         match val {
