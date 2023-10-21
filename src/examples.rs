@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use super::super::prelude::{*, tests::create_tree_for_testing};
+    use super::super::prelude::*;
     use std::collections::VecDeque;
 
     #[test]
@@ -135,7 +135,7 @@ mod tests {
         // Tree creation (see above documentation)
         let root = create_example_binary_tree();
 
-        let mut result = root.dfs_preorder()
+        let result = root.dfs_preorder()
             .map(|val| val.to_string())
             .collect::<Vec<String>>()
             .join(", ");
@@ -218,6 +218,42 @@ mod tests {
         dfs_inorder(Some(Box::new(root)), &mut result);
 
         // result: 3, 1, 4, 0, 5, 2, 7, 9, 10, 8, 6,
+        println!("{}", result);
+    }
+
+    #[test]
+    fn dfs_preorder_leaves_immediate_call_example() {
+        let root = create_example_tree();
+
+        let result = root.dfs_preorder()
+            .leaves()
+            .map(|val| val.to_string())
+            .collect::<Vec<String>>()
+            .join(", ");
+
+        // result: 3, 4, 5, 10,
+        println!("{}", result);
+    }
+
+    #[test]
+    fn dfs_preorder_leaves_delayed_call_example() {
+        let root = create_example_tree();
+
+        let mut dfs_preorder = root.dfs_preorder();
+
+        let mut results = Vec::new();
+        // take the first 2 non-leaves before switching to a leaves-only iterator
+        results.push(dfs_preorder.next().unwrap().to_string());
+        results.push(dfs_preorder.next().unwrap().to_string());
+
+        // once leaves is called, iteration switches to a depth-first postorder search
+        for leaf in dfs_preorder.leaves() {
+            results.push(leaf.to_string());
+        }
+
+        let result = results.join(", ");
+
+        // result: 0, 1, 3, 4, 5, 10,
         println!("{}", result);
     }
 

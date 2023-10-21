@@ -8,6 +8,11 @@ tree_iterators_rs is a library built to provide you with the utilities/iterators
 
 This crate is written such that you can build your own implementations as well using other collection types.
 
+### Feature Flags
+
+This crate only contains one feature flag:
+- "serde" - this flag can be used to implement Serialize and Deserialize for TreeNode<T> and BinaryTreeNode<T>.
+
 ### Benefits
 
 This crate uses no unsafe code!
@@ -355,7 +360,7 @@ This code could also be written using Rust's iterator APIs:
 // Tree creation (see above documentation)
 let root = create_example_binary_tree();
 
-let mut result = root.dfs_preorder()
+let result = root.dfs_preorder()
 	.map(|val| val.to_string())
 	.collect::<Vec<String>>()
 	.join(", ");
@@ -441,7 +446,49 @@ dfs_postorder(root, &mut result);
 println!("{}", result);
 ```
 
-## Attach Ancestors
+## Iterator Modifiers
+
+### Leaves
+
+leaves() is a method that can be called after any of the above APIs to change the iterator structure to one that only returns leaves of the tree. In the example tree (see above documentation), this will always result in the sequence 3, 4, 5, 10. Once this method is called, the iterator transforms to be either a breadth-first or a depth-first postorder search.
+
+I will be using the depth-first preorder search in the examples, but this works with all of the traversal types. This method can be called immediately if you wish to only receive the leaves of the tree like so:
+```rust
+let root = create_example_tree();
+
+let result = root.dfs_preorder()
+	.leaves()
+	.map(|val| val.to_string())
+	.collect::<Vec<String>>()
+	.join(", ");
+
+// result: 3, 4, 5, 10,
+println!("{}", result);
+```
+
+Alternatively, this method can be used to perform a normal traversal and then switch to a leaves-only traversal partway through the regular one. This can be done like so (again, all traversal types support this):
+```rust
+let root = create_example_tree();
+
+let mut dfs_preorder = root.dfs_preorder();
+
+let mut results = Vec::new();
+// take the first 2 non-leaves before switching to a leaves-only iterator
+results.push(dfs_preorder.next().unwrap().to_string());
+results.push(dfs_preorder.next().unwrap().to_string());
+
+// once leaves is called, iteration switches to a depth-first postorder search
+for leaf in dfs_preorder.leaves() {
+	results.push(leaf.to_string());
+}
+
+let result = results.join(", ");
+
+// result: 0, 1, 3, 4, 5, 10,
+println!("{}", result);
+```
+
+### Attach Ancestors
 
 attach_ancestors() is a method that can be called after any of the above APIs to change the iterator structure into one that returns a slice of all ancestors and the current value in the tree. If one of these is called, the (now streaming) iterator will yield a slice where the item at index 0 is the root value, the item at index len() - 1 is the current value, and everything in between is the other ancestors. As an example, when we are at the value of 10 in our traversal (see above documentation), the slice will look like this: \[0, 2, 6, 7, 8, 9, 10\].
 
@@ -552,7 +599,7 @@ You may pick and choose which of the traits you implement to suit your needs. Th
 
 As an example, we can implement another TreeNode variant that uses a Linked List to hold its children. All code here is MIT licensed and you are free to directly copy or modify it as you see fit subject to the conditions of the license.
 ```rust
-use crate::prelude::*;
+use tree_iterators_rs::prelude::*;
 use std::collections::LinkedList;
 
 struct LLTreeNode<T> {
@@ -567,6 +614,7 @@ This is a good start, but realistically we want it to implement all of the tree 
 
 We can start with the OwnedTreeNode implementation as follows. Since we chose to use a LinkedList as our children property, we have to wrap its iterator in a Some() Option variant. The hardest part of implementing this is figuring out the type of LinkedList's into_iter() method return type.
 ```rust
+use tree_iterators_rs::prelude::*;
 use std::collections::linked_list::IntoIter;
 
 impl<T> OwnedTreeNode for LLTreeNode<T> {
@@ -587,6 +635,7 @@ Now that we have implemented OwnedTreeNode, our type has the bfs(), dfs_preorder
 
 The mutable borrow implementation is very similar to the owned one. The only difference is that the 'Value' associated type changed to a mutable reference and we are calling iter_mut() instead of into_iter().
 ```rust
+use tree_iterators_rs::prelude::*;
 use std::collections::linked_list::IterMut;
 
 impl<'a, T> MutBorrowedTreeNode<'a> for LLTreeNode<T> 
@@ -609,6 +658,7 @@ Now that we have implemented MutBorrowedTreeNode, our type has the bfs_iter_mut(
 
 The borrow implementation is also very similar to the owned one. The only difference is that the 'Value' associated type changed to an immutable reference and we are calling iter() instead of into_iter().
 ```rust
+use tree_iterators_rs::prelude::*;
 use std::collections::linked_list::Iter;
 
 impl<'a, T> BorrowedTreeNode<'a> for LLTreeNode<T> 
