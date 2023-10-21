@@ -1075,7 +1075,7 @@ pub (crate) mod tests {
         };
         use streaming_iterator::StreamingIterator;
 
-        fn get_expected_order_dfs_preorder() -> [usize; 11] {
+        pub (crate) fn get_expected_order_dfs_preorder() -> [usize; 11] {
             [0,1,3,4,2,5,6,7,8,9,10]
         }
 
@@ -1223,7 +1223,7 @@ pub (crate) mod tests {
         };
         use streaming_iterator::StreamingIterator;  
 
-        fn get_expected_order_dfs_inorder() -> [usize; 11] {
+        pub (crate) fn get_expected_order_dfs_inorder() -> [usize; 11] {
             [3,1,4,0,5,2,7,9,10,8,6]
         }
 
@@ -1303,7 +1303,7 @@ pub (crate) mod tests {
         };
         use streaming_iterator::StreamingIterator;  
 
-        fn get_expected_order_dfs_postorder() -> [usize; 11] {
+        pub (crate) fn get_expected_order_dfs_postorder() -> [usize; 11] {
             [3,4,1,5,10,9,8,7,6,2,0]
         }
 
@@ -1450,7 +1450,7 @@ pub (crate) mod tests {
         };
         use streaming_iterator::StreamingIterator;  
 
-        fn get_expected_order_bfs() -> [usize; 11] {
+        pub (crate) fn get_expected_order_bfs() -> [usize; 11] {
             [0,1,2,3,4,5,6,7,8,9,10]
         }
 
@@ -1606,12 +1606,6 @@ pub (crate) mod tests {
                 }
 
                 for borrowed_iter in get_borrowed_leaves_iters(&test_tree) {
-                    let mut count = 0;
-                    borrowed_iter.for_each(|_| count += 1);
-                    println!("{}", count);
-                }
-
-                for borrowed_iter in get_borrowed_leaves_iters(&test_tree) {
                     assert_len!(expected.len(), borrowed_iter);
                 }
 
@@ -1732,6 +1726,379 @@ pub (crate) mod tests {
                 Box::new(test_tree.clone().dfs_postorder().leaves()),
                 Box::new(test_tree.clone().bfs().leaves())
             ]
+        }
+
+        #[test]
+        fn dfs_preorder_transformation_can_happen_mid_traversal() {
+            let expected_dfs_preorder = super::dfs_preorder_tests::get_expected_order_dfs_preorder();
+            let expected_leaves = get_expected_order_leaves();
+            for mut test_tree in create_trees_for_testing() {
+                // interrupt traversal at all points.
+                for _ in 0..expected_dfs_preorder.len() {
+                    let mut preorder_iter = test_tree.dfs_preorder_iter();
+                    let mut num_leaves_seen = 0;
+                    while let Some(value) = preorder_iter.next() {
+                        if *value == expected_leaves[num_leaves_seen] { 
+                            num_leaves_seen += 1; 
+                        }
+                    }
+
+                    let preorder_iter_leaves = preorder_iter.leaves();
+                    for (i, value) in preorder_iter_leaves.enumerate() {
+                        assert_eq!(expected_leaves[i + num_leaves_seen], *value);
+                    }
+
+
+                    let mut preorder_iter_mut = test_tree.dfs_preorder_iter_mut();
+                    let mut num_leaves_seen = 0;
+                    while let Some(value) = preorder_iter_mut.next() {
+                        if *value == expected_leaves[num_leaves_seen] { 
+                            num_leaves_seen += 1; 
+                        }
+                    }
+
+                    let preorder_iter_leaves = preorder_iter_mut.leaves();
+                    for (i, value) in preorder_iter_leaves.enumerate() {
+                        assert_eq!(expected_leaves[i + num_leaves_seen], *value);
+                    }
+
+
+                    let mut preorder = test_tree.clone().dfs_preorder();
+                    let mut num_leaves_seen = 0;
+                    while let Some(value) = preorder.next() {
+                        if value == expected_leaves[num_leaves_seen] { 
+                            num_leaves_seen += 1; 
+                        }
+                    }
+
+                    let preorder_iter_leaves = preorder.leaves();
+                    for (i, value) in preorder_iter_leaves.enumerate() {
+                        assert_eq!(expected_leaves[i + num_leaves_seen], value);
+                    }
+                }
+            }
+        }
+
+        #[test]
+        fn dfs_postorder_transformation_can_happen_mid_traversal() {
+            let expected_dfs_postorder = super::dfs_postorder_tests::get_expected_order_dfs_postorder();
+            let expected_leaves = get_expected_order_leaves();
+            for mut test_tree in create_trees_for_testing() {
+                // interrupt traversal at all points.
+                for _ in 0..expected_dfs_postorder.len() {
+                    let mut postorder_iter = test_tree.dfs_postorder_iter();
+                    let mut num_leaves_seen = 0;
+                    while let Some(value) = postorder_iter.next() {
+                        // dont index outside the array!
+                        if num_leaves_seen == expected_leaves.len() { continue; }
+                        if *value == expected_leaves[num_leaves_seen] { 
+                            num_leaves_seen += 1; 
+                        }
+                    }
+
+                    let postorder_iter_leaves = postorder_iter.leaves();
+                    for (i, value) in postorder_iter_leaves.enumerate() {
+                        assert_eq!(expected_leaves[i + num_leaves_seen], *value);
+                    }
+
+
+                    let mut postorder_iter_mut = test_tree.dfs_postorder_iter_mut();
+                    let mut num_leaves_seen = 0;
+                    while let Some(value) = postorder_iter_mut.next() {
+                        // dont index outside the array!
+                        if num_leaves_seen == expected_leaves.len() { continue; }
+                        if *value == expected_leaves[num_leaves_seen] { 
+                            num_leaves_seen += 1; 
+                        }
+                    }
+
+                    let postorder_iter_leaves = postorder_iter_mut.leaves();
+                    for (i, value) in postorder_iter_leaves.enumerate() {
+                        assert_eq!(expected_leaves[i + num_leaves_seen], *value);
+                    }
+
+
+                    let mut postorder = test_tree.clone().dfs_postorder();
+                    let mut num_leaves_seen = 0;
+                    while let Some(value) = postorder.next() {
+                        // dont index outside the array!
+                        if num_leaves_seen == expected_leaves.len() { continue; }
+                        if value == expected_leaves[num_leaves_seen] { 
+                            num_leaves_seen += 1; 
+                        }
+                    }
+
+                    let postorder_iter_leaves = postorder.leaves();
+                    for (i, value) in postorder_iter_leaves.enumerate() {
+                        assert_eq!(expected_leaves[i + num_leaves_seen], value);
+                    }
+                }
+            }
+        }
+
+        #[test]
+        fn bfs_transformation_can_happen_mid_traversal() {
+            let expected_bfs = super::bfs_tests::get_expected_order_bfs();
+            let expected_leaves = get_expected_order_leaves();
+            for mut test_tree in create_trees_for_testing() {
+                // interrupt traversal at all points.
+                for _ in 0..expected_bfs.len() {
+                    let mut bfs_iter = test_tree.bfs_iter();
+                    let mut num_leaves_seen = 0;
+                    while let Some(value) = bfs_iter.next() {
+                        if *value == expected_leaves[num_leaves_seen] { 
+                            num_leaves_seen += 1; 
+                        }
+                    }
+
+                    let bfs_iter_leaves = bfs_iter.leaves();
+                    for (i, value) in bfs_iter_leaves.enumerate() {
+                        assert_eq!(expected_leaves[i + num_leaves_seen], *value);
+                    }
+
+
+                    let mut bfs_iter_mut = test_tree.bfs_iter_mut();
+                    let mut num_leaves_seen = 0;
+                    while let Some(value) = bfs_iter_mut.next() {
+                        if *value == expected_leaves[num_leaves_seen] { 
+                            num_leaves_seen += 1; 
+                        }
+                    }
+
+                    let bfs_iter_mut_leaves = bfs_iter_mut.leaves();
+                    for (i, value) in bfs_iter_mut_leaves.enumerate() {
+                        assert_eq!(expected_leaves[i + num_leaves_seen], *value);
+                    }
+
+
+                    let mut bfs = test_tree.clone().bfs();
+                    let mut num_leaves_seen = 0;
+                    while let Some(value) = bfs.next() {
+                        if value == expected_leaves[num_leaves_seen] { 
+                            num_leaves_seen += 1; 
+                        }
+                    }
+
+                    let bfs_leaves = bfs.leaves();
+                    for (i, value) in bfs_leaves.enumerate() {
+                        assert_eq!(expected_leaves[i + num_leaves_seen], value);
+                    }
+                }
+            }
+        }
+
+        #[test]
+        fn dfs_preorder_binary_transformation_can_happen_mid_traversal() {
+            let expected_dfs_preorder = super::dfs_preorder_tests::get_expected_order_dfs_preorder();
+            let expected_leaves = get_expected_order_leaves();
+            let mut test_tree = create_binary_tree_for_testing();
+                // interrupt traversal at all points.
+            for _ in 0..expected_dfs_preorder.len() {
+                let mut preorder_iter = test_tree.dfs_preorder_iter();
+                let mut num_leaves_seen = 0;
+                while let Some(value) = preorder_iter.next() {
+                    if *value == expected_leaves[num_leaves_seen] { 
+                        num_leaves_seen += 1; 
+                    }
+                }
+
+                let preorder_iter_leaves = preorder_iter.leaves();
+                for (i, value) in preorder_iter_leaves.enumerate() {
+                    assert_eq!(expected_leaves[i + num_leaves_seen], *value);
+                }
+
+
+                let mut preorder_iter_mut = test_tree.dfs_preorder_iter_mut();
+                let mut num_leaves_seen = 0;
+                while let Some(value) = preorder_iter_mut.next() {
+                    if *value == expected_leaves[num_leaves_seen] { 
+                        num_leaves_seen += 1; 
+                    }
+                }
+
+                let preorder_iter_leaves = preorder_iter_mut.leaves();
+                for (i, value) in preorder_iter_leaves.enumerate() {
+                    assert_eq!(expected_leaves[i + num_leaves_seen], *value);
+                }
+
+
+                let mut preorder = test_tree.clone().dfs_preorder();
+                let mut num_leaves_seen = 0;
+                while let Some(value) = preorder.next() {
+                    if value == expected_leaves[num_leaves_seen] { 
+                        num_leaves_seen += 1; 
+                    }
+                }
+
+                let preorder_iter_leaves = preorder.leaves();
+                for (i, value) in preorder_iter_leaves.enumerate() {
+                    assert_eq!(expected_leaves[i + num_leaves_seen], value);
+                }
+            }
+        }
+
+        #[test]
+        fn dfs_inorder_binary_transformation_can_happen_mid_traversal() {
+            let expected_dfs_inorder = super::dfs_inorder_tests::get_expected_order_dfs_inorder();
+            let expected_leaves = get_expected_order_leaves();
+            let mut test_tree = create_binary_tree_for_testing();
+            // interrupt traversal at all points.
+            for _ in 0..expected_dfs_inorder.len() {
+                let mut inorder_iter = test_tree.dfs_inorder_iter();
+                let mut num_leaves_seen = 0;
+                while let Some(value) = inorder_iter.next() {
+                    // dont index outside the array!
+                    if num_leaves_seen == expected_leaves.len() { continue; }
+                    if *value == expected_leaves[num_leaves_seen] { 
+                        num_leaves_seen += 1; 
+                    }
+                }
+
+                let inorder_iter_leaves = inorder_iter.leaves();
+                for (i, value) in inorder_iter_leaves.enumerate() {
+                    assert_eq!(expected_leaves[i + num_leaves_seen], *value);
+                }
+
+
+                let mut inorder_iter_mut = test_tree.dfs_inorder_iter_mut();
+                let mut num_leaves_seen = 0;
+                while let Some(value) = inorder_iter_mut.next() {
+                    // dont index outside the array!
+                    if num_leaves_seen == expected_leaves.len() { continue; }
+                    if *value == expected_leaves[num_leaves_seen] { 
+                        num_leaves_seen += 1; 
+                    }
+                }
+
+                let inorder_iter_leaves = inorder_iter_mut.leaves();
+                for (i, value) in inorder_iter_leaves.enumerate() {
+                    assert_eq!(expected_leaves[i + num_leaves_seen], *value);
+                }
+
+
+                let mut inorder = test_tree.clone().dfs_inorder();
+                let mut num_leaves_seen = 0;
+                while let Some(value) = inorder.next() {
+                    // dont index outside the array!
+                    if num_leaves_seen == expected_leaves.len() { continue; }
+                    if value == expected_leaves[num_leaves_seen] { 
+                        num_leaves_seen += 1; 
+                    }
+                }
+
+                let inorder_iter_leaves = inorder.leaves();
+                for (i, value) in inorder_iter_leaves.enumerate() {
+                    assert_eq!(expected_leaves[i + num_leaves_seen], value);
+                }
+            }
+        }
+
+        #[test]
+        fn dfs_postorder_binary_transformation_can_happen_mid_traversal() {
+            let expected_dfs_postorder = super::dfs_postorder_tests::get_expected_order_dfs_postorder();
+            let expected_leaves = get_expected_order_leaves();
+            let mut test_tree = create_binary_tree_for_testing();
+            // interrupt traversal at all points.
+            for _ in 0..expected_dfs_postorder.len() {
+                let mut postorder_iter = test_tree.dfs_postorder_iter();
+                let mut num_leaves_seen = 0;
+                while let Some(value) = postorder_iter.next() {
+                    // dont index outside the array!
+                    if num_leaves_seen == expected_leaves.len() { continue; }
+                    if *value == expected_leaves[num_leaves_seen] { 
+                        num_leaves_seen += 1; 
+                    }
+                }
+
+                let postorder_iter_leaves = postorder_iter.leaves();
+                for (i, value) in postorder_iter_leaves.enumerate() {
+                    // dont index outside the array!
+                    if num_leaves_seen == expected_leaves.len() { continue; }
+                    assert_eq!(expected_leaves[i + num_leaves_seen], *value);
+                }
+
+
+                let mut postorder_iter_mut = test_tree.dfs_postorder_iter_mut();
+                let mut num_leaves_seen = 0;
+                while let Some(value) = postorder_iter_mut.next() {
+                    // dont index outside the array!
+                    if num_leaves_seen == expected_leaves.len() { continue; }
+                    if *value == expected_leaves[num_leaves_seen] { 
+                        num_leaves_seen += 1; 
+                    }
+                }
+
+                let postorder_iter_leaves = postorder_iter_mut.leaves();
+                for (i, value) in postorder_iter_leaves.enumerate() {
+                    assert_eq!(expected_leaves[i + num_leaves_seen], *value);
+                }
+
+
+                let mut postorder = test_tree.clone().dfs_postorder();
+                let mut num_leaves_seen = 0;
+                while let Some(value) = postorder.next() {
+                    // dont index outside the array!
+                    if num_leaves_seen == expected_leaves.len() { continue; }
+                    if value == expected_leaves[num_leaves_seen] { 
+                        num_leaves_seen += 1; 
+                    }
+                }
+
+                let postorder_iter_leaves = postorder.leaves();
+                for (i, value) in postorder_iter_leaves.enumerate() {
+                    assert_eq!(expected_leaves[i + num_leaves_seen], value);
+                }
+            }
+        }
+
+        #[test]
+        fn bfs_binary_transformation_can_happen_mid_traversal() {
+            let expected_bfs = super::bfs_tests::get_expected_order_bfs();
+            let expected_leaves = get_expected_order_leaves();
+            let mut test_tree = create_binary_tree_for_testing();
+            // interrupt traversal at all points.
+            for _ in 0..expected_bfs.len() {
+                let mut bfs_iter = test_tree.bfs_iter();
+                let mut num_leaves_seen = 0;
+                while let Some(value) = bfs_iter.next() {
+                    if *value == expected_leaves[num_leaves_seen] { 
+                        num_leaves_seen += 1; 
+                    }
+                }
+
+                let bfs_iter_leaves = bfs_iter.leaves();
+                for (i, value) in bfs_iter_leaves.enumerate() {
+                    assert_eq!(expected_leaves[i + num_leaves_seen], *value);
+                }
+
+
+                let mut bfs_iter_mut = test_tree.bfs_iter_mut();
+                let mut num_leaves_seen = 0;
+                while let Some(value) = bfs_iter_mut.next() {
+                    if *value == expected_leaves[num_leaves_seen] { 
+                        num_leaves_seen += 1; 
+                    }
+                }
+
+                let bfs_iter_mut_leaves = bfs_iter_mut.leaves();
+                for (i, value) in bfs_iter_mut_leaves.enumerate() {
+                    assert_eq!(expected_leaves[i + num_leaves_seen], *value);
+                }
+
+
+                let mut bfs = test_tree.clone().bfs();
+                let mut num_leaves_seen = 0;
+                while let Some(value) = bfs.next() {
+                    if value == expected_leaves[num_leaves_seen] { 
+                        num_leaves_seen += 1; 
+                    }
+                }
+
+                let bfs_leaves = bfs.leaves();
+                for (i, value) in bfs_leaves.enumerate() {
+                    assert_eq!(expected_leaves[i + num_leaves_seen], value);
+                }
+            }
         }
     }
 
