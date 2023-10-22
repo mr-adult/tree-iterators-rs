@@ -1,5 +1,8 @@
 use std::collections::VecDeque;
-use streaming_iterator::StreamingIterator;
+use streaming_iterator::{
+    StreamingIterator, 
+    StreamingIteratorMut
+};
 
 use crate::{
     prelude::{
@@ -13,6 +16,7 @@ use crate::{
     },
 };
 use super::{
+    get_mut,
     bfs_next, 
     bfs_advance_iterator, 
     bfs_streaming_iterator_impl,
@@ -71,6 +75,11 @@ impl<'a, Node> MutBorrowedBFSIterator<'a, Node>
         }
     }
 
+    /// WARNING: The slice returned by this iterator points to internal iterator
+    /// state. Any changes to the slice's structure/order made using the StreamingIteratorMut 
+    /// API will be carried through the remaining iterations. This can result in
+    /// unexpected behaviors if you are not careful.
+    /// 
     /// This method retrieves a streaming iterator that can be used to perform
     /// Breadth First searches of a tree. This converts the queue-based
     /// iterator into an iterative deepening iterator.
@@ -124,6 +133,67 @@ impl<'a, Node> MutBorrowedBFSIterator<'a, Node>
     /// Since this iterator is no longer a Rust Iterator, for loops will
     /// no longer work. See details on how to work around this in the 
     /// [streaming-iterator](https://crates.io/crates/streaming-iterator) crate.
+    /// 
+    /// The mutable version of this method exists because it is inherently useful 
+    /// to modify the nodes of the tree based on additional metadata provided by 
+    /// this stack of nodes style iterator. Modifying the values within the 
+    /// slices returned by this iterator is a safe operation and will never cause 
+    /// problems with the iterator.
+    /// 
+    /// As an example, given the following tree, we could modify each value
+    /// as we go to be the count of descendant nodes.
+    /// 
+    /// We would start with the tree:
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    /// The code to modify the tree would look like this:
+    /// ```rust
+    /// use crate::tree_iterators_rs::examples::create_example_tree;
+    /// use crate::tree_iterators_rs::prelude::*;
+    /// use streaming_iterator::StreamingIteratorMut;
+    /// 
+    /// let mut root = create_example_tree();
+    /// 
+    /// let mut bfs_iter = root.bfs_iter_mut().attach_ancestors();
+    /// while let Some(slice) = bfs_iter.next_mut() {
+    ///     *slice[slice.len() - 1] = 0;
+    ///     for i in 1..slice.len() {
+    ///         *slice[slice.len() - i] += 1;
+    ///     }
+    /// }
+    /// ```
+    /// 
+    /// After modifying each node during the traversal we could end
+    /// with this tree:
+    /// ```ignore
+    ///        6
+    ///       / \
+    ///      1   5
+    ///     / \ / \
+    ///    0  0 0  4
+    ///           /
+    ///          3
+    ///           \
+    ///            2
+    ///           /
+    ///          1
+    ///           \
+    ///           0
+    /// ```
     /// 
     pub fn attach_ancestors(self) -> MutBorrowedBFSIteratorWithAncestors<'a, Node> {
         match self.root {
@@ -185,6 +255,11 @@ impl<'a, Node> StreamingIterator for MutBorrowedBFSIteratorWithAncestors<'a, Nod
     bfs_streaming_iterator_impl!(get_value_and_children_iter_mut);
 }
 
+impl<'a, Node> StreamingIteratorMut for MutBorrowedBFSIteratorWithAncestors<'a, Node> 
+    where Node: MutBorrowedTreeNode<'a> {
+    get_mut!();
+}
+
 pub struct MutBorrowedBinaryBFSIterator<'a, Node> 
     where Node: MutBorrowedBinaryTreeNode<'a> {
 
@@ -236,6 +311,11 @@ impl<'a, Node> MutBorrowedBinaryBFSIterator<'a, Node>
         }
     }
 
+    /// WARNING: The slice returned by this iterator points to internal iterator
+    /// state. Any changes to the slice's structure/order made using the StreamingIteratorMut 
+    /// API will be carried through the remaining iterations. This can result in
+    /// unexpected behaviors if you are not careful.
+    /// 
     /// This method retrieves a streaming iterator that can be used to perform
     /// Breadth First searches of a tree. This converts the queue-based
     /// iterator into an iterative deepening iterator.
@@ -289,6 +369,67 @@ impl<'a, Node> MutBorrowedBinaryBFSIterator<'a, Node>
     /// Since this iterator is no longer a Rust Iterator, for loops will
     /// no longer work. See details on how to work around this in the 
     /// [streaming-iterator](https://crates.io/crates/streaming-iterator) crate.
+    /// 
+    /// The mutable version of this method exists because it is inherently useful 
+    /// to modify the nodes of the tree based on additional metadata provided by 
+    /// this stack of nodes style iterator. Modifying the values within the 
+    /// slices returned by this iterator is a safe operation and will never cause 
+    /// problems with the iterator.
+    /// 
+    /// As an example, given the following tree, we could modify each value
+    /// as we go to be the count of descendant nodes.
+    /// 
+    /// We would start with the tree:
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    /// The code to modify the tree would look like this:
+    /// ```rust
+    /// use crate::tree_iterators_rs::examples::create_example_binary_tree;
+    /// use crate::tree_iterators_rs::prelude::*;
+    /// use streaming_iterator::StreamingIteratorMut;
+    /// 
+    /// let mut root = create_example_binary_tree();
+    /// 
+    /// let mut bfs_iter = root.bfs_iter_mut().attach_ancestors();
+    /// while let Some(slice) = bfs_iter.next_mut() {
+    ///     *slice[slice.len() - 1] = 0;
+    ///     for i in 1..slice.len() {
+    ///         *slice[slice.len() - i] += 1;
+    ///     }
+    /// }
+    /// ```
+    /// 
+    /// After modifying each node during the traversal we could end
+    /// with this tree:
+    /// ```ignore
+    ///        6
+    ///       / \
+    ///      1   5
+    ///     / \ / \
+    ///    0  0 0  4
+    ///           /
+    ///          3
+    ///           \
+    ///            2
+    ///           /
+    ///          1
+    ///           \
+    ///           0
+    /// ```
     /// 
     pub fn attach_ancestors(self) -> MutBorrowedBinaryBFSIteratorWithAncestors<'a, Node> {
         match self.root {
@@ -348,4 +489,10 @@ impl<'a, Node> StreamingIterator for MutBorrowedBinaryBFSIteratorWithAncestors<'
     type Item = [Node::MutBorrowedValue];
 
     bfs_streaming_iterator_impl!(get_value_and_children_iter_mut);
+}
+
+impl<'a, Node> StreamingIteratorMut for MutBorrowedBinaryBFSIteratorWithAncestors<'a, Node> 
+    where Node: MutBorrowedBinaryTreeNode<'a> {
+    
+    get_mut!();
 }

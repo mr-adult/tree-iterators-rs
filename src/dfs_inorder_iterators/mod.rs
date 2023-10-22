@@ -111,6 +111,18 @@ macro_rules! dfs_inorder_streaming_iterator_impl {
     };
 }
 
+macro_rules! get_mut {
+    () => {
+        fn get_mut(&mut self) -> Option<&mut Self::Item> {
+            if self.item_stack.len() == 0 {
+                None
+            } else {
+                Some(&mut self.item_stack[..])
+            }
+        }
+    };
+}
+
 /// Statuses during an in order tree traversal. This enum
 /// should be treated as a state machine that can only flow
 /// in one direction
@@ -122,5 +134,6 @@ pub (crate) enum TraversalStatus {
     WentRight,
 }
 
+pub (crate) use get_mut;
 pub (crate) use dfs_inorder_next;
 pub (crate) use dfs_inorder_streaming_iterator_impl;

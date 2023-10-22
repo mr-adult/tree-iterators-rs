@@ -123,5 +123,18 @@ macro_rules! postorder_streaming_iterator_impl {
     };
 }
 
+macro_rules! get_mut {
+    () => {
+        fn get_mut(&mut self) -> Option<&mut Self::Item> {
+            if self.item_stack.len() == 0 {
+                None
+            } else {
+                Some(&mut self.item_stack[..])
+            }
+        }
+    };
+}
+
+pub(crate) use get_mut;
 pub(crate) use dfs_postorder_next;
 pub(crate) use postorder_streaming_iterator_impl;

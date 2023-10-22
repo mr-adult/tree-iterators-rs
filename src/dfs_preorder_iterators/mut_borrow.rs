@@ -1,4 +1,7 @@
-use streaming_iterator::StreamingIterator;
+use streaming_iterator::{
+    StreamingIterator,
+    StreamingIteratorMut
+};
 
 use crate::{
     prelude::{
@@ -12,7 +15,12 @@ use crate::{
     }
 };
 
-use super::{dfs_preorder_next, preorder_streaming_iterator_impl, advance_dfs};
+use super::{
+    get_mut,
+    dfs_preorder_next, 
+    preorder_streaming_iterator_impl, 
+    advance_dfs
+};
 
 pub struct MutBorrowedDFSPreorderIterator<'a, Node>
     where Node: MutBorrowedTreeNode<'a> {
@@ -68,6 +76,11 @@ impl<'a, Node> MutBorrowedDFSPreorderIterator<'a, Node>
         }
     }
 
+    /// WARNING: The slice returned by this iterator points to internal iterator
+    /// state. Any changes to the slice's structure/order made using the StreamingIteratorMut 
+    /// API will be carried through the remaining iterations. This can result in
+    /// unexpected behaviors if you are not careful.
+    /// 
     /// This method retrieves an iterator that can be used to perform
     /// Depth First Preorder searches of a tree.
     /// 
@@ -124,6 +137,67 @@ impl<'a, Node> MutBorrowedDFSPreorderIterator<'a, Node>
     /// no longer work. See details on how to work around this in the 
     /// [streaming-iterator](https://crates.io/crates/streaming-iterator) crate.
     /// 
+    /// The mutable version of this method exists because it is inherently useful 
+    /// to modify the nodes of the tree based on additional metadata provided by 
+    /// this stack of nodes style iterator. Modifying the values within the 
+    /// slices returned by this iterator is a safe operation and will never cause 
+    /// problems with the iterator.
+    /// 
+    /// As an example, given the following tree, we could modify each value
+    /// as we go to be the count of descendant nodes.
+    /// 
+    /// We would start with the tree:
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    /// The code to modify the tree would look like this:
+    /// ```rust
+    /// use crate::tree_iterators_rs::examples::create_example_tree;
+    /// use crate::tree_iterators_rs::prelude::*;
+    /// use streaming_iterator::StreamingIteratorMut;
+    /// 
+    /// let mut root = create_example_tree();
+    /// 
+    /// let mut dfs_iter = root.dfs_preorder_iter_mut().attach_ancestors();
+    /// while let Some(slice) = dfs_iter.next_mut() {
+    ///     *slice[slice.len() - 1] = 0;
+    ///     for i in 1..slice.len() {
+    ///         *slice[slice.len() - i] += 1;
+    ///     }
+    /// }
+    /// ```
+    /// 
+    /// After modifying each node during the traversal we could end
+    /// with this tree:
+    /// ```ignore
+    ///        6
+    ///       / \
+    ///      1   5
+    ///     / \ / \
+    ///    0  0 0  4
+    ///           /
+    ///          3
+    ///           \
+    ///            2
+    ///           /
+    ///          1
+    ///           \
+    ///           0
+    /// ```
+    /// 
     pub fn attach_ancestors(self) -> MutBorrowedDFSPreorderIteratorWithAncestors<'a, Node> {
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS preorder iterator in the middle of a tree traversal. This is forbidden."),
@@ -169,6 +243,12 @@ impl<'a, Node> StreamingIterator for MutBorrowedDFSPreorderIteratorWithAncestors
     
     type Item = [Node::MutBorrowedValue];
     preorder_streaming_iterator_impl!();
+}
+
+impl<'a, Node> StreamingIteratorMut for MutBorrowedDFSPreorderIteratorWithAncestors<'a, Node> 
+    where Node: MutBorrowedTreeNode<'a> {
+    
+    get_mut!();
 }
 
 
@@ -226,6 +306,11 @@ impl<'a, Node> MutBorrowedBinaryDFSPreorderIterator<'a, Node>
         }
     }
 
+    /// WARNING: The slice returned by this iterator points to internal iterator
+    /// state. Any changes to the slice's structure/order made using the StreamingIteratorMut 
+    /// API will be carried through the remaining iterations. This can result in
+    /// unexpected behaviors if you are not careful.
+    /// 
     /// This method retrieves an iterator that can be used to perform
     /// Depth First Preorder searches of a tree.
     /// 
@@ -282,6 +367,67 @@ impl<'a, Node> MutBorrowedBinaryDFSPreorderIterator<'a, Node>
     /// no longer work. See details on how to work around this in the 
     /// [streaming-iterator](https://crates.io/crates/streaming-iterator) crate.
     /// 
+    /// The mutable version of this method exists because it is inherently useful 
+    /// to modify the nodes of the tree based on additional metadata provided by 
+    /// this stack of nodes style iterator. Modifying the values within the 
+    /// slices returned by this iterator is a safe operation and will never cause 
+    /// problems with the iterator.
+    /// 
+    /// As an example, given the following tree, we could modify each value
+    /// as we go to be the count of descendant nodes.
+    /// 
+    /// We would start with the tree:
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    /// The code to modify the tree would look like this:
+    /// ```rust
+    /// use crate::tree_iterators_rs::examples::create_example_binary_tree;
+    /// use crate::tree_iterators_rs::prelude::*;
+    /// use streaming_iterator::StreamingIteratorMut;
+    /// 
+    /// let mut root = create_example_binary_tree();
+    /// 
+    /// let mut dfs_iter = root.dfs_preorder_iter_mut().attach_ancestors();
+    /// while let Some(slice) = dfs_iter.next_mut() {
+    ///     *slice[slice.len() - 1] = 0;
+    ///     for i in 1..slice.len() {
+    ///         *slice[slice.len() - i] += 1;
+    ///     }
+    /// }
+    /// ```
+    /// 
+    /// After modifying each node during the traversal we could end
+    /// with this tree:
+    /// ```ignore
+    ///        6
+    ///       / \
+    ///      1   5
+    ///     / \ / \
+    ///    0  0 0  4
+    ///           /
+    ///          3
+    ///           \
+    ///            2
+    ///           /
+    ///          1
+    ///           \
+    ///           0
+    /// ```
+    /// 
     pub fn attach_ancestors(self) -> MutBorrowedBinaryDFSPreorderIteratorWithAncestors<'a, Node> {
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS preorder iterator in the middle of a tree traversal. This is forbidden."),
@@ -327,4 +473,10 @@ impl<'a, Node> StreamingIterator for MutBorrowedBinaryDFSPreorderIteratorWithAnc
     
     type Item = [Node::MutBorrowedValue];
     preorder_streaming_iterator_impl!();
+}
+
+impl<'a, Node> StreamingIteratorMut for MutBorrowedBinaryDFSPreorderIteratorWithAncestors<'a, Node> 
+    where Node: MutBorrowedBinaryTreeNode<'a> {
+    
+    get_mut!();
 }

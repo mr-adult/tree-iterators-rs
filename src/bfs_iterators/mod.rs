@@ -218,7 +218,7 @@ macro_rules! bfs_streaming_iterator_impl {
                 }
             }
         }
-    
+
         fn get(&self) -> Option<&Self::Item> {
             if self.item_stack.len() == 0 {
                 None
@@ -229,9 +229,22 @@ macro_rules! bfs_streaming_iterator_impl {
     };
 }
 
+macro_rules! get_mut {
+    () => {
+        fn get_mut(&mut self) -> Option<&mut Self::Item> {
+            if self.item_stack.len() == 0 {
+                None
+            } else {
+                Some(&mut self.item_stack[..])
+            }
+        }
+    };
+}
+
 pub(crate) use bfs_next;
 pub(crate) use bfs_advance_iterator;
 pub(crate) use bfs_streaming_iterator_impl;
+pub(crate) use get_mut;
 
 #[derive(Debug, Default, Clone)]
 struct TreeNodeVecDeque<T> {

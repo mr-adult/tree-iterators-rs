@@ -1,4 +1,7 @@
-use streaming_iterator::StreamingIterator;
+use streaming_iterator::{
+    StreamingIterator,
+    StreamingIteratorMut
+};
 use crate::{
     prelude::{
         OwnedTreeNode, 
@@ -12,6 +15,7 @@ use crate::{
 };
 
 use super::{
+    get_mut,
     dfs_postorder_next, 
     postorder_streaming_iterator_impl
 };
@@ -35,6 +39,11 @@ impl<Node> OwnedDFSPostorderIterator<Node>
         }
     }
 
+    /// WARNING: The slice returned by this iterator points to internal iterator
+    /// state. Any changes to the slice's structure/order made using the StreamingIteratorMut 
+    /// API will be carried through the remaining iterations. This can result in
+    /// unexpected behaviors if you are not careful.
+    /// 
     /// This method converts the current Depth First Search iterator into 
     /// an iterator that will yield only the leaves of the tree. Iteration
     /// proceeds in a Depth First Postorder Search order.
@@ -70,6 +79,11 @@ impl<Node> OwnedDFSPostorderIterator<Node>
         }
     }
 
+    /// WARNING: The slice returned by this iterator points to internal iterator
+    /// state. Any changes to the slice's structure/order made using the StreamingIteratorMut 
+    /// API will be carried through the remaining iterations. This can result in
+    /// unexpected behaviors if you are not careful.
+    /// 
     /// This method retrieves a streaming iterator that can be used to perform
     /// Depth First Postorder searches of a tree.
     /// 
@@ -127,6 +141,67 @@ impl<Node> OwnedDFSPostorderIterator<Node>
     /// no longer work. See details on how to work around this in the 
     /// [streaming-iterator](https://crates.io/crates/streaming-iterator) crate.
     /// 
+    /// The mutable version of this method exists because it is inherently useful 
+    /// to modify the nodes of the tree based on additional metadata provided by 
+    /// this stack of nodes style iterator. Modifying the values within the 
+    /// slices returned by this iterator is a safe operation and will never cause 
+    /// problems with the iterator.
+    /// 
+    /// As an example, given the following tree, we could modify each value
+    /// as we go to be the count of descendant nodes.
+    /// 
+    /// We would start with the tree:
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    /// The code to modify the tree would look like this:
+    /// ```rust
+    /// use crate::tree_iterators_rs::examples::create_example_tree;
+    /// use crate::tree_iterators_rs::prelude::*;
+    /// use streaming_iterator::StreamingIteratorMut;
+    /// 
+    /// let mut root = create_example_tree();
+    /// 
+    /// let mut dfs_iter = root.dfs_postorder().attach_ancestors();
+    /// while let Some(slice) = dfs_iter.next_mut() {
+    ///     *slice.get_mut(slice.len() - 1).unwrap() = 0;
+    ///     for i in 1..slice.len() {
+    ///         *slice.get_mut(slice.len() - i).unwrap() += 1;
+    ///     }
+    /// }
+    /// ```
+    /// 
+    /// After modifying each node during the traversal we could end
+    /// with this tree:
+    /// ```ignore
+    ///        6
+    ///       / \
+    ///      1   5
+    ///     / \ / \
+    ///    0  0 0  4
+    ///           /
+    ///          3
+    ///           \
+    ///            2
+    ///           /
+    ///          1
+    ///           \
+    ///           0
+    /// ```
+    /// 
     pub fn attach_ancestors(self) -> OwnedDFSPostorderIteratorWithAncestors<Node> {
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS postorder iterator in the middle of a tree traversal. This is forbidden."),
@@ -169,6 +244,12 @@ impl<'a, Node> StreamingIterator for OwnedBinaryDFSPostorderIteratorWithAncestor
 
     type Item = [Node::OwnedValue];
     postorder_streaming_iterator_impl!(get_value_and_children);
+}
+
+impl<'a, Node> StreamingIteratorMut for OwnedBinaryDFSPostorderIteratorWithAncestors<Node> 
+    where Node: OwnedBinaryTreeNode {
+
+    get_mut!();
 }
 
 pub struct OwnedBinaryDFSPostorderIterator<Node> 
@@ -225,6 +306,11 @@ impl<Node> OwnedBinaryDFSPostorderIterator<Node>
         }
     }
 
+    /// WARNING: The slice returned by this iterator points to internal iterator
+    /// state. Any changes to the slice's structure/order made using the StreamingIteratorMut 
+    /// API will be carried through the remaining iterations. This can result in
+    /// unexpected behaviors if you are not careful.
+    /// 
     /// This method retrieves a streaming iterator that can be used to perform
     /// Depth First Postorder searches of a tree.
     /// 
@@ -282,6 +368,67 @@ impl<Node> OwnedBinaryDFSPostorderIterator<Node>
     /// no longer work. See details on how to work around this in the 
     /// [streaming-iterator](https://crates.io/crates/streaming-iterator) crate.
     /// 
+    /// The mutable version of this method exists because it is inherently useful 
+    /// to modify the nodes of the tree based on additional metadata provided by 
+    /// this stack of nodes style iterator. Modifying the values within the 
+    /// slices returned by this iterator is a safe operation and will never cause 
+    /// problems with the iterator.
+    /// 
+    /// As an example, given the following tree, we could modify each value
+    /// as we go to be the count of descendant nodes.
+    /// 
+    /// We would start with the tree:
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    /// The code to modify the tree would look like this:
+    /// ```rust
+    /// use crate::tree_iterators_rs::examples::create_example_binary_tree;
+    /// use crate::tree_iterators_rs::prelude::*;
+    /// use streaming_iterator::StreamingIteratorMut;
+    /// 
+    /// let mut root = create_example_binary_tree();
+    /// 
+    /// let mut dfs_iter = root.dfs_postorder().attach_ancestors();
+    /// while let Some(slice) = dfs_iter.next_mut() {
+    ///     *slice.get_mut(slice.len() - 1).unwrap() = 0;
+    ///     for i in 1..slice.len() {
+    ///         *slice.get_mut(slice.len() - i).unwrap() += 1;
+    ///     }
+    /// }
+    /// ```
+    /// 
+    /// After modifying each node during the traversal we could end
+    /// with this tree:
+    /// ```ignore
+    ///        6
+    ///       / \
+    ///      1   5
+    ///     / \ / \
+    ///    0  0 0  4
+    ///           /
+    ///          3
+    ///           \
+    ///            2
+    ///           /
+    ///          1
+    ///           \
+    ///           0
+    /// ```
+    /// 
     pub fn attach_ancestors(self) -> OwnedBinaryDFSPostorderIteratorWithAncestors<Node> {
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS postorder iterator in the middle of a tree traversal. This is forbidden."),
@@ -324,4 +471,10 @@ impl<'a, Node> StreamingIterator for OwnedDFSPostorderIteratorWithAncestors<Node
 
     type Item = [Node::OwnedValue];
     postorder_streaming_iterator_impl!(get_value_and_children);
+}
+
+impl<'a, Node> StreamingIteratorMut for OwnedDFSPostorderIteratorWithAncestors<Node> 
+    where Node: OwnedTreeNode {
+
+    get_mut!();
 }

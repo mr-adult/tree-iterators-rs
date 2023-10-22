@@ -135,6 +135,19 @@ macro_rules! preorder_streaming_iterator_impl {
     };
 }
 
+macro_rules! get_mut {
+    () => {
+        fn get_mut(&mut self) -> Option<&mut Self::Item> {
+            if self.item_stack.len() == 0 {
+                None
+            } else {
+                Some(&mut self.item_stack[..])
+            }
+        }
+    };
+}
+
+pub(crate) use get_mut;
 pub (crate) use dfs_preorder_next;
 pub (crate) use advance_dfs;
 pub (crate) use preorder_streaming_iterator_impl;
