@@ -10,7 +10,7 @@ documentation = "https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-streaming-iterator = "0.1.9"
+streaming-iterator = { version = "0.1.9", features = ["alloc"] }
 serde = { version = "1.0.189",  optional = true }
 serde_derive = { version = "1.0.189",  optional = true }
 

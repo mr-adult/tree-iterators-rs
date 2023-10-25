@@ -5,7 +5,7 @@ pub mod borrow;
 macro_rules! bfs_next {
     ($get_value_and_children: ident) => {
         fn next(&mut self) -> Option<Self::Item> {
-            match std::mem::take(&mut self.root) {
+            match core::mem::take(&mut self.root) {
                 Some(root) => {
                     let (value, children) = root.$get_value_and_children();
                     match children {
@@ -96,7 +96,7 @@ macro_rules! bfs_advance_iterator {
                                             .push_back(Some(popped));
                                     }
                                     Some(mut value) => {
-                                        self.item_stack.push(std::mem::take(&mut value.value).unwrap());
+                                        self.item_stack.push(core::mem::take(&mut value.value).unwrap());
                                         let has_children = !value.children.is_none();
                                         self.traversal_stack.push(value);
                                         stack_len += 1;
@@ -249,5 +249,5 @@ pub(crate) use get_mut;
 #[derive(Debug, Default, Clone)]
 struct TreeNodeVecDeque<T> {
     value: Option<T>,
-    children: Option<std::collections::VecDeque<Option<Self>>>,
+    children: Option<alloc::collections::VecDeque<Option<Self>>>,
 }

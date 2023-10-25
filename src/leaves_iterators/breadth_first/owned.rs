@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use alloc::collections::VecDeque;
 
 use crate::prelude::{
     OwnedTreeNode, 
@@ -6,7 +6,7 @@ use crate::prelude::{
     OwnedBinaryTreeNode
 };
 
-use crate::make_peekable_iterator::MakePeekableIterator;
+use core::iter::Peekable;
 
 use super::{
     bfs_next,
@@ -19,7 +19,7 @@ pub struct OwnedLeavesIterator<Node, Iter>
 
     pub (crate) root: Option<Node>,
     pub (crate) old_traversal_queue: VecDeque<Iter>,
-    pub (crate) new_traversal_queue: VecDeque<MakePeekableIterator<Node::OwnedChildren>>,
+    pub (crate) new_traversal_queue: VecDeque<Peekable<Node::OwnedChildren>>,
 }
 
 impl<'a, Node, Iter> OwnedLeavesIterator<Node, Iter> 
@@ -43,7 +43,7 @@ pub struct OwnedBinaryLeavesIterator<Node, Iter>
 
     pub (crate) root: Option<Node>,
     pub (crate) old_traversal_queue: VecDeque<Iter>,
-    pub (crate) new_traversal_queue: VecDeque<MakePeekableIterator<BinaryChildren<Node>>>,
+    pub (crate) new_traversal_queue: VecDeque<Peekable<BinaryChildren<Node>>>,
 }
 
 impl<'a, Node, Iter> OwnedBinaryLeavesIterator<Node, Iter> 

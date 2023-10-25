@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use streaming_iterator::{
     StreamingIterator,
     StreamingIteratorMut

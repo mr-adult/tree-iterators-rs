@@ -1,8 +1,13 @@
 #[cfg(test)]
-pub (crate) mod tests {
-    use super::{create_example_binary_tree, create_example_tree};
+pub mod tests {
+    extern crate std;
+    use std::println;
+    use alloc::string::String;
     use super::super::prelude::*;
-    use std::collections::VecDeque;
+    use alloc::collections::VecDeque;
+    use alloc::boxed::Box;
+    use alloc::vec;
+    use super::{create_example_binary_tree, create_example_tree};
 
     #[test]
     fn bfs_example() {
@@ -258,6 +263,8 @@ pub (crate) mod tests {
         println!("{}", result);
     }
 
+    use alloc::string::ToString;
+    use alloc::vec::Vec;
     use streaming_iterator::StreamingIterator;
 
     #[test]
@@ -339,9 +346,68 @@ pub (crate) mod tests {
         // result: 0 2 6
         println!("{}", result);
     }
+
+    mod custom_implemenation {
+        use crate::prelude::*;
+        use alloc::collections::LinkedList;
+
+        struct LLTreeNode<T> {
+            value: T,
+            children: LinkedList<LLTreeNode<T>>
+        }
+
+        use alloc::collections::linked_list::IntoIter;
+
+        impl<T> OwnedTreeNode for LLTreeNode<T> {
+            type OwnedValue = T;
+            type OwnedChildren = IntoIter<LLTreeNode<T>>;
+
+            fn get_value_and_children(self) -> (Self::OwnedValue, Option<Self::OwnedChildren>) {
+                (
+                    self.value,
+                    Some(self.children.into_iter())
+                )
+            }
+        }
+
+        use alloc::collections::linked_list::IterMut;
+
+        impl<'a, T> MutBorrowedTreeNode<'a> for LLTreeNode<T> 
+            where Self: 'a {
+
+            type MutBorrowedValue = &'a mut T;
+            type MutBorrowedChildren = IterMut<'a, LLTreeNode<T>>;
+
+            fn get_value_and_children_iter_mut(&'a mut self) -> (Self::MutBorrowedValue, Option<Self::MutBorrowedChildren>) {
+                (
+                    &mut self.value,
+                    Some(self.children.iter_mut())
+                )
+            }
+        }
+
+        use alloc::collections::linked_list::Iter;
+
+        impl<'a, T> BorrowedTreeNode<'a> for LLTreeNode<T> 
+            where Self: 'a {
+
+            type BorrowedValue = &'a T;
+            type BorrowedChildren = Iter<'a, LLTreeNode<T>>;
+
+            fn get_value_and_children_iter(&'a self) -> (Self::BorrowedValue, Option<Self::BorrowedChildren>) {
+                (
+                    &self.value,
+                    Some(self.children.iter())
+                )
+            }
+        }
+    }
+
+
 }
 
 use crate::prelude::*;
+use alloc::{boxed::Box, vec};
 
 pub fn create_example_binary_tree() -> BinaryTreeNode<usize> {
     BinaryTreeNode { 
@@ -484,60 +550,3 @@ pub fn create_example_tree() -> TreeNode<usize> {
         ])
     }
 }
-
-mod custom_implemenation {
-    use crate::prelude::*;
-    use std::collections::LinkedList;
-
-    struct LLTreeNode<T> {
-        value: T,
-        children: LinkedList<LLTreeNode<T>>
-    }
-
-    use std::collections::linked_list::IntoIter;
-
-    impl<T> OwnedTreeNode for LLTreeNode<T> {
-        type OwnedValue = T;
-        type OwnedChildren = IntoIter<LLTreeNode<T>>;
-
-        fn get_value_and_children(self) -> (Self::OwnedValue, Option<Self::OwnedChildren>) {
-            (
-                self.value,
-                Some(self.children.into_iter())
-            )
-        }
-    }
-
-    use std::collections::linked_list::IterMut;
-
-    impl<'a, T> MutBorrowedTreeNode<'a> for LLTreeNode<T> 
-        where Self: 'a {
-
-        type MutBorrowedValue = &'a mut T;
-        type MutBorrowedChildren = IterMut<'a, LLTreeNode<T>>;
-
-        fn get_value_and_children_iter_mut(&'a mut self) -> (Self::MutBorrowedValue, Option<Self::MutBorrowedChildren>) {
-            (
-                &mut self.value,
-                Some(self.children.iter_mut())
-            )
-        }
-    }
-
-    use std::collections::linked_list::Iter;
-
-    impl<'a, T> BorrowedTreeNode<'a> for LLTreeNode<T> 
-        where Self: 'a {
-
-        type BorrowedValue = &'a T;
-        type BorrowedChildren = Iter<'a, LLTreeNode<T>>;
-
-        fn get_value_and_children_iter(&'a self) -> (Self::BorrowedValue, Option<Self::BorrowedChildren>) {
-            (
-                &self.value,
-                Some(self.children.iter())
-            )
-        }
-    }
-}
-

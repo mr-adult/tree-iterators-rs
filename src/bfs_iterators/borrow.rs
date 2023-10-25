@@ -1,4 +1,7 @@
-use std::collections::VecDeque;
+use alloc::{
+    collections::VecDeque, 
+    vec::Vec
+};
 use streaming_iterator::StreamingIterator;
 
 use crate::{

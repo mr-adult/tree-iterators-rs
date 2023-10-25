@@ -6,7 +6,7 @@ macro_rules! dfs_postorder_leaves_next {
     ($get_value_and_children: ident) => {
         fn next(&mut self) -> Option<Self::Item> {
             loop {
-                match std::mem::take(&mut self.root) {
+                match core::mem::take(&mut self.root) {
                     Some(next) => {
                         let (value, children) = next.$get_value_and_children();
                         match children {

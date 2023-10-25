@@ -5,7 +5,7 @@ pub mod borrow;
 macro_rules! dfs_preorder_next {
     ($get_value_and_children: ident) => {
         fn next(&mut self) -> Option<Self::Item> {
-            match std::mem::take(&mut self.root) {
+            match core::mem::take(&mut self.root) {
                 Some(next) => {
                     let (value, children) = next.$get_value_and_children();
                     match children {
@@ -60,7 +60,7 @@ macro_rules! dfs_preorder_next {
 macro_rules! advance_dfs {
     ($get_value_and_children: ident) => {
         fn advance_dfs(&mut self) {
-            match std::mem::take(&mut self.root) {
+            match core::mem::take(&mut self.root) {
                 Some(next) => {
                     let (value, children) = next.$get_value_and_children();
                     match children {

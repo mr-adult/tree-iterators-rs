@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use crate::{
     prelude::OwnedBinaryTreeNode, 
     leaves_iterators::depth_first::owned::OwnedBinaryLeavesIterator,

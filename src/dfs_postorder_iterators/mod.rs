@@ -6,7 +6,7 @@ macro_rules! dfs_postorder_next {
     ($get_value_and_children: ident) => {
         fn next(&mut self) -> Option<Self::Item> {
             loop {
-                match std::mem::take(&mut self.root) {
+                match core::mem::take(&mut self.root) {
                     Some(next) => {
                         let (value, children) = next.$get_value_and_children();
                         match children {
@@ -53,7 +53,7 @@ macro_rules! postorder_streaming_iterator_impl {
         fn advance(&mut self) {
             let mut is_first_iteration = true;
             loop {
-                match std::mem::take(&mut self.root) {
+                match core::mem::take(&mut self.root) {
                     Some(next) => {
                         let (value, children) = next.$get_value_and_children();
                         match children {

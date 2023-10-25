@@ -5,7 +5,7 @@ pub mod borrow;
 macro_rules! bfs_next {
     ($get_value_and_children: ident, $value_type: ty) => {
         fn bfs_next(&mut self) -> Option<(bool, $value_type)> {
-            match std::mem::take(&mut self.root) {
+            match core::mem::take(&mut self.root) {
                 Some(root) => {
                     let (value, children) = root.$get_value_and_children();
                     
@@ -13,7 +13,7 @@ macro_rules! bfs_next {
                     match children {
                         None => { has_children = false; }
                         Some(children) => {
-                            let mut peekable = MakePeekableIterator::new(children);
+                            let mut peekable = children.peekable();
                             has_children = peekable.peek().is_some();
                             self.new_traversal_queue.push_back(peekable);
                         }
@@ -41,7 +41,7 @@ macro_rules! bfs_next {
                                                 match children {
                                                     None => { has_children = false; }
                                                     Some(children) => { 
-                                                        let mut peekable = MakePeekableIterator::new(children);
+                                                        let mut peekable = children.peekable();
                                                         has_children = peekable.peek().is_some();
                                                         self.new_traversal_queue.push_back(peekable);
                                                     }
@@ -66,7 +66,7 @@ macro_rules! bfs_next {
                                         match children {
                                             None => { has_children = false; }
                                             Some(children) => { 
-                                                let mut peekable = MakePeekableIterator::new(children);
+                                                let mut peekable = children.peekable();
                                                 has_children = peekable.peek().is_some();
                                                 self.new_traversal_queue.push_back(peekable);
                                             }

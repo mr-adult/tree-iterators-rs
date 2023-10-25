@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use alloc::collections::VecDeque;
 
 use crate::prelude::{
     MutBorrowedTreeNode, 
@@ -6,7 +6,7 @@ use crate::prelude::{
     MutBorrowedBinaryTreeNode
 };
 
-use crate::make_peekable_iterator::MakePeekableIterator;
+use core::iter::Peekable;
 
 use super::{
     bfs_next, 
@@ -18,7 +18,7 @@ pub struct MutBorrowedLeavesIterator<'a, Node>
 
     pub (crate) root: Option<&'a mut Node>,
     pub (crate) old_traversal_queue: VecDeque<Node::MutBorrowedChildren>,
-    pub (crate) new_traversal_queue: VecDeque<MakePeekableIterator<Node::MutBorrowedChildren>>,
+    pub (crate) new_traversal_queue: VecDeque<Peekable<Node::MutBorrowedChildren>>,
 }
 
 impl<'a, Node> MutBorrowedLeavesIterator<'a, Node> 
@@ -40,7 +40,7 @@ pub struct MutBorrowedBinaryLeavesIterator<'a, Node, Iter>
 
     pub (crate) root: Option<&'a mut Node>,
     pub (crate) old_traversal_queue: VecDeque<Iter>,
-    pub (crate) new_traversal_queue: VecDeque<MakePeekableIterator<BinaryChildren<&'a mut Node>>>,
+    pub (crate) new_traversal_queue: VecDeque<Peekable<BinaryChildren<&'a mut Node>>>,
 }
 
 impl<'a, Node, Iter> MutBorrowedBinaryLeavesIterator<'a, Node, Iter> 

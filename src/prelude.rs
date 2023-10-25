@@ -1,7 +1,8 @@
-use std::fmt::Debug;
-use std::iter::FlatMap;
-use std::slice::{Iter, IterMut};
-use std::vec::IntoIter;
+use core::fmt::Debug;
+use core::iter::FlatMap;
+use core::slice::{Iter, IterMut};
+use alloc::boxed::Box;
+use alloc::vec::{IntoIter, Vec};
 
 #[cfg(feature = "serde")]
 use serde_derive::{Serialize, Deserialize};
@@ -86,7 +87,7 @@ pub struct TreeNode<T> {
 /// Helper type to define the BinaryTreeNode's
 /// Children iterator type.
 pub (crate) type BinaryChildren<T> = FlatMap<
-    std::array::IntoIter<
+    core::array::IntoIter<
         Option<T>, 
         2
     >, 
@@ -1063,6 +1064,7 @@ fn opt_to_opt<T>(opt: Option<T>) -> Option<T> {
 #[cfg(test)]
 pub (crate) mod tests {
     use super::*;
+    use alloc::vec;
 
     #[cfg(test)]
     mod dfs_preorder_tests {
@@ -1583,7 +1585,11 @@ pub (crate) mod tests {
         }
     }
 
+    #[cfg(test)]
     mod leaves_tests {
+        extern crate std;
+        use std::println;
+
         use crate::prelude::*;
         use super::{
             assert_len,
