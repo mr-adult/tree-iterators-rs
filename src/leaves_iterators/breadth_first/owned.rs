@@ -3,7 +3,7 @@ use alloc::collections::VecDeque;
 use crate::prelude::{
     OwnedTreeNode, 
     BinaryChildren, 
-    OwnedBinaryTreeNode
+    OwnedBinaryTreeNode, LeavesIterator
 };
 
 use core::iter::Peekable;
@@ -29,13 +29,17 @@ impl<'a, Node, Iter> OwnedLeavesIterator<Node, Iter>
     bfs_next!(get_value_and_children, Node::OwnedValue);
 }
 
-impl<'a, Node, Iter> Iterator for OwnedLeavesIterator<Node, Iter> 
+impl<Node, Iter> Iterator for OwnedLeavesIterator<Node, Iter> 
     where Node: OwnedTreeNode,
         Iter: Iterator<Item = Node> {
     
     type Item = Node::OwnedValue;
     next!();
 }
+
+impl<Node, Iter> LeavesIterator for OwnedLeavesIterator<Node, Iter> 
+    where Node: OwnedTreeNode,
+        Iter: Iterator<Item = Node> {}
 
 pub struct OwnedBinaryLeavesIterator<Node, Iter>
     where Node: OwnedBinaryTreeNode,
@@ -46,7 +50,7 @@ pub struct OwnedBinaryLeavesIterator<Node, Iter>
     pub (crate) new_traversal_queue: VecDeque<Peekable<BinaryChildren<Node>>>,
 }
 
-impl<'a, Node, Iter> OwnedBinaryLeavesIterator<Node, Iter> 
+impl<Node, Iter> OwnedBinaryLeavesIterator<Node, Iter> 
     where Node: OwnedBinaryTreeNode,
         Iter: Iterator<Item = Node> {
 
@@ -60,3 +64,7 @@ impl<'a, Node, Iter> Iterator for OwnedBinaryLeavesIterator<Node, Iter>
     type Item = Node::OwnedValue;
     next!();
 }
+
+impl<Node, Iter> LeavesIterator for OwnedBinaryLeavesIterator<Node, Iter> 
+    where Node: OwnedBinaryTreeNode,
+        Iter: Iterator<Item = Node> {}

@@ -4,7 +4,7 @@ use crate::{
     prelude::{
         BorrowedTreeNode, 
         BinaryChildren, 
-        BorrowedBinaryTreeNode
+        BorrowedBinaryTreeNode, TreeIterator, AncestorsIterator, LeavesIterator
     }, 
     leaves_iterators::depth_first::borrow::{
         BorrowedLeavesIterator, 
@@ -34,36 +34,11 @@ impl<'a, Node> BorrowedDFSPreorderIterator<'a, Node>
             traversal_stack: Vec::new()
         }
     }
+}
 
-    /// This method converts the current Depth First Search iterator into 
-    /// an iterator that will yield only the leaves of the tree. Iteration
-    /// proceeds in a Depth First Postorder Search order. This may not make
-    /// intuitive sense at first, but in order for the lazy iterators of this 
-    /// library to know a node is a leaf of the tree, postorder must be used.
-    /// 
-    /// A leaf is defined as:
-    /// 
-    /// Any tree node that has no children. Given a tree of the following shape, 
-    /// this iterator would yield values in the following order:
-    /// 3, 4, 5, 10
-    /// 
-    /// ```ignore
-    ///        0
-    ///       / \
-    ///      1   2
-    ///     / \ / \
-    ///    3  4 5  6
-    ///           /
-    ///          7
-    ///           \
-    ///            8
-    ///           /
-    ///          9
-    ///           \
-    ///           10
-    /// ```
-    /// 
-    pub fn leaves(self) -> BorrowedLeavesIterator<'a, Node, Node::BorrowedChildren> {
+impl<'a, Node> TreeIterator for BorrowedDFSPreorderIterator<'a, Node> 
+    where Node: BorrowedTreeNode<'a> {
+    fn leaves(self) -> impl LeavesIterator<Item = Self::Item> {
         BorrowedLeavesIterator {
             root: self.root,
             traversal_stack_bottom: self.traversal_stack,
@@ -71,64 +46,8 @@ impl<'a, Node> BorrowedDFSPreorderIterator<'a, Node>
             item_stack: Vec::new(),
         }
     }
-
-    /// This method retrieves an iterator that can be used to perform
-    /// Depth First Preorder searches of a tree.
-    /// 
-    /// A Depth First Preorder search is defined as:
-    /// 
-    /// A tree traversal that involves depth-first searching a tree 
-    /// from the top down. this 
-    /// traversal type would traverse the elements and yield slices in
-    /// the following order. Note for each slice, the current node is
-    /// at index slice.len() - 1, the root is at index 0 and all other 
-    /// ancestors are found in between.
-    /// - \[0\],
-    /// - \[0, 1\],
-    /// - \[0, 1, 3\],
-    /// - \[0, 1, 4\],
-    /// - \[0, 2\],
-    /// - \[0, 2, 5\],
-    /// - \[0, 2, 6\],
-    /// - \[0, 2, 6, 7\],
-    /// - \[0, 2, 6, 7, 8\],
-    /// - \[0, 2, 6, 7, 8, 9\],
-    /// - \[0, 2, 6, 7, 8, 9, 10\],
-    /// 
-    /// In this traversal, each node will only be traversed before any
-    /// of its children have been traversed.
-    /// ```ignore
-    ///        0
-    ///       / \
-    ///      1   2
-    ///     / \ / \
-    ///    3  4 5  6
-    ///           /
-    ///          7
-    ///           \
-    ///            8
-    ///           /
-    ///          9
-    ///           \
-    ///           10
-    /// ```
-    /// 
-    /// More technical details:
-    /// 
-    /// This method attaches the ancestors of the node to the iterator.
-    /// This operation transforms the iterator into a StreamingIterator,
-    /// meaning that the values can no longer be directly saved and used 
-    /// across loop iterations. The references to the nodes themselves 
-    /// are still valid across the entirety of the loop, but you must 
-    /// extract them from their containing slice to reuse them. This
-    /// will incur a performance penalty that this library does not
-    /// assume you want.
-    /// 
-    /// Since this iterator is no longer a Rust Iterator, for loops will
-    /// no longer work. See details on how to work around this in the 
-    /// [streaming-iterator](https://crates.io/crates/streaming-iterator) crate.
-    /// 
-    pub fn attach_ancestors(self) -> BorrowedDFSPreorderIteratorWithAncestors<'a, Node> {
+    
+    fn attach_ancestors(self) -> impl AncestorsIterator<Item = [Node::BorrowedValue]> {
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS preorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
@@ -175,6 +94,9 @@ impl<'a, Node> StreamingIterator for BorrowedDFSPreorderIteratorWithAncestors<'a
     preorder_streaming_iterator_impl!();
 }
 
+impl<'a, Node> AncestorsIterator for BorrowedDFSPreorderIteratorWithAncestors<'a, Node> 
+    where Node: BorrowedTreeNode<'a> {}
+
 
 pub struct BorrowedBinaryDFSPreorderIterator<'a, Node>
     where Node: BorrowedBinaryTreeNode<'a> {
@@ -192,36 +114,11 @@ impl<'a, Node> BorrowedBinaryDFSPreorderIterator<'a, Node>
             traversal_stack: Vec::new()
         }
     }
+}
 
-    /// This method converts the current Depth First Search iterator into 
-    /// an iterator that will yield only the leaves of the tree. Iteration
-    /// proceeds in a Depth First Postorder Search order. This may not make
-    /// intuitive sense at first, but in order for the lazy iterators of this 
-    /// library to know a node is a leaf of the tree, postorder must be used.
-    /// 
-    /// A leaf is defined as:
-    /// 
-    /// Any tree node that has no children. Given a tree of the following shape, 
-    /// this iterator would yield values in the following order:
-    /// 3, 4, 5, 10
-    /// 
-    /// ```ignore
-    ///        0
-    ///       / \
-    ///      1   2
-    ///     / \ / \
-    ///    3  4 5  6
-    ///           /
-    ///          7
-    ///           \
-    ///            8
-    ///           /
-    ///          9
-    ///           \
-    ///           10
-    /// ```
-    /// 
-    pub fn leaves(self) -> BorrowedBinaryLeavesIterator<'a, Node, BinaryChildren<&'a Node>> {
+impl<'a, Node> TreeIterator for BorrowedBinaryDFSPreorderIterator<'a, Node> 
+    where Node: BorrowedBinaryTreeNode<'a> {
+    fn leaves(self) -> impl LeavesIterator<Item = Self::Item> {
         BorrowedBinaryLeavesIterator {
             root: self.root,
             traversal_stack_bottom: self.traversal_stack,
@@ -229,64 +126,8 @@ impl<'a, Node> BorrowedBinaryDFSPreorderIterator<'a, Node>
             item_stack: Vec::new(),
         }
     }
-
-    /// This method retrieves an iterator that can be used to perform
-    /// Depth First Preorder searches of a tree.
-    /// 
-    /// A Depth First Preorder search is defined as:
-    /// 
-    /// A tree traversal that involves depth-first searching a tree 
-    /// from the top down. this 
-    /// traversal type would traverse the elements and yield slices in
-    /// the following order. Note for each slice, the current node is
-    /// at index slice.len() - 1, the root is at index 0 and all other 
-    /// ancestors are found in between.
-    /// - \[0\],
-    /// - \[0, 1\],
-    /// - \[0, 1, 3\],
-    /// - \[0, 1, 4\],
-    /// - \[0, 2\],
-    /// - \[0, 2, 5\],
-    /// - \[0, 2, 6\],
-    /// - \[0, 2, 6, 7\],
-    /// - \[0, 2, 6, 7, 8\],
-    /// - \[0, 2, 6, 7, 8, 9\],
-    /// - \[0, 2, 6, 7, 8, 9, 10\],
-    /// 
-    /// In this traversal, each node will only be traversed before any
-    /// of its children have been traversed.
-    /// ```ignore
-    ///        0
-    ///       / \
-    ///      1   2
-    ///     / \ / \
-    ///    3  4 5  6
-    ///           /
-    ///          7
-    ///           \
-    ///            8
-    ///           /
-    ///          9
-    ///           \
-    ///           10
-    /// ```
-    /// 
-    /// More technical details:
-    /// 
-    /// This method attaches the ancestors of the node to the iterator.
-    /// This operation transforms the iterator into a StreamingIterator,
-    /// meaning that the values can no longer be directly saved and used 
-    /// across loop iterations. The references to the nodes themselves 
-    /// are still valid across the entirety of the loop, but you must 
-    /// extract them from their containing slice to reuse them. This
-    /// will incur a performance penalty that this library does not
-    /// assume you want.
-    /// 
-    /// Since this iterator is no longer a Rust Iterator, for loops will
-    /// no longer work. See details on how to work around this in the 
-    /// [streaming-iterator](https://crates.io/crates/streaming-iterator) crate.
-    /// 
-    pub fn attach_ancestors(self) -> BorrowedBinaryDFSPreorderIteratorWithAncestors<'a, Node> {
+    
+    fn attach_ancestors(self) -> impl AncestorsIterator<Item = [Node::BorrowedValue]> {
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS preorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
@@ -332,3 +173,6 @@ impl<'a, Node> StreamingIterator for BorrowedBinaryDFSPreorderIteratorWithAncest
     type Item = [Node::BorrowedValue];
     preorder_streaming_iterator_impl!();
 }
+
+impl<'a, Node> AncestorsIterator for BorrowedBinaryDFSPreorderIteratorWithAncestors<'a, Node> 
+    where Node: BorrowedBinaryTreeNode<'a> {}

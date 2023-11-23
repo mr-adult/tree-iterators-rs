@@ -6,6 +6,10 @@ use alloc::vec::{IntoIter, Vec};
 
 #[cfg(feature = "serde")]
 use serde_derive::{Serialize, Deserialize};
+use streaming_iterator::{
+    StreamingIterator, 
+    StreamingIteratorMut
+};
 
 use super::bfs_iterators::{
     owned::{
@@ -84,6 +88,258 @@ pub struct TreeNode<T> {
     pub children: Option<Vec<TreeNode<T>>>
 }
 
+pub trait TreeIterator : Iterator {
+    /// This method converts the current iterator into 
+    /// an iterator that will yield only the leaves of the tree. Iteration
+    /// still proceeds in either a breadth first search (if called on a 
+    /// breadth first iterator) or depth first post-order search (if called 
+    /// on a depth first pre-, in-, or post-order iterator). This method 
+    /// is safe to call at any point during iteration and will never panic.
+    /// 
+    /// A leaf is defined as: Any tree node that has no children. Given a tree 
+    /// of the following shape, this iterator would always yield values in the 
+    /// following order (regardless of iteration type):
+    /// 3, 4, 5, 10
+    /// 
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    /// ```ignore
+    /// // Example usage:
+    /// use tree_iterators_rs::{
+    ///     prelude::*,
+    ///     examples::create_example_binary_tree
+    /// };
+    /// 
+    /// let root = create_example_binary_tree();
+    /// for leaf in root.your_chosen_iterator_method().leaves() {
+    ///     println!("{}", leaf);
+    /// }
+    /// ```
+    fn leaves(self) -> impl LeavesIterator<Item = Self::Item>;
+
+    /// This method will panic if called after an element has already
+    /// been yielded from the iterator it is called on!
+    /// 
+    /// This method attaches the ancestors of each node to the node
+    /// during iteration. This operation converts the current iterator 
+    /// into a streaming iterator. 
+    /// 
+    /// For Breadth First Search iterators, this converts the queue-based 
+    /// iterator into an iterative deepening iterator. This can cause performance
+    /// degredation, but is impossible to avoid while providing this data.
+    /// 
+    /// The order in which elements are yielded remains unchanged, but
+    /// each will now be yielded with its ancestor stack attached. That
+    /// means that for our example tree, each element will be replaced 
+    /// by the following:
+    /// - 0 -> \[0\], 
+    /// - 1 -> \[0, 1\], 
+    /// - 2 -> \[0, 2\], 
+    /// - 3 -> \[0, 1, 3\], 
+    /// - 4 -> \[0, 1, 4\], 
+    /// - 5 -> \[0, 2, 5\], 
+    /// - 6 -> \[0, 2, 6\], 
+    /// - 7 -> \[0, 2, 6, 7\], 
+    /// - 8 -> \[0, 2, 6, 7, 8\], 
+    /// - 9 -> \[0, 2, 6, 7, 8, 9\], 
+    /// - 10 -> \[0, 2, 6, 7, 8, 9, 10\]
+    /// ```ignore
+    /// Example Tree:
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    /// More technical details:
+    /// 
+    /// Because this operation transforms the iterator into a StreamingIterator,
+    /// the slices cannot be saved and used across loop iterations, as the slice 
+    /// points to internal iterator memory and is altered with the .next() call. 
+    /// Each slice must be converted into a Vec by the caller to save 
+    /// them for later. This operation will incur a performance penalty 
+    /// and this library does not assume you want that performance penalty.
+    /// 
+    /// Since this iterator is no longer a Rust Iterator, for loops will
+    /// no longer work. See details on how to work around this in the 
+    /// [streaming-iterator](https://crates.io/crates/streaming-iterator) crate.
+    /// ```ignore
+    /// // Example usage:
+    /// use streaming_iterator::StreamingIterator;
+    /// use tree_iterators_rs::{
+    ///     prelude::*,
+    ///     examples::create_example_binary_tree
+    /// };
+    /// 
+    /// let root = create_example_binary_tree();
+    /// let mut result = String::new();
+    /// root.your_chosen_iterator_method()
+    ///     .attach_ancestors()
+    ///     .filter(|slice| 
+    ///         slice.iter().all(|value| **value % 2 == 0)
+    ///     )
+    ///     .map(|slice| slice[slice.len() - 1])
+    ///     .for_each(|value| {
+    ///         result.push(' ');
+    ///         result.push_str(&value.to_string())
+    ///     });
+    ///
+    /// println!("{}", result);
+    /// ```
+    fn attach_ancestors(self) -> impl AncestorsIterator<Item = [Self::Item]>;
+}
+
+pub trait TreeIteratorMut: Iterator {
+    /// This method converts the current iterator into 
+    /// an iterator that will yield only the leaves of the tree. Iteration
+    /// still proceeds in either a breadth first search (if called on a 
+    /// breadth first iterator) or depth first post-order search (if called 
+    /// on a depth first pre-, in-, or post-order iterator). This method 
+    /// is safe to call at any point during iteration and will never panic.
+    /// 
+    /// A leaf is defined as: Any tree node that has no children. Given a tree 
+    /// of the following shape, this iterator would always yield values in the 
+    /// following order (regardless of iteration type):
+    /// 3, 4, 5, 10
+    /// 
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    /// ```ignore
+    /// // Example usage:
+    /// use tree_iterators_rs::{
+    ///     prelude::*,
+    ///     examples::create_example_binary_tree
+    /// };
+    /// 
+    /// let root = create_example_binary_tree();
+    /// for leaf in root.your_chosen_iterator_method().leaves() {
+    ///     println!("{}", leaf);
+    /// }
+    /// ```
+    fn leaves(self) -> impl LeavesIterator<Item = Self::Item>;
+
+    /// This method will panic if called after an element has already
+    /// been yielded from the iterator it is called on!
+    /// 
+    /// This method attaches the ancestors of each node to the node
+    /// during iteration. This operation converts the current iterator 
+    /// into a streaming iterator. 
+    /// 
+    /// For Breadth First Search iterators, this converts the queue-based 
+    /// iterator into an iterative deepening iterator. This can have performanc
+    /// impacts.
+    /// 
+    /// The order in which elements are yielded remains unchanged, but
+    /// each will now be yielded with its ancestor stack attached. That
+    /// means that for our example tree, each element will be replaced 
+    /// by the following:
+    /// - 0 -> \[0\], 
+    /// - 1 -> \[0, 1\], 
+    /// - 2 -> \[0, 2\], 
+    /// - 3 -> \[0, 1, 3\], 
+    /// - 4 -> \[0, 1, 4\], 
+    /// - 5 -> \[0, 2, 5\], 
+    /// - 6 -> \[0, 2, 6\], 
+    /// - 7 -> \[0, 2, 6, 7\], 
+    /// - 8 -> \[0, 2, 6, 7, 8\], 
+    /// - 9 -> \[0, 2, 6, 7, 8, 9\], 
+    /// - 10 -> \[0, 2, 6, 7, 8, 9, 10\]
+    /// ```ignore
+    /// Example Tree:
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    /// 
+    /// More technical details:
+    /// 
+    /// Because this operation transforms the iterator into a StreamingIterator,
+    /// the slices cannot be saved and used across loop iterations, as the slice 
+    /// points to internal iterator memory and is altered with the .next() call. 
+    /// Each slice must be converted into a Vec by the caller to save 
+    /// them for later. This operation will incur a performance penalty 
+    /// and this library does not assume you want that performance penalty.
+    /// 
+    /// Since this iterator is no longer a Rust Iterator, for loops will
+    /// no longer work. See details on how to work around this in the 
+    /// [streaming-iterator](https://crates.io/crates/streaming-iterator) crate.
+    /// ```ignore
+    /// // Example usage:
+    /// use streaming_iterator::StreamingIterator;
+    /// use tree_iterators_rs::{
+    ///     prelude::*,
+    ///     examples::create_example_tree
+    /// };
+    /// 
+    /// let root = create_example_tree();
+    /// let mut result = String::new();
+    /// root.your_chosen_iterator_method()
+    ///     .attach_ancestors()
+    ///     .filter(|slice| 
+    ///         slice.iter().all(|value| **value % 2 == 0)
+    ///     )
+    ///     .map(|slice| slice[slice.len() - 1])
+    ///     .for_each(|value| {
+    ///         result.push(' ');
+    ///         result.push_str(&value.to_string())
+    ///     });
+    ///
+    /// println!("{}", result);
+    /// ```
+    fn attach_ancestors(self) -> impl AncestorsIteratorMut<Item = [Self::Item]>;
+}
+
+pub trait LeavesIterator : Iterator {}
+pub trait AncestorsIterator : StreamingIterator {}
+pub trait AncestorsIteratorMut : StreamingIteratorMut {}
+
 /// Helper type to define the BinaryTreeNode's
 /// Children iterator type.
 pub (crate) type BinaryChildren<T> = FlatMap<
@@ -151,7 +407,7 @@ pub trait OwnedBinaryTreeNode
     ///           10
     /// ```
     /// 
-    fn bfs(self) -> OwnedBinaryBFSIterator<Self> {
+    fn bfs(self) -> impl TreeIteratorMut<Item = Self::OwnedValue> {
         OwnedBinaryBFSIterator::new(self)
     }
 
@@ -183,7 +439,7 @@ pub trait OwnedBinaryTreeNode
     ///           10
     /// ```
     /// 
-    fn dfs_preorder(self) -> OwnedBinaryDFSPreorderIterator<Self> {
+    fn dfs_preorder(self) -> impl TreeIteratorMut<Item = Self::OwnedValue> {
         OwnedBinaryDFSPreorderIterator::new(self)
     }
 
@@ -216,7 +472,7 @@ pub trait OwnedBinaryTreeNode
     ///           10
     /// ```
     /// 
-    fn dfs_inorder(self) -> OwnedDFSInorderIterator<Self> {
+    fn dfs_inorder(self) -> impl TreeIteratorMut<Item = Self::OwnedValue> {
         OwnedDFSInorderIterator::new(self)
     }
 
@@ -252,7 +508,7 @@ pub trait OwnedBinaryTreeNode
     /// This traversal type guarantees that getChildren() will only be 
     /// called once per node of the tree.
     ///
-    fn dfs_postorder(self) -> OwnedBinaryDFSPostorderIterator<Self> {
+    fn dfs_postorder(self) -> impl TreeIteratorMut<Item = Self::OwnedValue> {
         OwnedBinaryDFSPostorderIterator::new(self)
     }
 }
@@ -302,7 +558,7 @@ pub trait OwnedTreeNode
     ///           10
     /// ```
     /// 
-    fn bfs(self) -> OwnedBFSIterator<Self> {
+    fn bfs(self) -> impl TreeIteratorMut<Item = Self::OwnedValue> {
         OwnedBFSIterator::new(self)
     }
 
@@ -334,7 +590,7 @@ pub trait OwnedTreeNode
     ///           10
     /// ```
    /// 
-    fn dfs_preorder(self) -> OwnedDFSPreorderIterator<Self> {
+    fn dfs_preorder(self) -> impl TreeIteratorMut<Item = Self::OwnedValue> {
         OwnedDFSPreorderIterator::new(self)
     }
 
@@ -370,7 +626,7 @@ pub trait OwnedTreeNode
     /// This traversal type guarantees that getChildren() will only be 
     /// called once per node of the tree.
     ///
-    fn dfs_postorder(self) -> OwnedDFSPostorderIterator<Self> {
+    fn dfs_postorder(self) -> impl TreeIteratorMut<Item = Self::OwnedValue> {
         OwnedDFSPostorderIterator::new(self)
     }
 }
@@ -430,7 +686,7 @@ pub trait MutBorrowedBinaryTreeNode<'a>
     ///           10
     /// ```
     /// 
-    fn bfs_iter_mut(&'a mut self) -> MutBorrowedBinaryBFSIterator<'a, Self> {
+    fn bfs_iter_mut(&'a mut self) -> impl TreeIteratorMut<Item = Self::MutBorrowedValue> {
         MutBorrowedBinaryBFSIterator::new(self)
     }
 
@@ -462,7 +718,7 @@ pub trait MutBorrowedBinaryTreeNode<'a>
     ///           10
     /// ```
     /// 
-    fn dfs_preorder_iter_mut(&'a mut self) -> MutBorrowedBinaryDFSPreorderIterator<'a, Self> {
+    fn dfs_preorder_iter_mut(&'a mut self) -> impl TreeIteratorMut<Item = Self::MutBorrowedValue> {
         MutBorrowedBinaryDFSPreorderIterator::new(self)
     }
 
@@ -495,7 +751,7 @@ pub trait MutBorrowedBinaryTreeNode<'a>
     ///           10
     /// ```
     /// 
-    fn dfs_inorder_iter_mut(&'a mut self) -> MutBorrowedDFSInorderIterator<Self> {
+    fn dfs_inorder_iter_mut(&'a mut self) -> impl TreeIteratorMut<Item = Self::MutBorrowedValue> {
         MutBorrowedDFSInorderIterator::new(self)
     }
 
@@ -531,7 +787,7 @@ pub trait MutBorrowedBinaryTreeNode<'a>
     /// This traversal type guarantees that getChildren() will only be 
     /// called once per node of the tree.
     ///
-    fn dfs_postorder_iter_mut(&'a mut self) -> MutBorrowedBinaryDFSPostorderIterator<'a, Self> {
+    fn dfs_postorder_iter_mut(&'a mut self) -> impl TreeIteratorMut<Item = Self::MutBorrowedValue> {
         MutBorrowedBinaryDFSPostorderIterator::new(self)
     }
 }
@@ -583,7 +839,7 @@ pub trait MutBorrowedTreeNode<'a>
     ///           10
     /// ```
     /// 
-    fn bfs_iter_mut(&'a mut self) -> MutBorrowedBFSIterator<Self> {
+    fn bfs_iter_mut(&'a mut self) -> impl TreeIteratorMut<Item = Self::MutBorrowedValue> {
         MutBorrowedBFSIterator::new(self)
     }
 
@@ -615,7 +871,7 @@ pub trait MutBorrowedTreeNode<'a>
     ///           10
     /// ```
    /// 
-    fn dfs_preorder_iter_mut(&'a mut self) -> MutBorrowedDFSPreorderIterator<'a, Self> {
+    fn dfs_preorder_iter_mut(&'a mut self) -> impl TreeIteratorMut<Item = Self::MutBorrowedValue> {
         MutBorrowedDFSPreorderIterator::new(self)
     }
 
@@ -651,7 +907,7 @@ pub trait MutBorrowedTreeNode<'a>
     /// This traversal type guarantees that getChildren() will only be 
     /// called once per node of the tree.
     ///
-    fn dfs_postorder_iter_mut(&'a mut self) -> MutBorrowedDFSPostorderIterator<'a, Self> {
+    fn dfs_postorder_iter_mut(&'a mut self) -> impl TreeIteratorMut<Item = Self::MutBorrowedValue> {
         MutBorrowedDFSPostorderIterator::new(self)
     }
 }
@@ -711,7 +967,7 @@ pub trait BorrowedBinaryTreeNode<'a>
     ///           10
     /// ```
     /// 
-    fn bfs_iter(&'a self) -> BorrowedBinaryBFSIterator<'a, Self> {
+    fn bfs_iter(&'a self) -> impl TreeIterator<Item = Self::BorrowedValue> {
         BorrowedBinaryBFSIterator::new(self)
     }
 
@@ -743,7 +999,7 @@ pub trait BorrowedBinaryTreeNode<'a>
     ///           10
     /// ```
     /// 
-    fn dfs_preorder_iter(&'a self) -> BorrowedBinaryDFSPreorderIterator<'a, Self> {
+    fn dfs_preorder_iter(&'a self) -> impl TreeIterator<Item = Self::BorrowedValue> {
         BorrowedBinaryDFSPreorderIterator::new(self)
     }
 
@@ -776,7 +1032,7 @@ pub trait BorrowedBinaryTreeNode<'a>
     ///           10
     /// ```
     /// 
-    fn dfs_inorder_iter(&'a self) -> BorrowedDFSInorderIterator<Self> {
+    fn dfs_inorder_iter(&'a self) -> impl TreeIterator<Item = Self::BorrowedValue> {
         BorrowedDFSInorderIterator::new(self)
     }
 
@@ -812,7 +1068,7 @@ pub trait BorrowedBinaryTreeNode<'a>
     /// This traversal type guarantees that getChildren() will only be 
     /// called once per node of the tree.
     ///
-    fn dfs_postorder_iter(&'a self) -> BorrowedBinaryDFSPostorderIterator<'a, Self> {
+    fn dfs_postorder_iter(&'a self) -> impl TreeIterator<Item = Self::BorrowedValue> {
         BorrowedBinaryDFSPostorderIterator::new(self)
     }
 }
@@ -863,7 +1119,7 @@ pub trait BorrowedTreeNode<'a>
     ///           10
     /// ```
     /// 
-    fn bfs_iter(&'a self) -> BorrowedBFSIterator<Self> {
+    fn bfs_iter(&'a self) -> impl TreeIterator<Item = Self::BorrowedValue> {
         BorrowedBFSIterator::new(self)
     }
 
@@ -895,7 +1151,7 @@ pub trait BorrowedTreeNode<'a>
     ///           10
     /// ```
    /// 
-    fn dfs_preorder_iter(&'a self) -> BorrowedDFSPreorderIterator<'a, Self> {
+    fn dfs_preorder_iter(&'a self) -> impl TreeIterator<Item = Self::BorrowedValue> {
         BorrowedDFSPreorderIterator::new(self)
     }
 
@@ -931,7 +1187,7 @@ pub trait BorrowedTreeNode<'a>
     /// This traversal type guarantees that getChildren() will only be 
     /// called once per node of the tree.
     ///
-    fn dfs_postorder_iter(&'a self) -> BorrowedDFSPostorderIterator<'a, Self> {
+    fn dfs_postorder_iter(&'a self) -> impl TreeIterator<Item = Self::BorrowedValue> {
         BorrowedDFSPostorderIterator::new(self)
     }
 }
@@ -1128,7 +1384,7 @@ pub (crate) mod tests {
         fn dfs_preorder_attach_ancestors_works() {
             let expected = get_expected_order_dfs_preorder();
 
-            for test_tree in create_trees_for_testing() {
+            for mut test_tree in create_trees_for_testing() {
                 let mut i = 0;
                 let mut iter_with_metadata = test_tree.dfs_preorder_iter().attach_ancestors();
                 while let Some(value) = iter_with_metadata.next() {
@@ -1140,9 +1396,8 @@ pub (crate) mod tests {
                     i += 1;
                 }
                 assert_eq!(expected.len(), i);
-            }
+                drop(iter_with_metadata);
 
-            for mut test_tree in create_trees_for_testing() {
                 let mut i = 0;
                 let mut iter_with_metadata = test_tree.dfs_preorder_iter_mut().attach_ancestors();
                 while let Some(value) = iter_with_metadata.next() {
@@ -1154,9 +1409,8 @@ pub (crate) mod tests {
                     i += 1;
                 }
                 assert_eq!(expected.len(), i);
-            }
+                drop(iter_with_metadata);
 
-            for test_tree in create_trees_for_testing() {
                 let mut i = 0;
                 let mut iter_with_metadata = test_tree.dfs_preorder().attach_ancestors();
                 while let Some(value) = iter_with_metadata.next() {
@@ -1355,7 +1609,7 @@ pub (crate) mod tests {
         fn dfs_postorder_attach_ancestors_works() {
             let expected = get_expected_order_dfs_postorder();
     
-            for test_tree in create_trees_for_testing() {
+            for mut test_tree in create_trees_for_testing() {
                 let mut i = 0;
                 let mut iter_with_metadata = test_tree.dfs_postorder_iter().attach_ancestors();
                 while let Some(value) = iter_with_metadata.next() {
@@ -1367,9 +1621,8 @@ pub (crate) mod tests {
                     i += 1;
                 }
                 assert_eq!(expected.len(), i);
-            }
-    
-            for mut test_tree in create_trees_for_testing() {
+                drop(iter_with_metadata);
+
                 let mut i = 0;
                 let mut iter_with_metadata = test_tree.dfs_postorder_iter_mut().attach_ancestors();
                 while let Some(value) = iter_with_metadata.next() {
@@ -1381,9 +1634,8 @@ pub (crate) mod tests {
                     i += 1;
                 }
                 assert_eq!(expected.len(), i);
-            }
-    
-            for test_tree in create_trees_for_testing() {
+                drop(iter_with_metadata);
+
                 let mut i = 0;
                 let mut iter_with_metadata = test_tree.dfs_postorder().attach_ancestors();
                 while let Some(value) = iter_with_metadata.next() {
@@ -1493,6 +1745,7 @@ pub (crate) mod tests {
                     i += 1;
                 }
                 assert_eq!(expected.len(), i);
+                drop(iter_with_metadata);
 
                 let mut i = 0;
                 let mut iter_with_metadata = test_tree.bfs_iter_mut().attach_ancestors();
@@ -1505,6 +1758,7 @@ pub (crate) mod tests {
                     i += 1;
                 }
                 assert_eq!(expected.len(), i);
+                drop(iter_with_metadata);
 
                 let mut i = 0;
                 let mut iter_with_metadata = test_tree.bfs().attach_ancestors();

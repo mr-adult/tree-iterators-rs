@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 use crate::prelude::{
     MutBorrowedTreeNode, 
     BinaryChildren, 
-    MutBorrowedBinaryTreeNode
+    MutBorrowedBinaryTreeNode, LeavesIterator
 };
 
 use super::dfs_postorder_leaves_next;
@@ -26,6 +26,10 @@ impl<'a, Node, Iter> Iterator for MutBorrowedLeavesIterator<'a, Node, Iter>
     dfs_postorder_leaves_next!(get_value_and_children_iter_mut);
 }
 
+impl<'a, Node, Iter> LeavesIterator for MutBorrowedLeavesIterator<'a, Node, Iter> 
+    where Node: MutBorrowedTreeNode<'a>,
+        Iter: Iterator<Item = &'a mut Node> {}
+
 pub struct MutBorrowedBinaryLeavesIterator<'a, Node, Iter>
     where Node: MutBorrowedBinaryTreeNode<'a>,
         Iter: Iterator<Item = &'a mut Node> {
@@ -44,3 +48,7 @@ impl<'a, Node, Iter> Iterator for MutBorrowedBinaryLeavesIterator<'a, Node, Iter
     
     dfs_postorder_leaves_next!(get_value_and_children_iter_mut);
 }
+
+impl<'a, Node, Iter> LeavesIterator for MutBorrowedBinaryLeavesIterator<'a, Node, Iter> 
+    where Node: MutBorrowedBinaryTreeNode<'a>,
+        Iter: Iterator<Item = &'a mut Node> {}

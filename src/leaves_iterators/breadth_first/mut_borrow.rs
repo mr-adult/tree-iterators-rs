@@ -3,7 +3,7 @@ use alloc::collections::VecDeque;
 use crate::prelude::{
     MutBorrowedTreeNode, 
     BinaryChildren, 
-    MutBorrowedBinaryTreeNode
+    MutBorrowedBinaryTreeNode, LeavesIterator
 };
 
 use core::iter::Peekable;
@@ -34,6 +34,9 @@ impl<'a, Node> Iterator for MutBorrowedLeavesIterator<'a, Node>
     next!();
 }
 
+impl<'a, Node> LeavesIterator for MutBorrowedLeavesIterator<'a, Node> 
+    where Node: MutBorrowedTreeNode<'a> {}
+
 pub struct MutBorrowedBinaryLeavesIterator<'a, Node, Iter>
     where Node: MutBorrowedBinaryTreeNode<'a>,
         Iter: Iterator<Item = &'a mut Node> {
@@ -57,3 +60,7 @@ impl<'a, Node, Iter> Iterator for MutBorrowedBinaryLeavesIterator<'a, Node, Iter
     type Item = Node::MutBorrowedValue;
     next!();
 }
+
+impl<'a, Node, Iter> LeavesIterator for MutBorrowedBinaryLeavesIterator<'a, Node, Iter> 
+    where Node: MutBorrowedBinaryTreeNode<'a>,
+        Iter: Iterator<Item = &'a mut Node> {}

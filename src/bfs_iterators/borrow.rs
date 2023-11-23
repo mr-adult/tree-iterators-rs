@@ -8,7 +8,10 @@ use crate::{
     prelude::{
         BorrowedTreeNode, 
         BinaryChildren, 
-        BorrowedBinaryTreeNode
+        BorrowedBinaryTreeNode, 
+        TreeIterator, 
+        LeavesIterator, 
+        AncestorsIterator
     }, 
     leaves_iterators::breadth_first::borrow::{
         BorrowedLeavesIterator, 
@@ -39,34 +42,12 @@ impl<'a, Node> BorrowedBFSIterator<'a, Node>
             traversal_queue: VecDeque::new() 
         }
     }
+}
 
-    /// This method converts the current Breadth First Search iterator into 
-    /// an iterator that will yield only the leaves of the tree. Iteration
-    /// still proceeds in a Breadth First Search order.
-    /// 
-    /// A leaf is defined as:
-    /// 
-    /// Any tree node that has no children. Given a tree of the following shape, 
-    /// this iterator would yield values in the following order:
-    /// 3, 4, 5, 10
-    /// 
-    /// ```ignore
-    ///        0
-    ///       / \
-    ///      1   2
-    ///     / \ / \
-    ///    3  4 5  6
-    ///           /
-    ///          7
-    ///           \
-    ///            8
-    ///           /
-    ///          9
-    ///           \
-    ///           10
-    /// ```
-    /// 
-    pub fn leaves(self) -> BorrowedLeavesIterator<'a, Node> {
+impl<'a, Node> TreeIterator for BorrowedBFSIterator<'a, Node> 
+    where Node: BorrowedTreeNode<'a> {
+        
+    fn leaves(self) -> impl LeavesIterator<Item = Node::BorrowedValue> {
         BorrowedLeavesIterator {
             root: self.root, 
             old_traversal_queue: self.traversal_queue,
@@ -74,61 +55,7 @@ impl<'a, Node> BorrowedBFSIterator<'a, Node>
         }
     }
 
-    /// This method retrieves a streaming iterator that can be used to perform
-    /// Breadth First searches of a tree. This converts the queue-based
-    /// iterator into an iterative deepening iterator.
-    /// 
-    /// A Breadth First Search (BFS) is defined as:
-    /// 
-    /// A tree traversal that involves breadth-first searching a tree 
-    /// from the top down. Given a tree of the following shape, this 
-    /// traversal type would yield slices in the following order:
-    /// \[0\], 
-    /// \[0, 1\], 
-    /// \[0, 2\], 
-    /// \[0, 1, 3\], 
-    /// \[0, 1, 4\], 
-    /// \[0, 2, 5\], 
-    /// \[0, 2, 5, 6\], 
-    /// \[0, 2, 5, 6, 7\], 
-    /// \[0, 2, 5, 6, 7, 8\], 
-    /// \[0, 2, 5, 6, 7, 8, 9\], 
-    /// \[0, 2, 5, 6, 7, 8, 9, 10\], 
-    /// 
-    /// In this traversal, we scan each level of the tree from left to
-    /// right before going down to the next level.
-    /// ```ignore
-    ///        0
-    ///       / \
-    ///      1   2
-    ///     / \ / \
-    ///    3  4 5  6
-    ///           /
-    ///          7
-    ///           \
-    ///            8
-    ///           /
-    ///          9
-    ///           \
-    ///           10
-    /// ```
-    /// 
-    /// More technical details:
-    /// 
-    /// This method attaches the ancestors of the node to the iterator.
-    /// This operation transforms the iterator into a StreamingIterator,
-    /// meaning that the values can no longer be directly saved and used 
-    /// across loop iterations. The references to the nodes themselves 
-    /// are still valid across the entirety of the loop, but you must 
-    /// extract them from their containing slice to reuse them. This
-    /// will incur a performance penalty that this library does not
-    /// assume you want.
-    /// 
-    /// Since this iterator is no longer a Rust Iterator, for loops will
-    /// no longer work. See details on how to work around this in the 
-    /// [streaming-iterator](https://crates.io/crates/streaming-iterator) crate.
-    /// 
-    pub fn attach_ancestors(self) -> BorrowedBFSIteratorWithAncestors<'a, Node> {
+    fn attach_ancestors(self) -> impl AncestorsIterator<Item = [Node::BorrowedValue]> {
         match self.root {
             None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => BorrowedBFSIteratorWithAncestors::new(root)
@@ -180,6 +107,9 @@ impl<'a, Node> BorrowedBFSIteratorWithAncestors<'a, Node>
     bfs_advance_iterator!(get_value_and_children_iter);
 }
 
+impl<'a, Node> AncestorsIterator for BorrowedBFSIteratorWithAncestors<'a, Node>
+    where Node: BorrowedTreeNode<'a> {}
+
 impl<'a, Node> StreamingIterator for BorrowedBFSIteratorWithAncestors<'a, Node> 
     where Node: BorrowedTreeNode<'a> {
 
@@ -204,101 +134,6 @@ impl<'a, Node> BorrowedBinaryBFSIterator<'a, Node>
             traversal_queue: VecDeque::new() 
         }
     }
-
-    /// This method converts the current Breadth First Search iterator into 
-    /// an iterator that will yield only the leaves of the tree. Iteration
-    /// still proceeds in a Breadth First Search order.
-    /// 
-    /// A leaf is defined as:
-    /// 
-    /// Any tree node that has no children. Given a tree of the following shape, 
-    /// this iterator would yield values in the following order:
-    /// 3, 4, 5, 10
-    /// 
-    /// ```ignore
-    ///        0
-    ///       / \
-    ///      1   2
-    ///     / \ / \
-    ///    3  4 5  6
-    ///           /
-    ///          7
-    ///           \
-    ///            8
-    ///           /
-    ///          9
-    ///           \
-    ///           10
-    /// ```
-    /// 
-    pub fn leaves(self) -> BorrowedBinaryLeavesIterator<'a, Node> {
-        BorrowedBinaryLeavesIterator { 
-            root: self.root, 
-            old_traversal_queue: self.traversal_queue,
-            new_traversal_queue: VecDeque::new(),
-        }
-    }
-
-    /// This method retrieves a streaming iterator that can be used to perform
-    /// Breadth First searches of a tree. This converts the queue-based
-    /// iterator into an iterative deepening iterator.
-    /// 
-    /// A Breadth First Search (BFS) is defined as:
-    /// 
-    /// A tree traversal that involves breadth-first searching a tree 
-    /// from the top down. Given a tree of the following shape, this 
-    /// traversal type would yield slices in the following order:
-    /// \[0\], 
-    /// \[0, 1\], 
-    /// \[0, 2\], 
-    /// \[0, 1, 3\], 
-    /// \[0, 1, 4\], 
-    /// \[0, 2, 5\], 
-    /// \[0, 2, 5, 6\], 
-    /// \[0, 2, 5, 6, 7\], 
-    /// \[0, 2, 5, 6, 7, 8\], 
-    /// \[0, 2, 5, 6, 7, 8, 9\], 
-    /// \[0, 2, 5, 6, 7, 8, 9, 10\], 
-    /// 
-    /// In this traversal, we scan each level of the tree from left to
-    /// right before going down to the next level.
-    /// ```ignore
-    ///        0
-    ///       / \
-    ///      1   2
-    ///     / \ / \
-    ///    3  4 5  6
-    ///           /
-    ///          7
-    ///           \
-    ///            8
-    ///           /
-    ///          9
-    ///           \
-    ///           10
-    /// ```
-    /// 
-    /// More technical details:
-    /// 
-    /// This method attaches the ancestors of the node to the iterator.
-    /// This operation transforms the iterator into a StreamingIterator,
-    /// meaning that the values can no longer be directly saved and used 
-    /// across loop iterations. The references to the nodes themselves 
-    /// are still valid across the entirety of the loop, but you must 
-    /// extract them from their containing slice to reuse them. This
-    /// will incur a performance penalty that this library does not
-    /// assume you want.
-    /// 
-    /// Since this iterator is no longer a Rust Iterator, for loops will
-    /// no longer work. See details on how to work around this in the 
-    /// [streaming-iterator](https://crates.io/crates/streaming-iterator) crate.
-    /// 
-    pub fn attach_ancestors(self) -> BorrowedBinaryBFSIteratorWithAncestors<'a, Node> {
-        match self.root {
-            None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
-            Some(root) => BorrowedBinaryBFSIteratorWithAncestors::new(root)
-        }
-    }
 }
 
 impl<'a, Node> Iterator for BorrowedBinaryBFSIterator<'a, Node> 
@@ -306,6 +141,25 @@ impl<'a, Node> Iterator for BorrowedBinaryBFSIterator<'a, Node>
 
     type Item = Node::BorrowedValue;
     bfs_next!(get_value_and_children_iter);
+}
+
+impl<'a, Node> TreeIterator for BorrowedBinaryBFSIterator<'a, Node> 
+    where Node: BorrowedBinaryTreeNode<'a> {
+
+    fn leaves(self) -> impl LeavesIterator<Item = Self::Item> {
+        BorrowedBinaryLeavesIterator { 
+            root: self.root, 
+            old_traversal_queue: self.traversal_queue,
+            new_traversal_queue: VecDeque::new(),
+        }
+    }
+
+    fn attach_ancestors(self) -> impl AncestorsIterator<Item = [Node::BorrowedValue]> {
+        match self.root {
+            None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
+            Some(root) => BorrowedBinaryBFSIteratorWithAncestors::new(root)
+        }
+    }
 }
 
 pub struct BorrowedBinaryBFSIteratorWithAncestors<'a, Node> 
@@ -352,3 +206,6 @@ impl<'a, Node> StreamingIterator for BorrowedBinaryBFSIteratorWithAncestors<'a, 
 
     bfs_streaming_iterator_impl!(get_value_and_children_iter);
 }
+
+impl<'a, Node> AncestorsIterator for BorrowedBinaryBFSIteratorWithAncestors<'a, Node> 
+    where Node: BorrowedBinaryTreeNode<'a> {}
