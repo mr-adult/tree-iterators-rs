@@ -67,7 +67,8 @@ pub trait TreeIterator: Iterator {
     ///
     /// A leaf is defined as: Any tree node that has no children. Given a tree
     /// of the following shape, this iterator would always yield values in the
-    /// following order (regardless of iteration type):
+    /// following order (regardless of iteration type, but this is not always
+    /// the case):
     /// 3, 4, 5, 10
     ///
     /// ```ignore
@@ -94,7 +95,7 @@ pub trait TreeIterator: Iterator {
     /// };
     ///
     /// let root = create_example_binary_tree();
-    /// for leaf in root.bfs().leaves() {
+    /// for leaf in root.bfs_iter().leaves() {
     ///     println!("{}", leaf);
     /// }
     /// ```
@@ -108,8 +109,9 @@ pub trait TreeIterator: Iterator {
     /// into a streaming iterator.
     ///
     /// For Breadth First Search iterators, this converts the queue-based
-    /// iterator into an iterative deepening iterator. This can cause performance
-    /// degredation, but is impossible to avoid while providing this data.
+    /// iterator into an iterative deepening iterator. This can have performance
+    /// impacts, as iterative deepening visits many nodes in the tree more 
+    /// than once.
     ///
     /// The order in which elements are yielded remains unchanged, but
     /// each will now be yielded with its ancestor stack attached. That
@@ -148,9 +150,10 @@ pub trait TreeIterator: Iterator {
     /// Because this operation transforms the iterator into a StreamingIterator,
     /// the slices cannot be saved and used across loop iterations, as the slice
     /// points to internal iterator memory and is altered with the .next() call.
-    /// Each slice must be converted into a Vec by the caller to save
-    /// them for later. This operation will incur a performance penalty
-    /// and this library does not assume you want that performance penalty.
+    /// Each slice must be collected into a Vec or other data structure by the 
+    /// caller to save them for later. This operation will incur a performance 
+    /// penalty and this library does not assume you want that performance penalty
+    /// by default.
     ///
     /// Since this iterator is no longer a Rust Iterator, for loops will
     /// no longer work. See details on how to work around this in the
@@ -193,7 +196,8 @@ pub trait TreeIteratorMut: Iterator {
     ///
     /// A leaf is defined as: Any tree node that has no children. Given a tree
     /// of the following shape, this iterator would always yield values in the
-    /// following order (regardless of iteration type):
+    /// following order (regardless of iteration type, but this is not always
+    /// the case):
     /// 3, 4, 5, 10
     ///
     /// ```ignore
@@ -212,7 +216,7 @@ pub trait TreeIteratorMut: Iterator {
     ///           10
     /// ```
     ///
-    /// ```ignore
+    /// ```rust
     /// // Example usage:
     /// use tree_iterators_rs::{
     ///     prelude::*,
@@ -220,7 +224,7 @@ pub trait TreeIteratorMut: Iterator {
     /// };
     ///
     /// let root = create_example_binary_tree();
-    /// for leaf in root.your_chosen_iterator_method().leaves() {
+    /// for leaf in root.bfs().leaves() {
     ///     println!("{}", leaf);
     /// }
     /// ```
@@ -234,8 +238,9 @@ pub trait TreeIteratorMut: Iterator {
     /// into a streaming iterator.
     ///
     /// For Breadth First Search iterators, this converts the queue-based
-    /// iterator into an iterative deepening iterator. This can have performanc
-    /// impacts.
+    /// iterator into an iterative deepening iterator. This can have performance
+    /// impacts, as iterative deepening visits many nodes in the tree more 
+    /// than once.
     ///
     /// The order in which elements are yielded remains unchanged, but
     /// each will now be yielded with its ancestor stack attached. That
@@ -274,27 +279,30 @@ pub trait TreeIteratorMut: Iterator {
     /// Because this operation transforms the iterator into a StreamingIterator,
     /// the slices cannot be saved and used across loop iterations, as the slice
     /// points to internal iterator memory and is altered with the .next() call.
-    /// Each slice must be converted into a Vec by the caller to save
-    /// them for later. This operation will incur a performance penalty
-    /// and this library does not assume you want that performance penalty.
+    /// Each slice must be collected into a Vec or other data structure by the 
+    /// caller to save them for later. This operation will incur a performance 
+    /// penalty and this library does not assume you want that performance penalty
+    /// by default.
     ///
     /// Since this iterator is no longer a Rust Iterator, for loops will
     /// no longer work. See details on how to work around this in the
     /// [streaming-iterator](https://crates.io/crates/streaming-iterator) crate.
-    /// ```ignore
+    /// ```rust
     /// // Example usage:
     /// use streaming_iterator::StreamingIterator;
     /// use tree_iterators_rs::{
     ///     prelude::*,
-    ///     examples::create_example_tree
+    ///     examples::create_example_binary_tree
     /// };
     ///
-    /// let root = create_example_tree();
+    /// let root = create_example_binary_tree();
     /// let mut result = String::new();
-    /// root.your_chosen_iterator_method()
+    ///
+    /// // any iterator method can be swapped in here
+    /// root.dfs_preorder()
     ///     .attach_ancestors()
     ///     .filter(|slice|
-    ///         slice.iter().all(|value| **value % 2 == 0)
+    ///         slice.iter().all(|value| *value % 2 == 0)
     ///     )
     ///     .map(|slice| slice[slice.len() - 1])
     ///     .for_each(|value| {
@@ -307,24 +315,110 @@ pub trait TreeIteratorMut: Iterator {
     fn attach_ancestors(self) -> impl AncestorsIteratorMut<Item = [Self::Item]>;
 }
 
-/// This trait is a placeholder to allow easy addition of features to the leaves iterator in the future. It simply wraps Iterator.
+/// This trait is a placeholder to allow easy addition of features to the leaves iterator in the future.
 /// For now it simply wraps Iterator
 pub trait LeavesIterator: Iterator {}
+
+/// this trait provides a consistent trait to simplify this library's public interface and documentation.
 pub trait AncestorsIterator: StreamingIterator {
+    /// This method converts the current iterator into
+    /// an iterator that will yield only the leaves of the tree. Iteration
+    /// still proceeds in either a breadth first search (if called on a
+    /// breadth first iterator) or depth first post-order search (if called
+    /// on a depth first pre-, in-, or post-order iterator). This method
+    /// is safe to call at any point during iteration and will never panic.
+    ///
+    /// A leaf is defined as: Any tree node that has no children. Given a tree
+    /// of the following shape, this iterator would always yield values in the
+    /// following order (regardless of iteration type, but this is not always
+    /// the case):
+    /// \[0, 1, 3\], \[0, 1, 4\], \[0, 2, 5\], \[0, 2, 6, 7, 8, 9, 10\]
+    ///
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    ///
+    /// ```rust
+    /// // Example usage:
+    /// use tree_iterators_rs::{
+    ///     prelude::*,
+    ///     examples::create_example_binary_tree
+    /// };
+    ///
+    /// let root = create_example_binary_tree();
+    /// let leaves_streaming_iter = root.dfs_postorder().attach_ancestors().leaves();
+    /// while let Some(leaf_with_ancestors) = leaves_streaming_iter.next() {
+    ///     println!("{:?}", leaf_with_ancestors);
+    /// }
+    /// ```
     fn leaves(self) -> impl AncestorsLeavesIterator<Item = Self::Item>;
 }
 
 /// this trait provides a consistent trait to simplify this library's public interface and documentation.
 pub trait AncestorsIteratorMut: StreamingIteratorMut {
+    /// This method converts the current iterator into
+    /// an iterator that will yield only the leaves of the tree. Iteration
+    /// still proceeds in either a breadth first search (if called on a
+    /// breadth first iterator) or depth first post-order search (if called
+    /// on a depth first pre-, in-, or post-order iterator). This method
+    /// is safe to call at any point during iteration and will never panic.
+    ///
+    /// A leaf is defined as: Any tree node that has no children. Given a tree
+    /// of the following shape, this iterator would always yield values in the
+    /// following order (regardless of iteration type, but this is not always
+    /// the case):
+    /// \[0, 1, 3\], \[0, 1, 4\], \[0, 2, 5\], \[0, 2, 6, 7, 8, 9, 10\]
+    ///
+    /// ```ignore
+    ///        0
+    ///       / \
+    ///      1   2
+    ///     / \ / \
+    ///    3  4 5  6
+    ///           /
+    ///          7
+    ///           \
+    ///            8
+    ///           /
+    ///          9
+    ///           \
+    ///           10
+    /// ```
+    ///
+    /// ```rust
+    /// // Example usage:
+    /// use tree_iterators_rs::{
+    ///     prelude::*,
+    ///     examples::create_example_binary_tree
+    /// };
+    ///
+    /// let root = create_example_binary_tree();
+    /// let leaves_streaming_iter = root.dfs_postorder().attach_ancestors().leaves();
+    /// while let Some(leaf_with_ancestors) = leaves_streaming_iter.next() {
+    ///     println!("{:?}", leaf_with_ancestors);
+    /// }
+    /// ```
     fn leaves(self) -> impl AncestorsLeavesIteratorMut<Item = Self::Item>;
 }
 
-/// this trait provides a consistent trait to simplify this library's public interface and documentation.
+/// this trait is a placeholder trait in which new functionality may be added.
 /// For now it simply wraps StreamingIterator.
 pub trait AncestorsLeavesIterator: StreamingIterator {}
 
-/// This trait provides a consistent trait to simplify this library's public interface and documentation.
-/// For now it simply wraps StreamingIterator.
+/// this trait is a placeholder trait in which new functionality may be added.
+/// For now it simply wraps StreamingIteratorMut.
 pub trait AncestorsLeavesIteratorMut: StreamingIteratorMut {}
 
 /// Helper type to define the BinaryTreeNode's
@@ -802,10 +896,7 @@ where
     ) -> (Self::MutBorrowedValue, Option<Self::MutBorrowedChildren>);
 
     /// This method retrieves an iterator that can be used to perform
-    /// Breadth First (Queue - specifically VecDeque-based) searches of a tree. If performance is
-    /// not a serious concern, a Breadth First (iterative deepening) search
-    /// (referred to as BFS in this library) should be preferred to make
-    /// debugging easier.
+    /// Breadth First (VecDeque-based) searches of a tree.
     ///
     /// A Breadth First Search (BFS) is defined as:
     ///
@@ -1090,10 +1181,7 @@ where
     ) -> (Self::BorrowedValue, Option<Self::BorrowedChildren>);
 
     /// This method retrieves an iterator that can be used to perform
-    /// Breadth First (Queue - specifically VecDeque-based) searches of a tree. If performance is
-    /// not a serious concern, a Breadth First (iterative deepening) search
-    /// (referred to as BFS in this library) should be preferred to make
-    /// debugging easier.
+    /// Breadth First (Queue - specifically VecDeque-based) searches of a tree.
     ///
     /// A Breadth First Search (BFS) is defined as:
     ///
