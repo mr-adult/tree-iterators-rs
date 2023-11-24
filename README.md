@@ -23,7 +23,7 @@ The other benefit of this library is its tight integration with the rest of Rust
 
 ## Getting Started
 
-The easiest way to get started is to simply add this crate as a dependency and add a using statement to pull in its prelude (`use tree_iterators_rs::prelude::*;`). You can then create your data structure using the BinaryTreeNode or TreeNode structs provided and build on top of it. These structs provide default implementations of all functionality in this crate. The methods that come attached to these structs include the following (all of which have open source code that can be found in [this file](https://github.com/mr-adult/tree-iterators-rs/blob/main/src/prelude.rs)):
+The easiest way to get started is to simply add this crate as a dependency and add a using statement to pull in its prelude (`use tree_iterators_rs::prelude::*;`). You can then create your data structure using the BinaryTreeNode or TreeNode structs provided and use their iterator implementations. These structs provide default implementations of all functionality available in this crate. The methods that come attached to these structs include the following (all of which have open source code that can be found in [this file](https://github.com/mr-adult/tree-iterators-rs/blob/main/src/prelude.rs)):
 - Owned Iterator APIs - these take ownership of the TreeNode similarly to an into_iter() call.
 	- [bfs()](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.OwnedTreeNode.html#method.bfs)
 	- [dfs_preorder()](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.OwnedTreeNode.html#method.dfs_preorder)
