@@ -1,63 +1,54 @@
-use alloc::{
-    collections::VecDeque, 
-    vec::Vec
-};
-use streaming_iterator::{
-    StreamingIterator, 
-    StreamingIteratorMut
-};
+use alloc::{collections::VecDeque, vec::Vec};
+use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
 
-use crate::{
-    prelude::{
-        OwnedTreeNode, 
-        BinaryChildren, 
-        OwnedBinaryTreeNode, 
-        TreeIteratorMut, 
-        LeavesIterator, 
-        AncestorsIterator, 
-        AncestorsIteratorMut
-    }, 
-    leaves_iterators::breadth_first::owned::{
-        OwnedBinaryLeavesIterator, 
-        OwnedLeavesIterator
-    }
-};
 use super::{
-    bfs_next, 
-    bfs_advance_iterator, 
-    bfs_streaming_iterator_impl,
-    TreeNodeVecDeque, get_mut,
+    bfs_advance_iterator, bfs_next, bfs_streaming_iterator_impl, get_mut, TreeNodeVecDeque,
+};
+use crate::{
+    leaves_iterators::{
+        ancestors_breadth_first::owned::{
+            OwnedBFSLeavesIteratorWithAncestors, OwnedBinaryBFSLeavesIteratorWithAncestors,
+        },
+        breadth_first::owned::{OwnedBinaryLeavesIterator, OwnedLeavesIterator},
+    },
+    prelude::{
+        AncestorsIteratorMut, AncestorsLeavesIteratorMut, BinaryChildren, LeavesIterator,
+        OwnedBinaryTreeNode, OwnedTreeNode, TreeIteratorMut,
+    },
 };
 
-pub struct OwnedBFSIterator<Node> 
-    where Node: OwnedTreeNode {
-
+pub struct OwnedBFSIterator<Node>
+where
+    Node: OwnedTreeNode,
+{
     root: Option<Node>,
-    traversal_queue: VecDeque<Node::OwnedChildren>
+    traversal_queue: VecDeque<Node::OwnedChildren>,
 }
 
 impl<Node> OwnedBFSIterator<Node>
-    where Node: OwnedTreeNode {
-
-    pub (crate) fn new(root: Node) -> OwnedBFSIterator<Node> {
-        OwnedBFSIterator { 
-            root: Some(root), 
-            traversal_queue: VecDeque::new() 
+where
+    Node: OwnedTreeNode,
+{
+    pub(crate) fn new(root: Node) -> OwnedBFSIterator<Node> {
+        OwnedBFSIterator {
+            root: Some(root),
+            traversal_queue: VecDeque::new(),
         }
     }
 }
 
-impl<Node> TreeIteratorMut for OwnedBFSIterator<Node> 
-    where Node: OwnedTreeNode {
-        
+impl<Node> TreeIteratorMut for OwnedBFSIterator<Node>
+where
+    Node: OwnedTreeNode,
+{
     fn leaves(self) -> impl LeavesIterator<Item = Self::Item> {
-        OwnedLeavesIterator { 
-            root: self.root, 
+        OwnedLeavesIterator {
+            root: self.root,
             old_traversal_queue: self.traversal_queue,
             new_traversal_queue: VecDeque::new(),
         }
     }
-        
+
     fn attach_ancestors(self) -> impl AncestorsIteratorMut<Item = [Node::OwnedValue]> {
         match self.root {
             None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
@@ -66,26 +57,29 @@ impl<Node> TreeIteratorMut for OwnedBFSIterator<Node>
     }
 }
 
-impl<Node> Iterator for OwnedBFSIterator<Node> 
-    where Node: OwnedTreeNode {
-
+impl<Node> Iterator for OwnedBFSIterator<Node>
+where
+    Node: OwnedTreeNode,
+{
     type Item = Node::OwnedValue;
     bfs_next!(get_value_and_children);
 }
 
-pub struct OwnedBFSIteratorWithAncestors<Node> 
-    where Node: OwnedTreeNode {
-    
-    is_root: bool,
-    item_stack: Vec<Node::OwnedValue>,
-    tree_cache: TreeNodeVecDeque<Node::OwnedValue>,
-    traversal_stack: Vec<TreeNodeVecDeque<Node::OwnedValue>>,
-    iterator_queue: VecDeque<Option<Node::OwnedChildren>>,
+pub struct OwnedBFSIteratorWithAncestors<Node>
+where
+    Node: OwnedTreeNode,
+{
+    pub(crate) is_root: bool,
+    pub(crate) item_stack: Vec<Node::OwnedValue>,
+    pub(crate) tree_cache: TreeNodeVecDeque<Node::OwnedValue>,
+    pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::OwnedValue>>,
+    pub(crate) iterator_queue: VecDeque<Option<Node::OwnedChildren>>,
 }
 
-impl<'a, Node> OwnedBFSIteratorWithAncestors<Node> 
-    where Node: OwnedTreeNode {
-
+impl<'a, Node> OwnedBFSIteratorWithAncestors<Node>
+where
+    Node: OwnedTreeNode,
+{
     fn new(root: Node) -> OwnedBFSIteratorWithAncestors<Node> {
         let (value, children) = root.get_value_and_children();
         let tree_cache = TreeNodeVecDeque {
@@ -110,50 +104,58 @@ impl<'a, Node> OwnedBFSIteratorWithAncestors<Node>
     bfs_advance_iterator!(get_value_and_children);
 }
 
-impl<'a, Node> StreamingIterator for OwnedBFSIteratorWithAncestors<Node> 
-    where Node: OwnedTreeNode {
-
+impl<'a, Node> StreamingIterator for OwnedBFSIteratorWithAncestors<Node>
+where
+    Node: OwnedTreeNode,
+{
     type Item = [Node::OwnedValue];
 
     bfs_streaming_iterator_impl!(get_value_and_children);
 }
 
-impl<'a, Node> StreamingIteratorMut for OwnedBFSIteratorWithAncestors<Node> 
-    where Node: OwnedTreeNode {
-
+impl<'a, Node> StreamingIteratorMut for OwnedBFSIteratorWithAncestors<Node>
+where
+    Node: OwnedTreeNode,
+{
     get_mut!();
 }
 
-impl<Node> AncestorsIterator for OwnedBFSIteratorWithAncestors<Node> 
-    where Node: OwnedTreeNode {}
+impl<Node> AncestorsIteratorMut for OwnedBFSIteratorWithAncestors<Node>
+where
+    Node: OwnedTreeNode,
+{
+    fn leaves(self) -> impl AncestorsLeavesIteratorMut<Item = Self::Item> {
+        OwnedBFSLeavesIteratorWithAncestors::new(self)
+    }
+}
 
-impl<Node> AncestorsIteratorMut for OwnedBFSIteratorWithAncestors<Node> 
-    where Node: OwnedTreeNode {}
-
-pub struct OwnedBinaryBFSIterator<Node> 
-    where Node: OwnedBinaryTreeNode {
-
+pub struct OwnedBinaryBFSIterator<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
     root: Option<Node>,
-    traversal_queue: VecDeque<BinaryChildren<Node>>
+    traversal_queue: VecDeque<BinaryChildren<Node>>,
 }
 
 impl<Node> OwnedBinaryBFSIterator<Node>
-    where Node: OwnedBinaryTreeNode {
-
-    pub (crate) fn new(root: Node) -> OwnedBinaryBFSIterator<Node> {
-        OwnedBinaryBFSIterator { 
-            root: Some(root), 
-            traversal_queue: VecDeque::new() 
+where
+    Node: OwnedBinaryTreeNode,
+{
+    pub(crate) fn new(root: Node) -> OwnedBinaryBFSIterator<Node> {
+        OwnedBinaryBFSIterator {
+            root: Some(root),
+            traversal_queue: VecDeque::new(),
         }
     }
 }
 
 impl<Node> TreeIteratorMut for OwnedBinaryBFSIterator<Node>
-    where Node: OwnedBinaryTreeNode {
-
+where
+    Node: OwnedBinaryTreeNode,
+{
     fn leaves(self) -> impl LeavesIterator<Item = Self::Item> {
-        OwnedBinaryLeavesIterator { 
-            root: self.root, 
+        OwnedBinaryLeavesIterator {
+            root: self.root,
             old_traversal_queue: self.traversal_queue,
             new_traversal_queue: VecDeque::new(),
         }
@@ -167,26 +169,29 @@ impl<Node> TreeIteratorMut for OwnedBinaryBFSIterator<Node>
     }
 }
 
-impl<Node> Iterator for OwnedBinaryBFSIterator<Node> 
-    where Node: OwnedBinaryTreeNode {
-
+impl<Node> Iterator for OwnedBinaryBFSIterator<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
     type Item = Node::OwnedValue;
     bfs_next!(get_value_and_children);
 }
 
-pub struct OwnedBinaryBFSIteratorWithAncestors<Node> 
-    where Node: OwnedBinaryTreeNode {
-    
-    is_root: bool,
-    item_stack: Vec<Node::OwnedValue>,
-    tree_cache: TreeNodeVecDeque<Node::OwnedValue>,
-    traversal_stack: Vec<TreeNodeVecDeque<Node::OwnedValue>>,
-    iterator_queue: VecDeque<Option<BinaryChildren<Node>>>,
+pub struct OwnedBinaryBFSIteratorWithAncestors<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    pub(crate) is_root: bool,
+    pub(crate) item_stack: Vec<Node::OwnedValue>,
+    pub(crate) tree_cache: TreeNodeVecDeque<Node::OwnedValue>,
+    pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::OwnedValue>>,
+    pub(crate) iterator_queue: VecDeque<Option<BinaryChildren<Node>>>,
 }
 
-impl<'a, Node> OwnedBinaryBFSIteratorWithAncestors<Node> 
-    where Node: OwnedBinaryTreeNode {
-
+impl<'a, Node> OwnedBinaryBFSIteratorWithAncestors<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
     fn new(root: Node) -> OwnedBinaryBFSIteratorWithAncestors<Node> {
         let (value, children) = root.get_value_and_children();
         let tree_cache = TreeNodeVecDeque {
@@ -211,22 +216,32 @@ impl<'a, Node> OwnedBinaryBFSIteratorWithAncestors<Node>
     bfs_advance_iterator!(get_value_and_children);
 }
 
-impl<'a, Node> StreamingIterator for OwnedBinaryBFSIteratorWithAncestors<Node> 
-    where Node: OwnedBinaryTreeNode {
+impl<Node> AncestorsIteratorMut for OwnedBinaryBFSIteratorWithAncestors<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    fn leaves(self) -> impl AncestorsLeavesIteratorMut<Item = Self::Item> {
+        OwnedBinaryBFSLeavesIteratorWithAncestors::new(self)
+    }
+}
 
+impl<'a, Node> StreamingIterator for OwnedBinaryBFSIteratorWithAncestors<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
     type Item = [Node::OwnedValue];
 
     bfs_streaming_iterator_impl!(get_value_and_children);
 }
 
-impl<'a, Node> StreamingIteratorMut for OwnedBinaryBFSIteratorWithAncestors<Node> 
-    where Node: OwnedBinaryTreeNode {
-        
+impl<'a, Node> StreamingIteratorMut for OwnedBinaryBFSIteratorWithAncestors<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
     get_mut!();
 }
 
-impl<Node> AncestorsIterator for OwnedBinaryBFSIteratorWithAncestors<Node> 
-    where Node: OwnedBinaryTreeNode {}
-
-impl<Node> AncestorsIteratorMut for OwnedBinaryBFSIteratorWithAncestors<Node> 
-    where Node: OwnedBinaryTreeNode {}
+impl<Node> AncestorsLeavesIteratorMut for OwnedBinaryBFSIteratorWithAncestors<Node> where
+    Node: OwnedBinaryTreeNode
+{
+}

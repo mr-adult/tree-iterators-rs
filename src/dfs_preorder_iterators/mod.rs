@@ -1,6 +1,6 @@
-pub mod owned;
-pub mod mut_borrow;
 pub mod borrow;
+pub mod mut_borrow;
+pub mod owned;
 
 macro_rules! dfs_preorder_next {
     ($get_value_and_children: ident) => {
@@ -10,16 +10,16 @@ macro_rules! dfs_preorder_next {
                     let (value, children) = next.$get_value_and_children();
                     match children {
                         None => {}
-                        Some(children) => self.traversal_stack.push(children)
+                        Some(children) => self.traversal_stack.push(children),
                     }
                     return Some(value);
                 }
                 None => {
-                    let next; 
+                    let next;
                     loop {
                         let stack_len = self.traversal_stack.len();
-                        if stack_len == 0 { 
-                            next = None; 
+                        if stack_len == 0 {
+                            next = None;
                             break;
                         }
                         match self.traversal_stack.get_mut(stack_len - 1) {
@@ -27,24 +27,22 @@ macro_rules! dfs_preorder_next {
                                 next = None;
                                 break;
                             }
-                            Some(top) => {
-                                match top.next() {
-                                    None => {
-                                        self.traversal_stack.pop();
-                                    }
-                                    Some(value) => {
-                                        next = Some(value);
-                                        break;
-                                    }
+                            Some(top) => match top.next() {
+                                None => {
+                                    self.traversal_stack.pop();
                                 }
-                            }
+                                Some(value) => {
+                                    next = Some(value);
+                                    break;
+                                }
+                            },
                         }
-                    };
+                    }
                     match next {
                         None => return None,
                         Some(node) => {
                             let (value, children) = node.$get_value_and_children();
-                            match  children {
+                            match children {
                                 None => {}
                                 Some(children) => self.traversal_stack.push(children),
                             }
@@ -65,9 +63,9 @@ macro_rules! advance_dfs {
                     let (value, children) = next.$get_value_and_children();
                     match children {
                         None => {}
-                        Some(children) => self.traversal_stack.push(children)
+                        Some(children) => self.traversal_stack.push(children),
                     }
-    
+
                     self.item_stack.push(value);
                     return;
                 }
@@ -75,8 +73,8 @@ macro_rules! advance_dfs {
                     let next;
                     loop {
                         let stack_len = self.traversal_stack.len();
-                        if stack_len == 0 { 
-                            next = None; 
+                        if stack_len == 0 {
+                            next = None;
                             break;
                         }
                         match self.traversal_stack.get_mut(stack_len - 1) {
@@ -105,7 +103,7 @@ macro_rules! advance_dfs {
                         None => return,
                         Some(node) => {
                             let (value, children) = node.$get_value_and_children();
-                            match  children {
+                            match children {
                                 None => {}
                                 Some(children) => self.traversal_stack.push(children),
                             }
@@ -147,7 +145,7 @@ macro_rules! get_mut {
     };
 }
 
+pub(crate) use advance_dfs;
+pub(crate) use dfs_preorder_next;
 pub(crate) use get_mut;
-pub (crate) use dfs_preorder_next;
-pub (crate) use advance_dfs;
-pub (crate) use preorder_streaming_iterator_impl;
+pub(crate) use preorder_streaming_iterator_impl;

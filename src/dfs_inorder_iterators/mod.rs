@@ -1,6 +1,6 @@
-pub mod owned;
-pub mod mut_borrow;
 pub mod borrow;
+pub mod mut_borrow;
+pub mod owned;
 
 macro_rules! dfs_inorder_next {
     ($get_value_and_left_right: ident) => {
@@ -11,8 +11,8 @@ macro_rules! dfs_inorder_next {
                 current = match current {
                     Some(c) => Some(c),
                     None => {
-                        if self.right_stack.len() == self.item_stack.len() { 
-                            return self.item_stack.pop(); 
+                        if self.right_stack.len() == self.item_stack.len() {
+                            return self.item_stack.pop();
                         }
                         match self.right_stack.pop() {
                             Some(right) => right,
@@ -20,18 +20,20 @@ macro_rules! dfs_inorder_next {
                         }
                     }
                 };
-    
-                if self.right_stack.len() == 0 { break; }
+
+                if self.right_stack.len() == 0 {
+                    break;
+                }
             }
-    
+
             while let Some(current_val) = current {
                 let (value, [left, right]) = current_val.$get_value_and_left_right();
-    
+
                 self.right_stack.push(right);
                 self.item_stack.push(value);
                 current = left;
             }
-    
+
             self.item_stack.pop()
         }
     };
@@ -41,17 +43,19 @@ macro_rules! dfs_inorder_streaming_iterator_impl {
     ($get_value_and_left_right: ident) => {
         fn advance(&mut self) {
             let mut current = None;
-            while current.is_none() {  
-                if self.right_stack.len() == 0 { 
+            while current.is_none() {
+                if self.right_stack.len() == 0 {
                     self.item_stack.clear();
                     break;
                 }
 
-                while self.status_stack.len() > 0 && self.status_stack[self.status_stack.len() - 1] == TraversalStatus::WentRight {
+                while self.status_stack.len() > 0
+                    && self.status_stack[self.status_stack.len() - 1] == TraversalStatus::WentRight
+                {
                     self.item_stack.pop();
                     self.status_stack.pop();
                 }
-    
+
                 if self.status_stack.len() > 0 {
                     let len = self.status_stack.len();
                     match self.status_stack.get_mut(len - 1) {
@@ -75,7 +79,10 @@ macro_rules! dfs_inorder_streaming_iterator_impl {
                         match self.right_stack.pop() {
                             Some(right) => right,
                             None => {
-                                while self.status_stack.len() > 0 && self.status_stack[self.status_stack.len() - 1] == TraversalStatus::WentRight {
+                                while self.status_stack.len() > 0
+                                    && self.status_stack[self.status_stack.len() - 1]
+                                        == TraversalStatus::WentRight
+                                {
                                     self.item_stack.pop();
                                     self.status_stack.pop();
                                 }
@@ -85,10 +92,10 @@ macro_rules! dfs_inorder_streaming_iterator_impl {
                     }
                 };
             }
-    
+
             while let Some(current_val) = current {
                 let (value, [left, right]) = current_val.$get_value_and_left_right();
-    
+
                 self.right_stack.push(right);
                 self.item_stack.push(value);
                 self.status_stack.push(TraversalStatus::WentLeft);
@@ -100,7 +107,7 @@ macro_rules! dfs_inorder_streaming_iterator_impl {
                 self.status_stack[len - 1] = TraversalStatus::ReturnedSelf;
             }
         }
-    
+
         fn get(&self) -> Option<&Self::Item> {
             if self.item_stack.len() > 0 {
                 Some(self.item_stack.as_slice())
@@ -128,12 +135,12 @@ macro_rules! get_mut {
 /// in one direction
 /// WentLeft -> ReturnedSelf -> WentRight.
 #[derive(PartialEq, Eq)]
-pub (crate) enum TraversalStatus {
+pub(crate) enum TraversalStatus {
     WentLeft,
     ReturnedSelf,
     WentRight,
 }
 
-pub (crate) use get_mut;
-pub (crate) use dfs_inorder_next;
-pub (crate) use dfs_inorder_streaming_iterator_impl;
+pub(crate) use dfs_inorder_next;
+pub(crate) use dfs_inorder_streaming_iterator_impl;
+pub(crate) use get_mut;

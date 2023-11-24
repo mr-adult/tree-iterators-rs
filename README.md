@@ -503,56 +503,6 @@ println!("{}", result);
 
 ## Iterator Modifiers
 
-### Leaves
-
-leaves() is a method that can be called after any of the above APIs to change the iterator structure to one that only returns leaves of the tree. In the example tree (see above documentation), this will always result in the sequence 3, 4, 5, 10. Once this method is called, the iterator transforms to be either a breadth-first (if the iterator was previously breadth-first) or a depth first postorder search (if the iterator was previously one of pre-, in-, or post-order depth first searches).
-
-I will be using the depth first preorder search in the examples, but this works with all of the traversal types. This method can be called immediately if you wish to only receive the leaves of the tree like so:
-```rust
-use tree_iterators_rs::{
-	examples::create_example_tree,
-	prelude::*
-};
-
-let root = create_example_tree();
-
-let result = root.dfs_preorder()
-	.leaves()
-	.map(|val| val.to_string())
-	.collect::<Vec<String>>()
-	.join(", ");
-
-// result: 3, 4, 5, 10
-println!("{}", result);
-```
-
-Alternatively, this method can be used to perform a normal traversal and then switch to a leaves-only traversal partway through the regular one. This can be done like so (again, all traversal types support this):
-```rust
-use tree_iterators_rs::{
-	examples::create_example_tree,
-	prelude::*
-};
-
-let root = create_example_tree();
-
-let mut dfs_preorder = root.dfs_preorder();
-
-let mut results = Vec::new();
-// take the first 2 non-leaves before switching to a leaves-only iterator
-results.push(dfs_preorder.next().unwrap().to_string());
-results.push(dfs_preorder.next().unwrap().to_string());
-
-// once leaves is called, iteration switches to a depth-first postorder search
-for leaf in dfs_preorder.leaves() {
-	results.push(leaf.to_string());
-}
-
-let result = results.join(", ");
-
-// result: 0, 1, 3, 4, 5, 10,
-println!("{}", result);
-```
-
 ### Attach Ancestors
 
 attach_ancestors() is a method that can be called after any of the above APIs to change the iterator structure into one that returns a slice of all ancestors and the current value in the tree. If one of these is called, the (now streaming) iterator will yield a slice where the item at index 0 is the root value, the item at index len() - 1 is the current value, and everything in between is the other ancestors. As an example, when we are at the value of 10 in our traversal (see above documentation), the slice will look like this: \[0, 2, 6, 7, 8, 9, 10\].
@@ -667,6 +617,56 @@ root.bfs_iter()
 println!("{}", result);
 ```
 
+### Leaves
+
+leaves() is a method that can be called after any of the above APIs (including attach_ancestors()) to change the iterator structure to one that only returns leaves of the tree. In the example tree (see above documentation), this will always result in the sequence 3, 4, 5, 10. Once this method is called, the iterator transforms to be either a breadth-first (if the iterator was previously breadth-first) or a depth first postorder search (if the iterator was previously one of pre-, in-, or post-order depth first searches).
+
+I will be using the depth first preorder search in the examples, but this works with all of the traversal types. This method can be called immediately if you wish to only receive the leaves of the tree like so:
+```rust
+use tree_iterators_rs::{
+	examples::create_example_tree,
+	prelude::*
+};
+
+let root = create_example_tree();
+
+let result = root.dfs_preorder()
+	.leaves()
+	.map(|val| val.to_string())
+	.collect::<Vec<String>>()
+	.join(", ");
+
+// result: 3, 4, 5, 10
+println!("{}", result);
+```
+
+Alternatively, this method can be used to perform a normal traversal and then switch to a leaves-only traversal partway through the regular one. This can be done like so (again, all traversal types support this):
+```rust
+use tree_iterators_rs::{
+	examples::create_example_tree,
+	prelude::*
+};
+
+let root = create_example_tree();
+
+let mut dfs_preorder = root.dfs_preorder();
+
+let mut results = Vec::new();
+// take the first 2 non-leaves before switching to a leaves-only iterator
+results.push(dfs_preorder.next().unwrap().to_string());
+results.push(dfs_preorder.next().unwrap().to_string());
+
+// once leaves is called, iteration switches to a depth-first postorder search
+for leaf in dfs_preorder.leaves() {
+	results.push(leaf.to_string());
+}
+
+let result = results.join(", ");
+
+// result: 0, 1, 3, 4, 5, 10,
+println!("{}", result);
+```
+
 ## Custom Tree Node Implementations
 
 This crates' APIs are powered by 3 traits. The traits include:
@@ -697,7 +697,7 @@ We can start with the OwnedTreeNode implementation as follows. Since we chose to
 ```rust
 use tree_iterators_rs::prelude::*;
 use std::collections::{
-	LinkedList
+	LinkedList,
 	linked_list::IntoIter
 };
 
@@ -726,7 +726,7 @@ The mutable borrow implementation is very similar to the owned one. The only dif
 ```rust
 use tree_iterators_rs::prelude::*;
 use std::collections::{
-	LinkedList
+	LinkedList,
 	linked_list::IterMut
 };
 
@@ -757,7 +757,7 @@ The borrow implementation is also very similar to the owned one. The only differ
 ```rust
 use tree_iterators_rs::prelude::*;
 use std::collections::{
-	LinkedList
+	LinkedList,
 	linked_list::Iter
 };
 
