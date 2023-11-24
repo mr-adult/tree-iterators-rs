@@ -7,7 +7,7 @@ use alloc::vec::{IntoIter, Vec};
 #[cfg(feature = "serde")]
 use serde_derive::{Serialize, Deserialize};
 use streaming_iterator::{
-    StreamingIterator, 
+    StreamingIterator,
     StreamingIteratorMut
 };
 
@@ -117,7 +117,7 @@ pub trait TreeIterator : Iterator {
     ///           10
     /// ```
     /// 
-    /// ```ignore
+    /// ```rust
     /// // Example usage:
     /// use tree_iterators_rs::{
     ///     prelude::*,
@@ -125,7 +125,7 @@ pub trait TreeIterator : Iterator {
     /// };
     /// 
     /// let root = create_example_binary_tree();
-    /// for leaf in root.your_chosen_iterator_method().leaves() {
+    /// for leaf in root.bfs().leaves() {
     ///     println!("{}", leaf);
     /// }
     /// ```
@@ -186,7 +186,7 @@ pub trait TreeIterator : Iterator {
     /// Since this iterator is no longer a Rust Iterator, for loops will
     /// no longer work. See details on how to work around this in the 
     /// [streaming-iterator](https://crates.io/crates/streaming-iterator) crate.
-    /// ```ignore
+    /// ```rust
     /// // Example usage:
     /// use streaming_iterator::StreamingIterator;
     /// use tree_iterators_rs::{
@@ -196,10 +196,12 @@ pub trait TreeIterator : Iterator {
     /// 
     /// let root = create_example_binary_tree();
     /// let mut result = String::new();
-    /// root.your_chosen_iterator_method()
+    /// 
+    /// // any iterator method can be swapped in here
+    /// root.dfs_preorder() 
     ///     .attach_ancestors()
     ///     .filter(|slice| 
-    ///         slice.iter().all(|value| **value % 2 == 0)
+    ///         slice.iter().all(|value| *value % 2 == 0)
     ///     )
     ///     .map(|slice| slice[slice.len() - 1])
     ///     .for_each(|value| {
