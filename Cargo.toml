@@ -6,7 +6,7 @@ description = "tree-iterators-rs is a library built to provide you with the iter
 license = "MIT"
 repository = "https://github.com/mr-adult/tree-iterators-rs"
 documentation = "https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/"
-keywords = ["tree", "dfs", "bfs", "traversal", "depth first", "breadth first", "traverse", "search", "graph", "bft", "dft", "preorder", "postorder", "inorder", "pre order", "post order", "in order"]
+keywords = ["tree", "traversal", "traverse", "search", "iteration"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
