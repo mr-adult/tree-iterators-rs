@@ -1,6 +1,6 @@
-pub(crate) mod borrow;
-pub(crate) mod mut_borrow;
-pub(crate) mod owned;
+pub mod borrow;
+pub mod mut_borrow;
+pub mod owned;
 
 macro_rules! streaming_leaves {
     ($get_value_and_children: ident) => {
