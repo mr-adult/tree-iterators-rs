@@ -6,9 +6,7 @@ use crate::{
     bfs_iterators::mut_borrow::{
         MutBorrowedBFSIteratorWithAncestors, MutBorrowedBinaryBFSIteratorWithAncestors,
     },
-    prelude::{
-        AncestorsLeavesIteratorMut, BinaryChildren, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode,
-    },
+    prelude::{BinaryChildren, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode},
 };
 
 use super::{bfs_next, get_mut, streaming_leaves};
@@ -50,11 +48,6 @@ where
     }
 
     bfs_next!(get_value_and_children_iter_mut);
-}
-
-impl<'a, Node> AncestorsLeavesIteratorMut for MutBorrowedBFSLeavesIteratorWithAncestors<'a, Node> where
-    Node: MutBorrowedTreeNode<'a>
-{
 }
 
 impl<'a, Node> StreamingIterator for MutBorrowedBFSLeavesIteratorWithAncestors<'a, Node>
@@ -124,11 +117,4 @@ where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
     get_mut!();
-}
-
-impl<'a, Node> AncestorsLeavesIteratorMut
-    for MutBorrowedBinaryBFSLeavesIteratorWithAncestors<'a, Node>
-where
-    Node: MutBorrowedBinaryTreeNode<'a>,
-{
 }

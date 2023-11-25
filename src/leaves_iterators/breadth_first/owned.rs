@@ -1,6 +1,6 @@
 use alloc::collections::VecDeque;
 
-use crate::prelude::{BinaryChildren, LeavesIterator, OwnedBinaryTreeNode, OwnedTreeNode};
+use crate::prelude::{BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode};
 
 use core::iter::Peekable;
 
@@ -32,14 +32,6 @@ where
     type Item = Node::OwnedValue;
     next!();
 }
-
-impl<Node, Iter> LeavesIterator for OwnedLeavesIterator<Node, Iter>
-where
-    Node: OwnedTreeNode,
-    Iter: Iterator<Item = Node>,
-{
-}
-
 pub struct OwnedBinaryLeavesIterator<Node, Iter>
 where
     Node: OwnedBinaryTreeNode,
@@ -65,11 +57,4 @@ where
 {
     type Item = Node::OwnedValue;
     next!();
-}
-
-impl<Node, Iter> LeavesIterator for OwnedBinaryLeavesIterator<Node, Iter>
-where
-    Node: OwnedBinaryTreeNode,
-    Iter: Iterator<Item = Node>,
-{
 }
