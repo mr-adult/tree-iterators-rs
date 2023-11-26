@@ -362,7 +362,7 @@ where
 
     /// This method gets the value and children from this node. The other
     /// methods of this trait assume that the 'Children' list does not contain
-    /// any circular references. If there are, an inifite loop will result.
+    /// any circular references. If there are, an infinite loop will result.
     fn get_value_and_children_iter_mut(
         &'a mut self,
     ) -> (Self::MutBorrowedValue, Option<BinaryChildren<&'a mut Self>>) {
@@ -525,7 +525,7 @@ where
 
     /// This method gets the value and children from this node. The other
     /// methods of this trait assume that the 'Children' list does not contain
-    /// any circular references. If there are, an inifite loop will result.
+    /// any circular references. If there are, an infinite loop will result.
     fn get_value_and_children_iter_mut(
         &'a mut self,
     ) -> (Self::MutBorrowedValue, Option<Self::MutBorrowedChildren>);
@@ -922,7 +922,7 @@ impl<T> OwnedTreeNode for TreeNode<T> {
 
     /// This method gets the value and children from this node. The other
     /// methods of this trait assume that the 'Children' list does not contain
-    /// any circular references. If there are, an inifite loop will result.
+    /// any circular references. If there are, an infinite loop will result.
     fn get_value_and_children(self) -> (Self::OwnedValue, Option<Self::OwnedChildren>) {
         (
             self.value,
@@ -943,7 +943,7 @@ where
 
     /// This method gets the value and children from this node. The other
     /// methods of this trait assume that the 'Children' list does not contain
-    /// any circular references. If there are, an inifite loop will result.
+    /// any circular references. If there are, an infinite loop will result.
     fn get_value_and_children_iter_mut(
         &'a mut self,
     ) -> (Self::MutBorrowedValue, Option<Self::MutBorrowedChildren>) {
@@ -966,7 +966,7 @@ where
 
     /// This method gets the value and children from this node. The other
     /// methods of this trait assume that the 'Children' list does not contain
-    /// any circular references. If there are, an inifite loop will result.
+    /// any circular references. If there are, an infinite loop will result.
     fn get_value_and_children_iter(
         &'a self,
     ) -> (Self::BorrowedValue, Option<Self::BorrowedChildren>) {
