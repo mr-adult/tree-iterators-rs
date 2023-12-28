@@ -1,6 +1,6 @@
 use alloc::collections::VecDeque;
 
-use crate::prelude::{BinaryChildren, BorrowedBinaryTreeNode, BorrowedTreeNode};
+use crate::prelude::{BinaryChildren, BorrowedBinaryTreeNode, BorrowedTreeNode, LeavesIterator};
 
 use core::iter::Peekable;
 
@@ -14,6 +14,8 @@ where
     pub(crate) old_traversal_queue: VecDeque<Node::BorrowedChildren>,
     pub(crate) new_traversal_queue: VecDeque<Peekable<Node::BorrowedChildren>>,
 }
+
+impl<'a, Node> LeavesIterator for BorrowedLeavesIterator<'a, Node> where Node: BorrowedTreeNode<'a> {}
 
 impl<'a, Node> BorrowedLeavesIterator<'a, Node>
 where
@@ -52,4 +54,9 @@ where
 {
     type Item = Node::BorrowedValue;
     next!();
+}
+
+impl<'a, Node> LeavesIterator for BorrowedBinaryLeavesIterator<'a, Node> where
+    Node: BorrowedBinaryTreeNode<'a>
+{
 }

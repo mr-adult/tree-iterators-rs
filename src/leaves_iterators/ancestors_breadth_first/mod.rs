@@ -1,6 +1,6 @@
-pub mod borrow;
-pub mod mut_borrow;
-pub mod owned;
+pub(crate) mod borrow;
+pub(crate) mod mut_borrow;
+pub(crate) mod owned;
 
 macro_rules! bfs_next {
     ($get_value_and_children: ident) => {

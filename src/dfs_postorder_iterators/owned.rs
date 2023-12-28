@@ -6,7 +6,10 @@ use crate::{
         },
         depth_first::owned::{OwnedBinaryLeavesIterator, OwnedLeavesIterator},
     },
-    prelude::{BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode},
+    prelude::{
+        AncestorsIteratorMut, AncestorsLeavesIteratorMut, BinaryChildren, LeavesIterator,
+        OwnedBinaryTreeNode, OwnedTreeNode, TreeIteratorMut,
+    },
 };
 use alloc::vec::Vec;
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
@@ -33,9 +36,13 @@ where
             traversal_stack: Vec::new(),
         }
     }
+}
 
-    #[doc = include_str!("../../doc_files/leaves.md")]
-    pub fn leaves(self) -> OwnedLeavesIterator<Node> {
+impl<Node> TreeIteratorMut for OwnedDFSPostorderIterator<Node>
+where
+    Node: OwnedTreeNode,
+{
+    fn leaves(self) -> impl LeavesIterator<Item = Self::Item> {
         OwnedLeavesIterator {
             root: self.root,
             traversal_stack_bottom: self.traversal_stack,
@@ -44,8 +51,7 @@ where
         }
     }
 
-    #[doc = include_str!("../../doc_files/attach_ancestors.md")]
-    pub fn attach_ancestors(self) -> OwnedDFSPostorderIteratorWithAncestors<Node> {
+    fn attach_ancestors(self) -> impl AncestorsIteratorMut<Item = [Node::OwnedValue]> {
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS postorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
@@ -83,16 +89,6 @@ where
             traversal_stack: Vec::new(),
         }
     }
-
-    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(self) -> OwnedDFSLeavesPostorderIteratorWithAncestors<Node, Node::OwnedChildren> {
-        OwnedDFSLeavesPostorderIteratorWithAncestors {
-            root: self.root,
-            item_stack: self.item_stack,
-            old_traversal_stack: self.traversal_stack.into_iter().collect(),
-            new_traversal_stack: Vec::new(),
-        }
-    }
 }
 
 impl<Node> StreamingIterator for OwnedDFSPostorderIteratorWithAncestors<Node>
@@ -108,6 +104,20 @@ where
     Node: OwnedTreeNode,
 {
     get_mut!();
+}
+
+impl<Node> AncestorsIteratorMut for OwnedDFSPostorderIteratorWithAncestors<Node>
+where
+    Node: OwnedTreeNode,
+{
+    fn leaves(self) -> impl AncestorsLeavesIteratorMut<Item = Self::Item> {
+        OwnedDFSLeavesPostorderIteratorWithAncestors {
+            root: self.root,
+            item_stack: self.item_stack,
+            old_traversal_stack: self.traversal_stack.into_iter().collect(),
+            new_traversal_stack: Vec::new(),
+        }
+    }
 }
 
 pub struct OwnedBinaryDFSPostorderIterator<Node>
@@ -130,9 +140,13 @@ where
             traversal_stack: Vec::new(),
         }
     }
+}
 
-    #[doc = include_str!("../../doc_files/leaves.md")]
-    pub fn leaves(self) -> OwnedBinaryLeavesIterator<Node, BinaryChildren<Node>> {
+impl<Node> TreeIteratorMut for OwnedBinaryDFSPostorderIterator<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    fn leaves(self) -> impl LeavesIterator<Item = Self::Item> {
         OwnedBinaryLeavesIterator {
             root: self.root,
             traversal_stack_bottom: self.traversal_stack,
@@ -141,8 +155,7 @@ where
         }
     }
 
-    #[doc = include_str!("../../doc_files/attach_ancestors.md")]
-    pub fn attach_ancestors(self) -> OwnedBinaryDFSPostorderIteratorWithAncestors<Node> {
+    fn attach_ancestors(self) -> impl AncestorsIteratorMut<Item = [Node::OwnedValue]> {
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS postorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
@@ -180,18 +193,6 @@ where
             traversal_stack: Vec::new(),
         }
     }
-
-    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(
-        self,
-    ) -> OwnedBinaryDFSLeavesPostorderIteratorWithAncestors<Node, BinaryChildren<Node>> {
-        OwnedBinaryDFSLeavesPostorderIteratorWithAncestors {
-            root: self.root,
-            item_stack: self.item_stack,
-            old_traversal_stack: self.traversal_stack.into_iter().collect(),
-            new_traversal_stack: Vec::new(),
-        }
-    }
 }
 
 impl<Node> StreamingIterator for OwnedBinaryDFSPostorderIteratorWithAncestors<Node>
@@ -207,4 +208,18 @@ where
     Node: OwnedBinaryTreeNode,
 {
     get_mut!();
+}
+
+impl<Node> AncestorsIteratorMut for OwnedBinaryDFSPostorderIteratorWithAncestors<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    fn leaves(self) -> impl AncestorsLeavesIteratorMut<Item = Self::Item> {
+        OwnedBinaryDFSLeavesPostorderIteratorWithAncestors {
+            root: self.root,
+            item_stack: self.item_stack,
+            old_traversal_stack: self.traversal_stack.into_iter().collect(),
+            new_traversal_stack: Vec::new(),
+        }
+    }
 }

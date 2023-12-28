@@ -8,7 +8,10 @@ use crate::{
         },
         breadth_first::borrow::{BorrowedBinaryLeavesIterator, BorrowedLeavesIterator},
     },
-    prelude::{BinaryChildren, BorrowedBinaryTreeNode, BorrowedTreeNode},
+    prelude::{
+        AncestorsIterator, AncestorsLeavesIterator, BinaryChildren, BorrowedBinaryTreeNode,
+        BorrowedTreeNode, LeavesIterator, TreeIterator,
+    },
 };
 
 use super::{bfs_advance_iterator, bfs_next, bfs_streaming_iterator_impl, TreeNodeVecDeque};
@@ -31,9 +34,13 @@ where
             traversal_queue: VecDeque::new(),
         }
     }
+}
 
-    #[doc = include_str!("../../doc_files/leaves.md")]
-    pub fn leaves(self) -> BorrowedLeavesIterator<'a, Node> {
+impl<'a, Node> TreeIterator for BorrowedBFSIterator<'a, Node>
+where
+    Node: BorrowedTreeNode<'a>,
+{
+    fn leaves(self) -> impl LeavesIterator<Item = Node::BorrowedValue> {
         BorrowedLeavesIterator {
             root: self.root,
             old_traversal_queue: self.traversal_queue,
@@ -41,8 +48,7 @@ where
         }
     }
 
-    #[doc = include_str!("../../doc_files/attach_ancestors.md")]
-    pub fn attach_ancestors(self) -> BorrowedBFSIteratorWithAncestors<'a, Node> {
+    fn attach_ancestors(self) -> impl AncestorsIterator<Item = [Node::BorrowedValue]> {
         match self.root {
             None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => BorrowedBFSIteratorWithAncestors::new(root)
@@ -94,12 +100,16 @@ where
         }
     }
 
-    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(self) -> BorrowedBFSLeavesIteratorWithAncestors<'a, Node> {
+    bfs_advance_iterator!(get_value_and_children_iter);
+}
+
+impl<'a, Node> AncestorsIterator for BorrowedBFSIteratorWithAncestors<'a, Node>
+where
+    Node: BorrowedTreeNode<'a>,
+{
+    fn leaves(self) -> impl AncestorsLeavesIterator<Item = Self::Item> {
         BorrowedBFSLeavesIteratorWithAncestors::new(self)
     }
-
-    bfs_advance_iterator!(get_value_and_children_iter);
 }
 
 impl<'a, Node> StreamingIterator for BorrowedBFSIteratorWithAncestors<'a, Node>
@@ -129,23 +139,6 @@ where
             traversal_queue: VecDeque::new(),
         }
     }
-
-    #[doc = include_str!("../../doc_files/leaves.md")]
-    pub fn leaves(self) -> BorrowedBinaryLeavesIterator<'a, Node> {
-        BorrowedBinaryLeavesIterator {
-            root: self.root,
-            old_traversal_queue: self.traversal_queue,
-            new_traversal_queue: VecDeque::new(),
-        }
-    }
-
-    #[doc = include_str!("../../doc_files/attach_ancestors.md")]
-    pub fn attach_ancestors(self) -> BorrowedBinaryBFSIteratorWithAncestors<'a, Node> {
-        match self.root {
-            None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
-            Some(root) => BorrowedBinaryBFSIteratorWithAncestors::new(root)
-        }
-    }
 }
 
 impl<'a, Node> Iterator for BorrowedBinaryBFSIterator<'a, Node>
@@ -154,6 +147,26 @@ where
 {
     type Item = Node::BorrowedValue;
     bfs_next!(get_value_and_children_iter);
+}
+
+impl<'a, Node> TreeIterator for BorrowedBinaryBFSIterator<'a, Node>
+where
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+    fn leaves(self) -> impl LeavesIterator<Item = Self::Item> {
+        BorrowedBinaryLeavesIterator {
+            root: self.root,
+            old_traversal_queue: self.traversal_queue,
+            new_traversal_queue: VecDeque::new(),
+        }
+    }
+
+    fn attach_ancestors(self) -> impl AncestorsIterator<Item = [Node::BorrowedValue]> {
+        match self.root {
+            None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
+            Some(root) => BorrowedBinaryBFSIteratorWithAncestors::new(root)
+        }
+    }
 }
 
 pub struct BorrowedBinaryBFSIteratorWithAncestors<'a, Node>
@@ -192,11 +205,6 @@ where
         }
     }
 
-    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(self) -> BorrowedBinaryBFSLeavesIteratorWithAncestors<'a, Node> {
-        BorrowedBinaryBFSLeavesIteratorWithAncestors::new(self)
-    }
-
     bfs_advance_iterator!(get_value_and_children_iter);
 }
 
@@ -207,4 +215,13 @@ where
     type Item = [Node::BorrowedValue];
 
     bfs_streaming_iterator_impl!(get_value_and_children_iter);
+}
+
+impl<'a, Node> AncestorsIterator for BorrowedBinaryBFSIteratorWithAncestors<'a, Node>
+where
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+    fn leaves(self) -> impl AncestorsLeavesIterator<Item = Self::Item> {
+        BorrowedBinaryBFSLeavesIteratorWithAncestors::new(self)
+    }
 }

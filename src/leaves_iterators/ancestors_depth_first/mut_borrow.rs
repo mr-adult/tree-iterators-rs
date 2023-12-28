@@ -1,4 +1,6 @@
-use crate::prelude::{BinaryChildren, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode};
+use crate::prelude::{
+    AncestorsLeavesIteratorMut, BinaryChildren, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode,
+};
 use alloc::vec::Vec;
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
 
@@ -34,6 +36,14 @@ where
     get_mut!();
 }
 
+impl<'a, Node, Iter> AncestorsLeavesIteratorMut
+    for MutBorrowedDFSLeavesPostorderIteratorWithAncestors<'a, Node, Iter>
+where
+    Node: MutBorrowedTreeNode<'a>,
+    Iter: Iterator<Item = &'a mut Node>,
+{
+}
+
 pub struct MutBorrowedBinaryDFSLeavesPostorderIteratorWithAncestors<'a, Node, Iter>
 where
     Node: MutBorrowedBinaryTreeNode<'a>,
@@ -62,4 +72,12 @@ where
     Iter: Iterator<Item = &'a mut Node>,
 {
     get_mut!();
+}
+
+impl<'a, Node, Iter> AncestorsLeavesIteratorMut
+    for MutBorrowedBinaryDFSLeavesPostorderIteratorWithAncestors<'a, Node, Iter>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+    Iter: Iterator<Item = &'a mut Node>,
+{
 }

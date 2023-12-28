@@ -12,7 +12,10 @@ use crate::{
         },
         breadth_first::mut_borrow::{MutBorrowedBinaryLeavesIterator, MutBorrowedLeavesIterator},
     },
-    prelude::{BinaryChildren, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode},
+    prelude::{
+        AncestorsIteratorMut, AncestorsLeavesIteratorMut, BinaryChildren, LeavesIterator,
+        MutBorrowedBinaryTreeNode, MutBorrowedTreeNode, TreeIteratorMut,
+    },
 };
 
 pub struct MutBorrowedBFSIterator<'a, Node>
@@ -33,9 +36,13 @@ where
             traversal_queue: VecDeque::new(),
         }
     }
+}
 
-    #[doc = include_str!("../../doc_files/leaves.md")]
-    pub fn leaves(self) -> MutBorrowedLeavesIterator<'a, Node> {
+impl<'a, Node> TreeIteratorMut for MutBorrowedBFSIterator<'a, Node>
+where
+    Node: MutBorrowedTreeNode<'a>,
+{
+    fn leaves(self) -> impl LeavesIterator<Item = Self::Item> {
         MutBorrowedLeavesIterator {
             root: self.root,
             old_traversal_queue: self.traversal_queue,
@@ -43,8 +50,7 @@ where
         }
     }
 
-    #[doc = include_str!("../../doc_files/attach_ancestors.md")]
-    pub fn attach_ancestors(self) -> MutBorrowedBFSIteratorWithAncestors<'a, Node> {
+    fn attach_ancestors(self) -> impl AncestorsIteratorMut<Item = [Node::MutBorrowedValue]> {
         match self.root {
             None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => MutBorrowedBFSIteratorWithAncestors::new(root)
@@ -96,11 +102,6 @@ where
         }
     }
 
-    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(self) -> MutBorrowedBFSLeavesIteratorWithAncestors<'a, Node> {
-        MutBorrowedBFSLeavesIteratorWithAncestors::new(self)
-    }
-
     bfs_advance_iterator!(get_value_and_children_iter_mut);
 }
 
@@ -118,6 +119,15 @@ where
     Node: MutBorrowedTreeNode<'a>,
 {
     get_mut!();
+}
+
+impl<'a, Node> AncestorsIteratorMut for MutBorrowedBFSIteratorWithAncestors<'a, Node>
+where
+    Node: MutBorrowedTreeNode<'a>,
+{
+    fn leaves(self) -> impl AncestorsLeavesIteratorMut<Item = Self::Item> {
+        MutBorrowedBFSLeavesIteratorWithAncestors::new(self)
+    }
 }
 
 pub struct MutBorrowedBinaryBFSIterator<'a, Node>
@@ -138,9 +148,13 @@ where
             traversal_queue: VecDeque::new(),
         }
     }
+}
 
-    #[doc = include_str!("../../doc_files/leaves.md")]
-    pub fn leaves(self) -> MutBorrowedBinaryLeavesIterator<'a, Node, BinaryChildren<&'a mut Node>> {
+impl<'a, Node> TreeIteratorMut for MutBorrowedBinaryBFSIterator<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    fn leaves(self) -> impl LeavesIterator<Item = Self::Item> {
         MutBorrowedBinaryLeavesIterator {
             root: self.root,
             old_traversal_queue: self.traversal_queue,
@@ -148,8 +162,7 @@ where
         }
     }
 
-    #[doc = include_str!("../../doc_files/attach_ancestors.md")]
-    pub fn attach_ancestors(self) -> MutBorrowedBinaryBFSIteratorWithAncestors<'a, Node> {
+    fn attach_ancestors(self) -> impl AncestorsIteratorMut<Item = [Node::MutBorrowedValue]> {
         match self.root {
             None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => MutBorrowedBinaryBFSIteratorWithAncestors::new(root)
@@ -201,11 +214,6 @@ where
         }
     }
 
-    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(self) -> MutBorrowedBinaryBFSLeavesIteratorWithAncestors<'a, Node> {
-        MutBorrowedBinaryBFSLeavesIteratorWithAncestors::new(self)
-    }
-
     bfs_advance_iterator!(get_value_and_children_iter_mut);
 }
 
@@ -223,4 +231,13 @@ where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
     get_mut!();
+}
+
+impl<'a, Node> AncestorsIteratorMut for MutBorrowedBinaryBFSIteratorWithAncestors<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    fn leaves(self) -> impl AncestorsLeavesIteratorMut<Item = Self::Item> {
+        MutBorrowedBinaryBFSLeavesIteratorWithAncestors::new(self)
+    }
 }

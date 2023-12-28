@@ -4,7 +4,7 @@ use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
 
 use crate::{
     bfs_iterators::owned::{OwnedBFSIteratorWithAncestors, OwnedBinaryBFSIteratorWithAncestors},
-    prelude::{BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode},
+    prelude::{AncestorsLeavesIteratorMut, BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode},
 };
 
 use super::{bfs_next, get_mut, streaming_leaves};
@@ -46,6 +46,11 @@ where
     }
 
     bfs_next!(get_value_and_children);
+}
+
+impl<Node> AncestorsLeavesIteratorMut for OwnedBFSLeavesIteratorWithAncestors<Node> where
+    Node: OwnedTreeNode
+{
 }
 
 impl<Node> StreamingIterator for OwnedBFSLeavesIteratorWithAncestors<Node>
@@ -115,4 +120,9 @@ where
     Node: OwnedBinaryTreeNode,
 {
     get_mut!();
+}
+
+impl<Node> AncestorsLeavesIteratorMut for OwnedBinaryBFSLeavesIteratorWithAncestors<Node> where
+    Node: OwnedBinaryTreeNode
+{
 }

@@ -6,7 +6,10 @@ use crate::{
         },
         depth_first::borrow::{BorrowedBinaryLeavesIterator, BorrowedLeavesIterator},
     },
-    prelude::{BinaryChildren, BorrowedBinaryTreeNode, BorrowedTreeNode},
+    prelude::{
+        AncestorsIterator, AncestorsLeavesIterator, BinaryChildren, BorrowedBinaryTreeNode,
+        BorrowedTreeNode, LeavesIterator, TreeIterator,
+    },
 };
 use alloc::vec::Vec;
 use streaming_iterator::StreamingIterator;
@@ -31,9 +34,13 @@ where
             traversal_stack: Vec::new(),
         }
     }
+}
 
-    #[doc = "../../doc_files/leaves.md"]
-    pub fn leaves(self) -> BorrowedLeavesIterator<'a, Node, Node::BorrowedChildren> {
+impl<'a, Node> TreeIterator for BorrowedDFSPreorderIterator<'a, Node>
+where
+    Node: BorrowedTreeNode<'a>,
+{
+    fn leaves(self) -> impl LeavesIterator<Item = Self::Item> {
         BorrowedLeavesIterator {
             root: self.root,
             traversal_stack_bottom: self.traversal_stack,
@@ -42,8 +49,7 @@ where
         }
     }
 
-    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn attach_ancestors(self) -> BorrowedDFSPreorderIteratorWithAncestors<'a, Node> {
+    fn attach_ancestors(self) -> impl AncestorsIterator<Item = [Node::BorrowedValue]> {
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS preorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
@@ -82,18 +88,6 @@ where
         }
     }
 
-    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(
-        self,
-    ) -> BorrowedDFSLeavesPostorderIteratorWithAncestors<'a, Node, Node::BorrowedChildren> {
-        BorrowedDFSLeavesPostorderIteratorWithAncestors {
-            root: self.root,
-            item_stack: self.item_stack,
-            old_traversal_stack: self.traversal_stack,
-            new_traversal_stack: Vec::new(),
-        }
-    }
-
     advance_dfs!(get_value_and_children_iter);
 }
 
@@ -103,6 +97,20 @@ where
 {
     type Item = [Node::BorrowedValue];
     preorder_streaming_iterator_impl!();
+}
+
+impl<'a, Node> AncestorsIterator for BorrowedDFSPreorderIteratorWithAncestors<'a, Node>
+where
+    Node: BorrowedTreeNode<'a>,
+{
+    fn leaves(self) -> impl AncestorsLeavesIterator<Item = Self::Item> {
+        BorrowedDFSLeavesPostorderIteratorWithAncestors {
+            root: self.root,
+            item_stack: self.item_stack,
+            old_traversal_stack: self.traversal_stack,
+            new_traversal_stack: Vec::new(),
+        }
+    }
 }
 
 pub struct BorrowedBinaryDFSPreorderIterator<'a, Node>
@@ -123,9 +131,13 @@ where
             traversal_stack: Vec::new(),
         }
     }
+}
 
-    #[doc = include_str!("../../doc_files/leaves.md")]
-    pub fn leaves(self) -> BorrowedBinaryLeavesIterator<'a, Node, BinaryChildren<&'a Node>> {
+impl<'a, Node> TreeIterator for BorrowedBinaryDFSPreorderIterator<'a, Node>
+where
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+    fn leaves(self) -> impl LeavesIterator<Item = Self::Item> {
         BorrowedBinaryLeavesIterator {
             root: self.root,
             traversal_stack_bottom: self.traversal_stack,
@@ -134,8 +146,7 @@ where
         }
     }
 
-    #[doc = include_str!("../../doc_files/attach_ancestors.md")]
-    pub fn attach_ancestors(self) -> BorrowedBinaryDFSPreorderIteratorWithAncestors<'a, Node> {
+    fn attach_ancestors(self) -> impl AncestorsIterator<Item = [Node::BorrowedValue]> {
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS preorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
@@ -174,19 +185,6 @@ where
         }
     }
 
-    #[doc = "../../doc_files/ancestors_leaves.md"]
-    pub fn leaves(
-        self,
-    ) -> BorrowedBinaryDFSLeavesPostorderIteratorWithAncestors<'a, Node, BinaryChildren<&'a Node>>
-    {
-        BorrowedBinaryDFSLeavesPostorderIteratorWithAncestors {
-            root: self.root,
-            item_stack: self.item_stack,
-            old_traversal_stack: self.traversal_stack,
-            new_traversal_stack: Vec::new(),
-        }
-    }
-
     advance_dfs!(get_value_and_children_iter);
 }
 
@@ -196,4 +194,18 @@ where
 {
     type Item = [Node::BorrowedValue];
     preorder_streaming_iterator_impl!();
+}
+
+impl<'a, Node> AncestorsIterator for BorrowedBinaryDFSPreorderIteratorWithAncestors<'a, Node>
+where
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+    fn leaves(self) -> impl AncestorsLeavesIterator<Item = Self::Item> {
+        BorrowedBinaryDFSLeavesPostorderIteratorWithAncestors {
+            root: self.root,
+            item_stack: self.item_stack,
+            old_traversal_stack: self.traversal_stack,
+            new_traversal_stack: Vec::new(),
+        }
+    }
 }

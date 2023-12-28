@@ -9,7 +9,10 @@ use crate::{
         },
         depth_first::mut_borrow::{MutBorrowedBinaryLeavesIterator, MutBorrowedLeavesIterator},
     },
-    prelude::{BinaryChildren, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode},
+    prelude::{
+        AncestorsIteratorMut, AncestorsLeavesIteratorMut, BinaryChildren, LeavesIterator,
+        MutBorrowedBinaryTreeNode, MutBorrowedTreeNode, TreeIteratorMut,
+    },
 };
 
 use super::{advance_dfs, dfs_preorder_next, get_mut, preorder_streaming_iterator_impl};
@@ -32,9 +35,13 @@ where
             traversal_stack: Vec::new(),
         }
     }
+}
 
-    #[doc = include_str!("../../doc_files/leaves.md")]
-    pub fn leaves(self) -> MutBorrowedLeavesIterator<'a, Node, Node::MutBorrowedChildren> {
+impl<'a, Node> TreeIteratorMut for MutBorrowedDFSPreorderIterator<'a, Node>
+where
+    Node: MutBorrowedTreeNode<'a>,
+{
+    fn leaves(self) -> impl LeavesIterator<Item = Self::Item> {
         MutBorrowedLeavesIterator {
             root: self.root,
             traversal_stack_bottom: self.traversal_stack,
@@ -43,8 +50,7 @@ where
         }
     }
 
-    #[doc = include_str!("../../doc_files/attach_ancestors.md")]
-    pub fn attach_ancestors(self) -> MutBorrowedDFSPreorderIteratorWithAncestors<'a, Node> {
+    fn attach_ancestors(self) -> impl AncestorsIteratorMut<Item = [Node::MutBorrowedValue]> {
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS preorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
@@ -83,19 +89,6 @@ where
         }
     }
 
-    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(
-        self,
-    ) -> MutBorrowedDFSLeavesPostorderIteratorWithAncestors<'a, Node, Node::MutBorrowedChildren>
-    {
-        MutBorrowedDFSLeavesPostorderIteratorWithAncestors {
-            root: self.root,
-            item_stack: self.item_stack,
-            old_traversal_stack: self.traversal_stack,
-            new_traversal_stack: Vec::new(),
-        }
-    }
-
     advance_dfs!(get_value_and_children_iter_mut);
 }
 
@@ -112,6 +105,20 @@ where
     Node: MutBorrowedTreeNode<'a>,
 {
     get_mut!();
+}
+
+impl<'a, Node> AncestorsIteratorMut for MutBorrowedDFSPreorderIteratorWithAncestors<'a, Node>
+where
+    Node: MutBorrowedTreeNode<'a>,
+{
+    fn leaves(self) -> impl AncestorsLeavesIteratorMut<Item = Self::Item> {
+        MutBorrowedDFSLeavesPostorderIteratorWithAncestors {
+            root: self.root,
+            item_stack: self.item_stack,
+            old_traversal_stack: self.traversal_stack,
+            new_traversal_stack: Vec::new(),
+        }
+    }
 }
 
 pub struct MutBorrowedBinaryDFSPreorderIterator<'a, Node>
@@ -132,9 +139,13 @@ where
             traversal_stack: Vec::new(),
         }
     }
+}
 
-    #[doc = include_str!("../../doc_files/leaves.md")]
-    pub fn leaves(self) -> MutBorrowedBinaryLeavesIterator<'a, Node, BinaryChildren<&'a mut Node>> {
+impl<'a, Node> TreeIteratorMut for MutBorrowedBinaryDFSPreorderIterator<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    fn leaves(self) -> impl LeavesIterator<Item = Self::Item> {
         MutBorrowedBinaryLeavesIterator {
             root: self.root,
             traversal_stack_bottom: self.traversal_stack,
@@ -143,8 +154,7 @@ where
         }
     }
 
-    #[doc = include_str!("../../doc_files/attach_ancestors.md")]
-    pub fn attach_ancestors(self) -> MutBorrowedBinaryDFSPreorderIteratorWithAncestors<'a, Node> {
+    fn attach_ancestors(self) -> impl AncestorsIteratorMut<Item = [Node::MutBorrowedValue]> {
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS preorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
@@ -185,22 +195,6 @@ where
         }
     }
 
-    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(
-        self,
-    ) -> MutBorrowedBinaryDFSLeavesPostorderIteratorWithAncestors<
-        'a,
-        Node,
-        BinaryChildren<&'a mut Node>,
-    > {
-        MutBorrowedBinaryDFSLeavesPostorderIteratorWithAncestors {
-            root: self.root,
-            item_stack: self.item_stack,
-            old_traversal_stack: self.traversal_stack,
-            new_traversal_stack: Vec::new(),
-        }
-    }
-
     advance_dfs!(get_value_and_children_iter_mut);
 }
 
@@ -217,4 +211,18 @@ where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
     get_mut!();
+}
+
+impl<'a, Node> AncestorsIteratorMut for MutBorrowedBinaryDFSPreorderIteratorWithAncestors<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    fn leaves(self) -> impl AncestorsLeavesIteratorMut<Item = Self::Item> {
+        MutBorrowedBinaryDFSLeavesPostorderIteratorWithAncestors {
+            root: self.root,
+            item_stack: self.item_stack,
+            old_traversal_stack: self.traversal_stack,
+            new_traversal_stack: Vec::new(),
+        }
+    }
 }

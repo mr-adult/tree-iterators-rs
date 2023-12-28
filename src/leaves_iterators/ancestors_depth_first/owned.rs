@@ -1,4 +1,6 @@
-use crate::prelude::{BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode};
+use crate::prelude::{
+    AncestorsLeavesIteratorMut, BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode,
+};
 use alloc::vec::Vec;
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
 
@@ -32,6 +34,14 @@ where
     get_mut!();
 }
 
+impl<Node, Iter> AncestorsLeavesIteratorMut
+    for OwnedDFSLeavesPostorderIteratorWithAncestors<Node, Iter>
+where
+    Node: OwnedTreeNode,
+    Iter: Iterator<Item = Node>,
+{
+}
+
 pub struct OwnedBinaryDFSLeavesPostorderIteratorWithAncestors<Node, Iter>
 where
     Node: OwnedBinaryTreeNode,
@@ -60,4 +70,12 @@ where
     Iter: Iterator<Item = Node>,
 {
     get_mut!();
+}
+
+impl<Node, Iter> AncestorsLeavesIteratorMut
+    for OwnedBinaryDFSLeavesPostorderIteratorWithAncestors<Node, Iter>
+where
+    Node: OwnedBinaryTreeNode,
+    Iter: Iterator<Item = Node>,
+{
 }

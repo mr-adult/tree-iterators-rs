@@ -1,4 +1,6 @@
-use crate::prelude::{BinaryChildren, BorrowedBinaryTreeNode, BorrowedTreeNode};
+use crate::prelude::{
+    AncestorsLeavesIterator, BinaryChildren, BorrowedBinaryTreeNode, BorrowedTreeNode,
+};
 use alloc::vec::Vec;
 use streaming_iterator::StreamingIterator;
 
@@ -25,6 +27,14 @@ where
     streaming_leaves!(get_value_and_children_iter);
 }
 
+impl<'a, Node, Iter> AncestorsLeavesIterator
+    for BorrowedDFSLeavesPostorderIteratorWithAncestors<'a, Node, Iter>
+where
+    Node: BorrowedTreeNode<'a>,
+    Iter: Iterator<Item = &'a Node>,
+{
+}
+
 pub struct BorrowedBinaryDFSLeavesPostorderIteratorWithAncestors<'a, Node, Iter>
 where
     Node: BorrowedBinaryTreeNode<'a>,
@@ -44,4 +54,12 @@ where
 {
     type Item = [Node::BorrowedValue];
     streaming_leaves!(get_value_and_children_iter);
+}
+
+impl<'a, Node, Iter> AncestorsLeavesIterator
+    for BorrowedBinaryDFSLeavesPostorderIteratorWithAncestors<'a, Node, Iter>
+where
+    Node: BorrowedBinaryTreeNode<'a>,
+    Iter: Iterator<Item = &'a Node>,
+{
 }
