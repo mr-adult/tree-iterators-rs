@@ -457,7 +457,7 @@ println!("{}", result);
 
 ### Attach Ancestors
 
-attach_ancestors() is a method that can be called after any of the above APIs to change the iterator structure into one that returns a slice of all ancestors and the current value in the tree. If one of these is called, the (now streaming) iterator will yield a slice where the item at index 0 is the root value, the item at index len() - 1 is the current value, and everything in between is the other ancestors. As an example, when we are at the value of 10 in our traversal (see above documentation), the slice will look like this: \[0, 2, 6, 7, 8, 9, 10\].
+[attach_ancestors()](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.TreeIterator.html#method.attach_ancestors) is a method that can be called after any of the above APIs to change the iterator structure into one that returns a slice of all ancestors and the current value in the tree. If one of these is called, the (now streaming) iterator will yield a slice where the item at index 0 is the root value, the item at index len() - 1 is the current value, and everything in between is the other ancestors. As an example, when we are at the value of 10 in our traversal (see above documentation), the slice will look like this: \[0, 2, 6, 7, 8, 9, 10\].
 
 For example, we can use this API to filter down to only the values where all of the ancestors and the current node are even numbers in the example tree. 
 
@@ -571,7 +571,7 @@ println!("{}", result);
 
 ### Leaves
 
-leaves() is a method that can be called after any of the above APIs (including attach_ancestors()) to change the iterator structure to one that only returns leaves of the tree. In the example tree (see above documentation), this will always result in the sequence 3, 4, 5, 10. Once this method is called, the iterator transforms to be either a breadth-first (if the iterator was previously breadth-first) or a depth first postorder search (if the iterator was previously one of pre-, in-, or post-order depth first searches).
+[leaves()](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.TreeIterator.html#method.leaves) is a method that can be called after any of the above APIs (including attach_ancestors() - see [here](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.AncestorsIterator.html#method.leaves)) to change the iterator structure to one that only returns leaves of the tree. In the example tree (see above documentation), this will always result in the sequence 3, 4, 5, 10. Once this method is called, the iterator transforms to be either a breadth-first (if the iterator was previously breadth-first) or a depth first postorder search (if the iterator was previously one of pre-, in-, or post-order depth first searches).
 
 I will be using the depth first preorder search in the examples, but this works with all of the traversal types. This method can be called immediately if you wish to only receive the leaves of the tree like so:
 ```rust
