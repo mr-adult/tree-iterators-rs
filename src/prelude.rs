@@ -310,7 +310,7 @@ pub trait TreeIteratorMut: Iterator {
     /// root.dfs_preorder()
     ///     .attach_ancestors()
     ///     .filter(|slice|
-    ///         slice.iter_mut().all(|value| *value % 2 == 0)
+    ///         slice.iter().all(|value| *value % 2 == 0)
     ///     )
     ///     .map(|slice| slice[slice.len() - 1])
     ///     .for_each(|value| {
@@ -364,9 +364,10 @@ pub trait AncestorsIterator: StreamingIterator {
     ///     prelude::*,
     ///     examples::create_example_binary_tree
     /// };
+    /// use streaming_iterator::StreamingIterator;
     ///
     /// let root = create_example_binary_tree();
-    /// let leaves_streaming_iter = root.dfs_postorder().attach_ancestors().leaves();
+    /// let mut leaves_streaming_iter = root.dfs_postorder().attach_ancestors().leaves();
     /// while let Some(leaf_with_ancestors) = leaves_streaming_iter.next() {
     ///     println!("{:?}", leaf_with_ancestors);
     /// }
@@ -411,9 +412,10 @@ pub trait AncestorsIteratorMut: StreamingIteratorMut {
     ///     prelude::*,
     ///     examples::create_example_binary_tree
     /// };
+    /// use streaming_iterator::StreamingIterator;
     ///
     /// let root = create_example_binary_tree();
-    /// let leaves_streaming_iter = root.dfs_postorder().attach_ancestors().leaves();
+    /// let mut leaves_streaming_iter = root.dfs_postorder().attach_ancestors().leaves();
     /// while let Some(leaf_with_ancestors) = leaves_streaming_iter.next() {
     ///     println!("{:?}", leaf_with_ancestors);
     /// }
