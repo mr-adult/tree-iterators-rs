@@ -19,7 +19,7 @@ where
     item_stack: Vec<Node::OwnedValue>,
     tree_cache: TreeNodeVecDeque<Node::OwnedValue>,
     traversal_stack: Vec<TreeNodeVecDeque<Node::OwnedValue>>,
-    iterator_queue: VecDeque<Option<Peekable<Node::OwnedChildren>>>,
+    iterator_queue: VecDeque<Peekable<Node::OwnedChildren>>,
 }
 
 impl<Node> OwnedBFSLeavesIteratorWithAncestors<Node>
@@ -35,10 +35,7 @@ where
             iterator_queue: source
                 .iterator_queue
                 .into_iter()
-                .map(|val| match val {
-                    None => None,
-                    Some(val) => Some(val.peekable()),
-                })
+                .map(|val| val.peekable())
                 .collect(),
             traversal_stack: source.traversal_stack,
             tree_cache: source.tree_cache,
@@ -77,7 +74,7 @@ where
     item_stack: Vec<Node::OwnedValue>,
     tree_cache: TreeNodeVecDeque<Node::OwnedValue>,
     traversal_stack: Vec<TreeNodeVecDeque<Node::OwnedValue>>,
-    iterator_queue: VecDeque<Option<Peekable<BinaryChildren<Node>>>>,
+    iterator_queue: VecDeque<Peekable<BinaryChildren<Node>>>,
 }
 
 impl<Node> OwnedBinaryBFSLeavesIteratorWithAncestors<Node>
@@ -93,10 +90,7 @@ where
             iterator_queue: source
                 .iterator_queue
                 .into_iter()
-                .map(|val| match val {
-                    None => None,
-                    Some(val) => Some(val.peekable()),
-                })
+                .map(|val| val.peekable())
                 .collect(),
             traversal_stack: source.traversal_stack,
             tree_cache: source.tree_cache,

@@ -73,7 +73,7 @@ where
     pub(crate) item_stack: Vec<Node::OwnedValue>,
     pub(crate) tree_cache: TreeNodeVecDeque<Node::OwnedValue>,
     pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::OwnedValue>>,
-    pub(crate) iterator_queue: VecDeque<Option<Node::OwnedChildren>>,
+    pub(crate) iterator_queue: VecDeque<Node::OwnedChildren>,
 }
 
 impl<'a, Node> OwnedBFSIteratorWithAncestors<Node>
@@ -185,7 +185,7 @@ where
     pub(crate) item_stack: Vec<Node::OwnedValue>,
     pub(crate) tree_cache: TreeNodeVecDeque<Node::OwnedValue>,
     pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::OwnedValue>>,
-    pub(crate) iterator_queue: VecDeque<Option<BinaryChildren<Node>>>,
+    pub(crate) iterator_queue: VecDeque<BinaryChildren<Node>>,
 }
 
 impl<'a, Node> OwnedBinaryBFSIteratorWithAncestors<Node>

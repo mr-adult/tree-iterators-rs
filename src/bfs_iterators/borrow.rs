@@ -72,7 +72,7 @@ where
     pub(crate) item_stack: Vec<Node::BorrowedValue>,
     pub(crate) tree_cache: TreeNodeVecDeque<Node::BorrowedValue>,
     pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::BorrowedValue>>,
-    pub(crate) iterator_queue: VecDeque<Option<Node::BorrowedChildren>>,
+    pub(crate) iterator_queue: VecDeque<Node::BorrowedChildren>,
 }
 
 impl<'a, Node> BorrowedBFSIteratorWithAncestors<'a, Node>
@@ -177,7 +177,7 @@ where
     pub(crate) item_stack: Vec<Node::BorrowedValue>,
     pub(crate) tree_cache: TreeNodeVecDeque<Node::BorrowedValue>,
     pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::BorrowedValue>>,
-    pub(crate) iterator_queue: VecDeque<Option<BinaryChildren<&'a Node>>>,
+    pub(crate) iterator_queue: VecDeque<BinaryChildren<&'a Node>>,
 }
 
 impl<'a, Node> BorrowedBinaryBFSIteratorWithAncestors<'a, Node>

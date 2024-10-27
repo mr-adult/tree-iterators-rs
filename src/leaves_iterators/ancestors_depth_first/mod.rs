@@ -9,13 +9,8 @@ macro_rules! streaming_leaves {
                 match core::mem::take(&mut self.root) {
                     Some(next) => {
                         let (value, children) = next.$get_value_and_children();
-                        match children {
-                            None => return,
-                            Some(children) => {
-                                self.new_traversal_stack.push(children);
-                                self.item_stack.push(value);
-                            }
-                        }
+                        self.new_traversal_stack.push(children);
+                        self.item_stack.push(value);
                     }
                     None => {
                         let mut pushed_another_iterator = false;
@@ -44,23 +39,12 @@ macro_rules! streaming_leaves {
                                         }
                                         Some(node) => {
                                             let (value, children) = node.$get_value_and_children();
-                                            match children {
-                                                None => {
-                                                    if !pushed_another_iterator {
-                                                        self.item_stack.pop();
-                                                    }
-                                                    self.item_stack.push(value);
-                                                    return;
-                                                }
-                                                Some(children) => {
-                                                    if self.item_stack.len() > total_stack_len {
-                                                        self.item_stack.pop();
-                                                    }
-                                                    self.new_traversal_stack.push(children);
-                                                    self.item_stack.push(value);
-                                                    pushed_another_iterator = true;
-                                                }
+                                            if self.item_stack.len() > total_stack_len {
+                                                self.item_stack.pop();
                                             }
+                                            self.new_traversal_stack.push(children);
+                                            self.item_stack.push(value);
+                                            pushed_another_iterator = true;
                                         }
                                     },
                                 }
@@ -83,23 +67,12 @@ macro_rules! streaming_leaves {
                                     }
                                     Some(node) => {
                                         let (value, children) = node.$get_value_and_children();
-                                        match children {
-                                            None => {
-                                                if !pushed_another_iterator {
-                                                    self.item_stack.pop();
-                                                }
-                                                self.item_stack.push(value);
-                                                return;
-                                            }
-                                            Some(children) => {
-                                                if self.item_stack.len() > total_stack_len {
-                                                    self.item_stack.pop();
-                                                }
-                                                self.new_traversal_stack.push(children);
-                                                self.item_stack.push(value);
-                                                pushed_another_iterator = true;
-                                            }
+                                        if self.item_stack.len() > total_stack_len {
+                                            self.item_stack.pop();
                                         }
+                                        self.new_traversal_stack.push(children);
+                                        self.item_stack.push(value);
+                                        pushed_another_iterator = true;
                                     }
                                 },
                             }

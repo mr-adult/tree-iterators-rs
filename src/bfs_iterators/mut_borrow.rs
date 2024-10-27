@@ -74,7 +74,7 @@ where
     pub(crate) item_stack: Vec<Node::MutBorrowedValue>,
     pub(crate) tree_cache: TreeNodeVecDeque<Node::MutBorrowedValue>,
     pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::MutBorrowedValue>>,
-    pub(crate) iterator_queue: VecDeque<Option<Node::MutBorrowedChildren>>,
+    pub(crate) iterator_queue: VecDeque<Node::MutBorrowedChildren>,
 }
 
 impl<'a, Node> MutBorrowedBFSIteratorWithAncestors<'a, Node>
@@ -186,7 +186,7 @@ where
     pub(crate) item_stack: Vec<Node::MutBorrowedValue>,
     pub(crate) tree_cache: TreeNodeVecDeque<Node::MutBorrowedValue>,
     pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::MutBorrowedValue>>,
-    pub(crate) iterator_queue: VecDeque<Option<BinaryChildren<&'a mut Node>>>,
+    pub(crate) iterator_queue: VecDeque<BinaryChildren<&'a mut Node>>,
 }
 
 impl<'a, Node> MutBorrowedBinaryBFSIteratorWithAncestors<'a, Node>

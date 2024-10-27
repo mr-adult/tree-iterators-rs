@@ -50,47 +50,49 @@ pub fn create_example_binary_tree() -> BinaryTreeNode<usize> {
 }
 
 pub fn create_example_tree() -> TreeNode<usize> {
+    use alloc::vec::Vec;
+
     TreeNode {
         value: 0,
-        children: Some(vec![
+        children: vec![
             TreeNode {
                 value: 1,
-                children: Some(vec![
+                children: vec![
                     TreeNode {
                         value: 3,
-                        children: None,
+                        children: Vec::with_capacity(0),
                     },
                     TreeNode {
                         value: 4,
-                        children: None,
+                        children: Vec::with_capacity(0),
                     },
-                ]),
+                ],
             },
             TreeNode {
                 value: 2,
-                children: Some(vec![
+                children: vec![
                     TreeNode {
                         value: 5,
-                        children: None,
+                        children: Vec::with_capacity(0),
                     },
                     TreeNode {
                         value: 6,
-                        children: Some(vec![TreeNode {
+                        children: vec![TreeNode {
                             value: 7,
-                            children: Some(vec![TreeNode {
+                            children: vec![TreeNode {
                                 value: 8,
-                                children: Some(vec![TreeNode {
+                                children: vec![TreeNode {
                                     value: 9,
-                                    children: Some(vec![TreeNode {
+                                    children: vec![TreeNode {
                                         value: 10,
-                                        children: None,
-                                    }]),
-                                }]),
-                            }]),
-                        }]),
+                                        children: Vec::with_capacity(0),
+                                    }],
+                                }],
+                            }],
+                        }],
                     },
-                ]),
+                ],
             },
-        ]),
+        ],
     }
 }

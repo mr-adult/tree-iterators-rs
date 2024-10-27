@@ -8,12 +8,7 @@ macro_rules! bfs_next {
             match core::mem::take(&mut self.root) {
                 Some(root) => {
                     let (value, children) = root.$get_value_and_children();
-                    match children {
-                        None => {}
-                        Some(children) => {
-                            self.traversal_queue.push_back(children);
-                        }
-                    }
+                    self.traversal_queue.push_back(children);
                     return Some(value);
                 }
                 None => loop {
@@ -27,10 +22,7 @@ macro_rules! bfs_next {
                             }
                             Some(next) => {
                                 let (value, children) = next.$get_value_and_children();
-                                match children {
-                                    None => {}
-                                    Some(children) => self.traversal_queue.push_back(children),
-                                }
+                                self.traversal_queue.push_back(children);
                                 return Some(value);
                             }
                         },
@@ -158,16 +150,14 @@ macro_rules! bfs_streaming_iterator_impl {
                         return;
                     }
                     Some(iter) => {
-                        if let Some(iter) = iter {
-                            if let Some(next) = iter.next() {
-                                if self.item_stack.len() == self.traversal_stack.len() + 2 {
-                                    self.pop_from_item_stack();
-                                }
-                                let (value, children) = next.$get_value_and_children();
-                                self.item_stack.push(value);
-                                self.iterator_queue.push_back(children);
-                                break;
+                        if let Some(next) = iter.next() {
+                            if self.item_stack.len() == self.traversal_stack.len() + 2 {
+                                self.pop_from_item_stack();
                             }
+                            let (value, children) = next.$get_value_and_children();
+                            self.item_stack.push(value);
+                            self.iterator_queue.push_back(children);
+                            break;
                         }
 
                         if self.item_stack.len() == self.traversal_stack.len() + 2 {

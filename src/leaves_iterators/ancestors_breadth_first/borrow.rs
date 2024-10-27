@@ -21,7 +21,7 @@ where
     item_stack: Vec<Node::BorrowedValue>,
     tree_cache: TreeNodeVecDeque<Node::BorrowedValue>,
     traversal_stack: Vec<TreeNodeVecDeque<Node::BorrowedValue>>,
-    iterator_queue: VecDeque<Option<Peekable<Node::BorrowedChildren>>>,
+    iterator_queue: VecDeque<Peekable<Node::BorrowedChildren>>,
 }
 
 impl<'a, Node> BorrowedBFSLeavesIteratorWithAncestors<'a, Node>
@@ -37,10 +37,7 @@ where
             iterator_queue: source
                 .iterator_queue
                 .into_iter()
-                .map(|val| match val {
-                    None => None,
-                    Some(val) => Some(val.peekable()),
-                })
+                .map(|val| val.peekable())
                 .collect(),
             traversal_stack: source.traversal_stack,
             tree_cache: source.tree_cache,
@@ -72,7 +69,7 @@ where
     item_stack: Vec<Node::BorrowedValue>,
     tree_cache: TreeNodeVecDeque<Node::BorrowedValue>,
     traversal_stack: Vec<TreeNodeVecDeque<Node::BorrowedValue>>,
-    iterator_queue: VecDeque<Option<Peekable<BinaryChildren<&'a Node>>>>,
+    iterator_queue: VecDeque<Peekable<BinaryChildren<&'a Node>>>,
 }
 
 impl<'a, Node> BorrowedBinaryBFSLeavesIteratorWithAncestors<'a, Node>
@@ -88,10 +85,7 @@ where
             iterator_queue: source
                 .iterator_queue
                 .into_iter()
-                .map(|val| match val {
-                    None => None,
-                    Some(val) => Some(val.peekable()),
-                })
+                .map(|val| val.peekable())
                 .collect(),
             traversal_stack: source.traversal_stack,
             tree_cache: source.tree_cache,

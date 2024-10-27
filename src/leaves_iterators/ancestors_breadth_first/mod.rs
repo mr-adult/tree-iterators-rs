@@ -11,12 +11,7 @@ macro_rules! bfs_next {
                     .iterator_queue
                     .get_mut(0)
                     .expect("root node to have a children collection on the stack");
-                return first_iter.is_some()
-                    && first_iter
-                        .as_mut()
-                        .expect("to be Some() after .is_some() call")
-                        .peek()
-                        .is_some();
+                return first_iter.peek().is_some();
             }
 
             loop {
@@ -26,29 +21,18 @@ macro_rules! bfs_next {
                         return false;
                     }
                     Some(iter) => {
-                        if let Some(iter) = iter {
-                            if let Some(next) = iter.next() {
-                                if self.item_stack.len() == self.traversal_stack.len() + 2 {
-                                    self.pop_from_item_stack();
-                                }
-                                let (value, children) = next.$get_value_and_children();
-                                self.item_stack.push(value);
-                                let has_children;
-                                let peekable_children = match children {
-                                    None => {
-                                        has_children = false;
-                                        None
-                                    }
-                                    Some(iter) => {
-                                        let mut peekable_children = iter.peekable();
-                                        has_children = peekable_children.peek().is_some();
-                                        Some(peekable_children)
-                                    }
-                                };
-
-                                self.iterator_queue.push_back(peekable_children);
-                                return has_children;
+                        if let Some(next) = iter.next() {
+                            if self.item_stack.len() == self.traversal_stack.len() + 2 {
+                                self.pop_from_item_stack();
                             }
+                            let (value, children) = next.$get_value_and_children();
+                            self.item_stack.push(value);
+                            let has_children;
+                            let mut peekable_children = children.peekable();
+                            has_children = peekable_children.peek().is_some();
+
+                            self.iterator_queue.push_back(peekable_children);
+                            return has_children;
                         }
 
                         if self.item_stack.len() == self.traversal_stack.len() + 2 {

@@ -8,10 +8,7 @@ macro_rules! dfs_preorder_next {
             match core::mem::take(&mut self.root) {
                 Some(next) => {
                     let (value, children) = next.$get_value_and_children();
-                    match children {
-                        None => {}
-                        Some(children) => self.traversal_stack.push(children),
-                    }
+                    self.traversal_stack.push(children);
                     return Some(value);
                 }
                 None => {
@@ -42,10 +39,7 @@ macro_rules! dfs_preorder_next {
                         None => return None,
                         Some(node) => {
                             let (value, children) = node.$get_value_and_children();
-                            match children {
-                                None => {}
-                                Some(children) => self.traversal_stack.push(children),
-                            }
+                            self.traversal_stack.push(children);
                             return Some(value);
                         }
                     }
@@ -61,11 +55,7 @@ macro_rules! advance_dfs {
             match core::mem::take(&mut self.root) {
                 Some(next) => {
                     let (value, children) = next.$get_value_and_children();
-                    match children {
-                        None => {}
-                        Some(children) => self.traversal_stack.push(children),
-                    }
-
+                    self.traversal_stack.push(children);
                     self.item_stack.push(value);
                     return;
                 }
@@ -103,10 +93,7 @@ macro_rules! advance_dfs {
                         None => return,
                         Some(node) => {
                             let (value, children) = node.$get_value_and_children();
-                            match children {
-                                None => {}
-                                Some(children) => self.traversal_stack.push(children),
-                            }
+                            self.traversal_stack.push(children);
                             self.item_stack.push(value);
                             return;
                         }

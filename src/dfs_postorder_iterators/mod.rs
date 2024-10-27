@@ -9,15 +9,8 @@ macro_rules! dfs_postorder_next {
                 match core::mem::take(&mut self.root) {
                     Some(next) => {
                         let (value, children) = next.$get_value_and_children();
-                        match children {
-                            None => {
-                                return Some(value);
-                            }
-                            Some(children) => {
-                                self.traversal_stack.push(children);
-                                self.item_stack.push(value);
-                            }
-                        }
+                        self.traversal_stack.push(children);
+                        self.item_stack.push(value);
                     }
                     None => loop {
                         let stack_len = self.traversal_stack.len();
@@ -34,12 +27,7 @@ macro_rules! dfs_postorder_next {
                                 Some(node) => {
                                     let (value, children) = node.$get_value_and_children();
                                     self.item_stack.push(value);
-                                    match children {
-                                        None => {
-                                            return self.item_stack.pop();
-                                        }
-                                        Some(children) => self.traversal_stack.push(children),
-                                    }
+                                    self.traversal_stack.push(children);
                                 }
                             },
                         }
@@ -58,17 +46,11 @@ macro_rules! postorder_streaming_iterator_impl {
                 match core::mem::take(&mut self.root) {
                     Some(next) => {
                         let (value, children) = next.$get_value_and_children();
-                        match children {
-                            None => return,
-                            Some(children) => {
-                                self.traversal_stack.push(children);
-                                self.item_stack.push(value);
-                                is_first_iteration = false;
-                            }
-                        }
+                        self.traversal_stack.push(children);
+                        self.item_stack.push(value);
+                        is_first_iteration = false;
                     }
                     None => {
-                        let mut pushed_another_iterator = false;
                         loop {
                             let stack_len = self.traversal_stack.len();
                             if stack_len < 1 {
@@ -90,23 +72,11 @@ macro_rules! postorder_streaming_iterator_impl {
                                     }
                                     Some(node) => {
                                         let (value, children) = node.$get_value_and_children();
-                                        match children {
-                                            None => {
-                                                if !pushed_another_iterator {
-                                                    self.item_stack.pop();
-                                                }
-                                                self.item_stack.push(value);
-                                                return;
-                                            }
-                                            Some(children) => {
-                                                if is_first_iteration {
-                                                    self.item_stack.pop();
-                                                }
-                                                self.traversal_stack.push(children);
-                                                self.item_stack.push(value);
-                                                pushed_another_iterator = true;
-                                            }
+                                        if is_first_iteration {
+                                            self.item_stack.pop();
                                         }
+                                        self.traversal_stack.push(children);
+                                        self.item_stack.push(value);
                                     }
                                 },
                             }

@@ -9,15 +9,8 @@ macro_rules! dfs_postorder_leaves_next {
                 match core::mem::take(&mut self.root) {
                     Some(next) => {
                         let (value, children) = next.$get_value_and_children();
-                        match children {
-                            None => {
-                                return Some(value);
-                            }
-                            Some(children) => {
-                                self.traversal_stack_top.push(children);
-                                self.item_stack.push(value);
-                            }
-                        }
+                        self.traversal_stack_top.push(children);
+                        self.item_stack.push(value);
                     }
                     None => {
                         // keep track of if the children iterator was just added.
@@ -46,15 +39,8 @@ macro_rules! dfs_postorder_leaves_next {
                                         Some(node) => {
                                             let (value, children) = node.$get_value_and_children();
                                             self.item_stack.push(value);
-                                            match children {
-                                                None => {
-                                                    return self.item_stack.pop();
-                                                }
-                                                Some(children) => {
-                                                    self.traversal_stack_top.push(children);
-                                                    just_added = true;
-                                                }
-                                            }
+                                            self.traversal_stack_top.push(children);
+                                            just_added = true;
                                         }
                                     },
                                 }
@@ -70,14 +56,7 @@ macro_rules! dfs_postorder_leaves_next {
                                     Some(node) => {
                                         let (value, children) = node.$get_value_and_children();
                                         self.item_stack.push(value);
-                                        match children {
-                                            None => {
-                                                return self.item_stack.pop();
-                                            }
-                                            Some(children) => {
-                                                self.traversal_stack_top.push(children)
-                                            }
-                                        }
+                                        self.traversal_stack_top.push(children)
                                     }
                                 },
                             }

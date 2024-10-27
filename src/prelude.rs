@@ -54,7 +54,7 @@ pub struct TreeNode<T> {
     /// This node's value
     pub value: T,
     /// The children of the current node.
-    pub children: Option<Vec<TreeNode<T>>>,
+    pub children: Vec<TreeNode<T>>,
 }
 
 /// this trait provides a consistent trait to simplify this library's public interface and documentation.
@@ -454,15 +454,13 @@ where
     /// in the process. The other methods of this trait assume that the 'Children'
     /// list does not contain any circular references. If it does, it will create
     /// an infinite loop.
-    fn get_value_and_children(self) -> (Self::OwnedValue, Option<BinaryChildren<Self>>) {
+    fn get_value_and_children(self) -> (Self::OwnedValue, BinaryChildren<Self>) {
         let (value, children) = self.get_value_and_children_binary();
         (
             value,
-            Some(
-                children
-                    .into_iter()
-                    .flat_map(opt_to_opt as fn(Option<Self>) -> Option<Self>),
-            ),
+            children
+                .into_iter()
+                .flat_map(opt_to_opt as fn(Option<Self>) -> Option<Self>),
         )
     }
 
@@ -616,7 +614,7 @@ where
     /// in the process. The other methods of this trait assume that the 'Children'
     /// list does not contain any circular references. If it does, it will create
     /// an infinite loop.
-    fn get_value_and_children(self) -> (Self::OwnedValue, Option<Self::OwnedChildren>);
+    fn get_value_and_children(self) -> (Self::OwnedValue, Self::OwnedChildren);
 
     /// This method retrieves an iterator that can be used to perform
     /// Breadth First (Queue - specifically VecDeque-based) searches of a tree.
@@ -740,15 +738,13 @@ where
     /// any circular references. If there are, an infinite loop will result.
     fn get_value_and_children_iter_mut(
         &'a mut self,
-    ) -> (Self::MutBorrowedValue, Option<BinaryChildren<&'a mut Self>>) {
+    ) -> (Self::MutBorrowedValue, BinaryChildren<&'a mut Self>) {
         let (value, children) = self.get_value_and_children_binary_iter_mut();
         (
             value,
-            Some(
-                children
-                    .into_iter()
-                    .flat_map(opt_to_opt as fn(Option<&'a mut Self>) -> Option<&'a mut Self>),
-            ),
+            children
+                .into_iter()
+                .flat_map(opt_to_opt as fn(Option<&'a mut Self>) -> Option<&'a mut Self>),
         )
     }
 
@@ -903,7 +899,7 @@ where
     /// any circular references. If there are, an infinite loop will result.
     fn get_value_and_children_iter_mut(
         &'a mut self,
-    ) -> (Self::MutBorrowedValue, Option<Self::MutBorrowedChildren>);
+    ) -> (Self::MutBorrowedValue, Self::MutBorrowedChildren);
 
     /// This method retrieves an iterator that can be used to perform
     /// Breadth First (VecDeque-based) searches of a tree.
@@ -1024,17 +1020,13 @@ where
     /// This method gets the value and children from this node, consuming it
     /// in the process. The other methods of this trait assume that the 'Children'
     /// list does not contain and circular references back to parent nodes.
-    fn get_value_and_children_iter(
-        &'a self,
-    ) -> (Self::BorrowedValue, Option<BinaryChildren<&'a Self>>) {
+    fn get_value_and_children_iter(&'a self) -> (Self::BorrowedValue, BinaryChildren<&'a Self>) {
         let (value, children) = self.get_value_and_children_binary_iter();
         (
             value,
-            Some(
-                children
-                    .into_iter()
-                    .flat_map(opt_to_opt as fn(Option<&'a Self>) -> Option<&'a Self>),
-            ),
+            children
+                .into_iter()
+                .flat_map(opt_to_opt as fn(Option<&'a Self>) -> Option<&'a Self>),
         )
     }
 
@@ -1186,9 +1178,7 @@ where
     /// This method gets the value and children from this node, consuming it
     /// in the process. The other methods of this trait assume that the 'Children'
     /// list does not contain and circular references back to parent nodes.
-    fn get_value_and_children_iter(
-        &'a self,
-    ) -> (Self::BorrowedValue, Option<Self::BorrowedChildren>);
+    fn get_value_and_children_iter(&'a self) -> (Self::BorrowedValue, Self::BorrowedChildren);
 
     /// This method retrieves an iterator that can be used to perform
     /// Breadth First (Queue - specifically VecDeque-based) searches of a tree.
@@ -1298,14 +1288,8 @@ impl<T> OwnedTreeNode for TreeNode<T> {
     /// This method gets the value and children from this node. The other
     /// methods of this trait assume that the 'Children' list does not contain
     /// any circular references. If there are, an infinite loop will result.
-    fn get_value_and_children(self) -> (Self::OwnedValue, Option<Self::OwnedChildren>) {
-        (
-            self.value,
-            match self.children {
-                None => None,
-                Some(children) => Some(children.into_iter()),
-            },
-        )
+    fn get_value_and_children(self) -> (Self::OwnedValue, Self::OwnedChildren) {
+        (self.value, self.children.into_iter())
     }
 }
 
@@ -1321,14 +1305,8 @@ where
     /// any circular references. If there are, an infinite loop will result.
     fn get_value_and_children_iter_mut(
         &'a mut self,
-    ) -> (Self::MutBorrowedValue, Option<Self::MutBorrowedChildren>) {
-        (
-            &mut self.value,
-            match &mut self.children {
-                None => None,
-                Some(children) => Some(children.iter_mut()),
-            },
-        )
+    ) -> (Self::MutBorrowedValue, Self::MutBorrowedChildren) {
+        (&mut self.value, self.children.iter_mut())
     }
 }
 
@@ -1342,14 +1320,8 @@ where
     /// This method gets the value and children from this node. The other
     /// methods of this trait assume that the 'Children' list does not contain
     /// any circular references. If there are, an infinite loop will result.
-    fn get_value_and_children_iter(
-        &'a self,
-    ) -> (Self::BorrowedValue, Option<Self::BorrowedChildren>) {
-        let children_iter = match &self.children {
-            Some(vec) => Some(vec.iter()),
-            None => None,
-        };
-        (&self.value, children_iter)
+    fn get_value_and_children_iter(&'a self) -> (Self::BorrowedValue, Self::BorrowedChildren) {
+        (&self.value, self.children.iter())
     }
 }
 
@@ -3295,21 +3267,18 @@ pub(crate) mod tests {
     }
 
     fn create_trees_for_testing() -> Vec<TreeNode<usize>> {
-        vec![
-            create_tree_for_testing(None),
-            create_tree_for_testing(Some(Vec::new())),
-        ]
+        vec![create_tree_for_testing(Vec::new())]
     }
 
     pub(crate) fn create_tree_for_testing(
-        empty_children_list: Option<Vec<TreeNode<usize>>>,
+        empty_children_list: Vec<TreeNode<usize>>,
     ) -> TreeNode<usize> {
         TreeNode {
             value: 0,
-            children: Some(vec![
+            children: vec![
                 TreeNode {
                     value: 1,
-                    children: Some(vec![
+                    children: vec![
                         TreeNode {
                             value: 3,
                             children: empty_children_list.clone(),
@@ -3318,34 +3287,34 @@ pub(crate) mod tests {
                             value: 4,
                             children: empty_children_list.clone(),
                         },
-                    ]),
+                    ],
                 },
                 TreeNode {
                     value: 2,
-                    children: Some(vec![
+                    children: vec![
                         TreeNode {
                             value: 5,
                             children: empty_children_list.clone(),
                         },
                         TreeNode {
                             value: 6,
-                            children: Some(vec![TreeNode {
+                            children: vec![TreeNode {
                                 value: 7,
-                                children: Some(vec![TreeNode {
+                                children: vec![TreeNode {
                                     value: 8,
-                                    children: Some(vec![TreeNode {
+                                    children: vec![TreeNode {
                                         value: 9,
-                                        children: Some(vec![TreeNode {
+                                        children: vec![TreeNode {
                                             value: 10,
                                             children: empty_children_list.clone(),
-                                        }]),
-                                    }]),
-                                }]),
-                            }]),
+                                        }],
+                                    }],
+                                }],
+                            }],
                         },
-                    ]),
+                    ],
                 },
-            ]),
+            ],
         }
     }
 
