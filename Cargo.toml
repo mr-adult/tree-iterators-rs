@@ -1,6 +1,6 @@
 [package]
 name = "tree_iterators_rs"
-version = "1.2.1"
+version = "2.0.0"
 edition = "2021"
 description = "tree_iterators_rs is a library built to provide you with the iterators to easily work with tree data structures in Rust."
 license = "MIT"
@@ -12,8 +12,8 @@ keywords = ["tree", "traversal", "traverse", "search", "iteration"]
 
 [dependencies]
 streaming-iterator = { version = "0.1.9", features = ["alloc"] }
-serde = { version = "1.0.193",  optional = true }
-serde_derive = { version = "1.0.193",  optional = true }
+serde = { version = "1.0",  optional = true }
+serde_derive = { version = "1.0",  optional = true }
 
 [features]
 serde = ["dep:serde", "dep:serde_derive"]
