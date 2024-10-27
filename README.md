@@ -78,6 +78,14 @@ found in
   which include .leaves() and attach_ancestors(). Each of these can be chained
   after the iterator call (more details in **Examples**).
 
+## Change Log
+
+2.0.0 - This version removes the Option wrapping of children iterators. This
+wrapping is redundant since iterators can represent empty collections in and of
+themselves. Removing it will improve performance going forward. All iterator
+methods (bfs(), dfs_preorder(), dfs_postorder(), etc.) can be used just the same
+as in previous versions.
+
 ## Examples
 
 For all of the following examples, we will use the tree structure as follows. It
