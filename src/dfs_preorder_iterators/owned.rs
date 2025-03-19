@@ -19,7 +19,7 @@ where
     Node: OwnedTreeNode,
 {
     root: Option<Node>,
-    traversal_stack: Vec<Node::OwnedChildren>,
+    traversal_stack: Vec<<Node::OwnedChildren as IntoIterator>::IntoIter>,
 }
 
 impl<Node> OwnedDFSPreorderIterator<Node>
@@ -67,7 +67,7 @@ where
     Node: OwnedTreeNode,
 {
     root: Option<Node>,
-    traversal_stack: Vec<Node::OwnedChildren>,
+    traversal_stack: Vec<<Node::OwnedChildren as IntoIterator>::IntoIter>,
     item_stack: Vec<Node::OwnedValue>,
 }
 
@@ -84,7 +84,7 @@ where
     }
 
     #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(self) -> OwnedDFSLeavesPostorderIteratorWithAncestors<Node, Node::OwnedChildren> {
+    pub fn leaves(self) -> OwnedDFSLeavesPostorderIteratorWithAncestors<Node, <Node::OwnedChildren as IntoIterator>::IntoIter> {
         OwnedDFSLeavesPostorderIteratorWithAncestors {
             root: self.root,
             item_stack: self.item_stack,

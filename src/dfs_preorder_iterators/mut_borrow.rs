@@ -19,7 +19,7 @@ where
     Node: MutBorrowedTreeNode<'a>,
 {
     root: Option<&'a mut Node>,
-    traversal_stack: Vec<Node::MutBorrowedChildren>,
+    traversal_stack: Vec<<Node::MutBorrowedChildren as IntoIterator>::IntoIter>,
 }
 
 impl<'a, Node> MutBorrowedDFSPreorderIterator<'a, Node>
@@ -34,7 +34,7 @@ where
     }
 
     #[doc = include_str!("../../doc_files/leaves.md")]
-    pub fn leaves(self) -> MutBorrowedLeavesIterator<'a, Node, Node::MutBorrowedChildren> {
+    pub fn leaves(self) -> MutBorrowedLeavesIterator<'a, Node, <Node::MutBorrowedChildren as IntoIterator>::IntoIter> {
         MutBorrowedLeavesIterator {
             root: self.root,
             traversal_stack_bottom: self.traversal_stack,
@@ -67,7 +67,7 @@ where
     Node: MutBorrowedTreeNode<'a>,
 {
     root: Option<&'a mut Node>,
-    traversal_stack: Vec<Node::MutBorrowedChildren>,
+    traversal_stack: Vec<<Node::MutBorrowedChildren as IntoIterator>::IntoIter>,
     item_stack: Vec<Node::MutBorrowedValue>,
 }
 
@@ -86,7 +86,7 @@ where
     #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
     pub fn leaves(
         self,
-    ) -> MutBorrowedDFSLeavesPostorderIteratorWithAncestors<'a, Node, Node::MutBorrowedChildren>
+    ) -> MutBorrowedDFSLeavesPostorderIteratorWithAncestors<'a, Node, <Node::MutBorrowedChildren as IntoIterator>::IntoIter>
     {
         MutBorrowedDFSLeavesPostorderIteratorWithAncestors {
             root: self.root,

@@ -28,7 +28,7 @@ macro_rules! bfs_next {
                             let (value, children) = next.$get_value_and_children();
                             self.item_stack.push(value);
                             let has_children;
-                            let mut peekable_children = children.peekable();
+                            let mut peekable_children = children.into_iter().peekable();
                             has_children = peekable_children.peek().is_some();
 
                             self.iterator_queue.push_back(peekable_children);

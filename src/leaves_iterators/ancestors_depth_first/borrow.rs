@@ -12,7 +12,7 @@ where
     pub(crate) root: Option<&'a Node>,
     pub(crate) item_stack: Vec<Node::BorrowedValue>,
     pub(crate) old_traversal_stack: Vec<Iter>,
-    pub(crate) new_traversal_stack: Vec<Node::BorrowedChildren>,
+    pub(crate) new_traversal_stack: Vec<<Node::BorrowedChildren as IntoIterator>::IntoIter>,
 }
 
 impl<'a, Node, Iter> StreamingIterator

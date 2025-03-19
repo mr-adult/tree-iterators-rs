@@ -9,7 +9,7 @@ macro_rules! dfs_postorder_next {
                 match core::mem::take(&mut self.root) {
                     Some(next) => {
                         let (value, children) = next.$get_value_and_children();
-                        self.traversal_stack.push(children);
+                        self.traversal_stack.push(children.into_iter());
                         self.item_stack.push(value);
                     }
                     None => loop {
@@ -27,7 +27,7 @@ macro_rules! dfs_postorder_next {
                                 Some(node) => {
                                     let (value, children) = node.$get_value_and_children();
                                     self.item_stack.push(value);
-                                    self.traversal_stack.push(children);
+                                    self.traversal_stack.push(children.into_iter());
                                 }
                             },
                         }
@@ -46,7 +46,7 @@ macro_rules! postorder_streaming_iterator_impl {
                 match core::mem::take(&mut self.root) {
                     Some(next) => {
                         let (value, children) = next.$get_value_and_children();
-                        self.traversal_stack.push(children);
+                        self.traversal_stack.push(children.into_iter());
                         self.item_stack.push(value);
                         is_first_iteration = false;
                     }
@@ -74,7 +74,7 @@ macro_rules! postorder_streaming_iterator_impl {
                                     if is_first_iteration {
                                         self.item_stack.pop();
                                     }
-                                    self.traversal_stack.push(children);
+                                    self.traversal_stack.push(children.into_iter());
                                     self.item_stack.push(value);
                                 }
                             },

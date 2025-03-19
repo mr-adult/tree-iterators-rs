@@ -9,7 +9,7 @@ macro_rules! dfs_postorder_leaves_next {
                 match core::mem::take(&mut self.root) {
                     Some(next) => {
                         let (value, children) = next.$get_value_and_children();
-                        self.traversal_stack_top.push(children);
+                        self.traversal_stack_top.push(children.into_iter());
                         self.item_stack.push(value);
                     }
                     None => {
@@ -39,7 +39,7 @@ macro_rules! dfs_postorder_leaves_next {
                                         Some(node) => {
                                             let (value, children) = node.$get_value_and_children();
                                             self.item_stack.push(value);
-                                            self.traversal_stack_top.push(children);
+                                            self.traversal_stack_top.push(children.into_iter());
                                             just_added = true;
                                         }
                                     },
@@ -56,7 +56,7 @@ macro_rules! dfs_postorder_leaves_next {
                                     Some(node) => {
                                         let (value, children) = node.$get_value_and_children();
                                         self.item_stack.push(value);
-                                        self.traversal_stack_top.push(children)
+                                        self.traversal_stack_top.push(children.into_iter())
                                     }
                                 },
                             }

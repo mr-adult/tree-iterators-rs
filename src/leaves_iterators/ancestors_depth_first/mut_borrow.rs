@@ -12,7 +12,7 @@ where
     pub(crate) root: Option<&'a mut Node>,
     pub(crate) item_stack: Vec<Node::MutBorrowedValue>,
     pub(crate) old_traversal_stack: Vec<Iter>,
-    pub(crate) new_traversal_stack: Vec<Node::MutBorrowedChildren>,
+    pub(crate) new_traversal_stack: Vec<<Node::MutBorrowedChildren as IntoIterator>::IntoIter>,
 }
 
 impl<'a, Node, Iter> StreamingIterator

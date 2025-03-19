@@ -1,8 +1,7 @@
 use alloc::boxed::Box;
-use alloc::vec::{IntoIter, Vec};
+use alloc::vec::Vec;
 use core::fmt::Debug;
 use core::iter::FlatMap;
-use core::slice::{Iter, IterMut};
 
 #[cfg(feature = "serde")]
 use serde_derive::{Deserialize, Serialize};
@@ -233,7 +232,7 @@ where
 
     /// The type of iterator that can be used to iterate over each node's children
     /// collection.
-    type OwnedChildren: Iterator<Item = Self>;
+    type OwnedChildren: IntoIterator<Item = Self>;
 
     /// This method gets the value and children from this node, consuming it
     /// in the process. The other methods of this trait assume that the 'Children'
@@ -517,7 +516,7 @@ where
 
     /// The type of iterator that can be used to iterate over each node's children
     /// collection.
-    type MutBorrowedChildren: Iterator<Item = &'a mut Self>;
+    type MutBorrowedChildren: IntoIterator<Item = &'a mut Self>;
 
     /// This method gets the value and children from this node. The other
     /// methods of this trait assume that the 'Children' list does not contain
@@ -798,7 +797,7 @@ where
     type BorrowedValue: Sized;
     /// The type of iterator that can be used to iterate over each node's children
     /// collection.
-    type BorrowedChildren: Iterator<Item = &'a Self>;
+    type BorrowedChildren: IntoIterator<Item = &'a Self>;
 
     /// This method gets the value and children from this node, consuming it
     /// in the process. The other methods of this trait assume that the 'Children'
@@ -908,13 +907,13 @@ where
 
 impl<T> OwnedTreeNode for TreeNode<T> {
     type OwnedValue = T;
-    type OwnedChildren = IntoIter<Self>;
+    type OwnedChildren = Vec<Self>;
 
     /// This method gets the value and children from this node. The other
     /// methods of this trait assume that the 'Children' list does not contain
     /// any circular references. If there are, an infinite loop will result.
     fn get_value_and_children(self) -> (Self::OwnedValue, Self::OwnedChildren) {
-        (self.value, self.children.into_iter())
+        (self.value, self.children)
     }
 }
 
@@ -923,7 +922,7 @@ where
     T: 'a,
 {
     type MutBorrowedValue = &'a mut T;
-    type MutBorrowedChildren = IterMut<'a, TreeNode<T>>;
+    type MutBorrowedChildren = &'a mut Vec<Self>;
 
     /// This method gets the value and children from this node. The other
     /// methods of this trait assume that the 'Children' list does not contain
@@ -931,7 +930,7 @@ where
     fn get_value_and_children_iter_mut(
         &'a mut self,
     ) -> (Self::MutBorrowedValue, Self::MutBorrowedChildren) {
-        (&mut self.value, self.children.iter_mut())
+        (&mut self.value, &mut self.children)
     }
 }
 
@@ -940,13 +939,13 @@ where
     T: 'a,
 {
     type BorrowedValue = &'a T;
-    type BorrowedChildren = Iter<'a, TreeNode<T>>;
+    type BorrowedChildren = &'a Vec<Self>;
 
     /// This method gets the value and children from this node. The other
     /// methods of this trait assume that the 'Children' list does not contain
     /// any circular references. If there are, an infinite loop will result.
     fn get_value_and_children_iter(&'a self) -> (Self::BorrowedValue, Self::BorrowedChildren) {
-        (&self.value, self.children.iter())
+        (&self.value, &self.children)
     }
 }
 

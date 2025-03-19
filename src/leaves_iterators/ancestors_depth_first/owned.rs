@@ -12,7 +12,7 @@ where
     pub(crate) root: Option<Node>,
     pub(crate) item_stack: Vec<Node::OwnedValue>,
     pub(crate) old_traversal_stack: Vec<Iter>,
-    pub(crate) new_traversal_stack: Vec<Node::OwnedChildren>,
+    pub(crate) new_traversal_stack: Vec<<Node::OwnedChildren as IntoIterator>::IntoIter>,
 }
 
 impl<Node, Iter> StreamingIterator for OwnedDFSLeavesPostorderIteratorWithAncestors<Node, Iter>

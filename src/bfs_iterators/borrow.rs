@@ -18,7 +18,7 @@ where
     Node: BorrowedTreeNode<'a>,
 {
     root: Option<&'a Node>,
-    traversal_queue: VecDeque<Node::BorrowedChildren>,
+    traversal_queue: VecDeque<<Node::BorrowedChildren as IntoIterator>::IntoIter>,
 }
 
 impl<'a, Node> BorrowedBFSIterator<'a, Node>
@@ -66,7 +66,7 @@ where
     pub(crate) item_stack: Vec<Node::BorrowedValue>,
     pub(crate) tree_cache: TreeNodeVecDeque<Node::BorrowedValue>,
     pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::BorrowedValue>>,
-    pub(crate) iterator_queue: VecDeque<Node::BorrowedChildren>,
+    pub(crate) iterator_queue: VecDeque<<Node::BorrowedChildren as IntoIterator>::IntoIter>,
 }
 
 impl<'a, Node> BorrowedBFSIteratorWithAncestors<'a, Node>
@@ -83,7 +83,7 @@ where
         let mut item_stack = Vec::new();
 
         item_stack.push(value);
-        iterator_queue.push_back(children);
+        iterator_queue.push_back(children.into_iter());
 
         BorrowedBFSIteratorWithAncestors {
             is_root: true,

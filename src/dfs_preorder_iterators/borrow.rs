@@ -18,7 +18,7 @@ where
     Node: BorrowedTreeNode<'a>,
 {
     root: Option<&'a Node>,
-    traversal_stack: Vec<Node::BorrowedChildren>,
+    traversal_stack: Vec<<Node::BorrowedChildren as IntoIterator>::IntoIter>,
 }
 
 impl<'a, Node> BorrowedDFSPreorderIterator<'a, Node>
@@ -33,7 +33,7 @@ where
     }
 
     #[doc = include_str!("../../doc_files/leaves.md")]
-    pub fn leaves(self) -> BorrowedLeavesIterator<'a, Node, Node::BorrowedChildren> {
+    pub fn leaves(self) -> BorrowedLeavesIterator<'a, Node, <Node::BorrowedChildren as IntoIterator>::IntoIter> {
         BorrowedLeavesIterator {
             root: self.root,
             traversal_stack_bottom: self.traversal_stack,
@@ -66,7 +66,7 @@ where
     Node: BorrowedTreeNode<'a>,
 {
     root: Option<&'a Node>,
-    traversal_stack: Vec<Node::BorrowedChildren>,
+    traversal_stack: Vec<<Node::BorrowedChildren as IntoIterator>::IntoIter>,
     item_stack: Vec<Node::BorrowedValue>,
 }
 
@@ -85,7 +85,7 @@ where
     #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
     pub fn leaves(
         self,
-    ) -> BorrowedDFSLeavesPostorderIteratorWithAncestors<'a, Node, Node::BorrowedChildren> {
+    ) -> BorrowedDFSLeavesPostorderIteratorWithAncestors<'a, Node, <Node::BorrowedChildren as IntoIterator>::IntoIter> {
         BorrowedDFSLeavesPostorderIteratorWithAncestors {
             root: self.root,
             item_stack: self.item_stack,

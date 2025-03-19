@@ -9,7 +9,7 @@ macro_rules! streaming_leaves {
                 match core::mem::take(&mut self.root) {
                     Some(next) => {
                         let (value, children) = next.$get_value_and_children();
-                        self.new_traversal_stack.push(children);
+                        self.new_traversal_stack.push(children.into_iter());
                         self.item_stack.push(value);
                     }
                     None => {
@@ -42,7 +42,7 @@ macro_rules! streaming_leaves {
                                             if self.item_stack.len() > total_stack_len {
                                                 self.item_stack.pop();
                                             }
-                                            self.new_traversal_stack.push(children);
+                                            self.new_traversal_stack.push(children.into_iter());
                                             self.item_stack.push(value);
                                             pushed_another_iterator = true;
                                         }
@@ -70,7 +70,7 @@ macro_rules! streaming_leaves {
                                         if self.item_stack.len() > total_stack_len {
                                             self.item_stack.pop();
                                         }
-                                        self.new_traversal_stack.push(children);
+                                        self.new_traversal_stack.push(children.into_iter());
                                         self.item_stack.push(value);
                                         pushed_another_iterator = true;
                                     }

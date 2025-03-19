@@ -19,7 +19,7 @@ where
     item_stack: Vec<Node::OwnedValue>,
     tree_cache: TreeNodeVecDeque<Node::OwnedValue>,
     traversal_stack: Vec<TreeNodeVecDeque<Node::OwnedValue>>,
-    iterator_queue: VecDeque<Peekable<Node::OwnedChildren>>,
+    iterator_queue: VecDeque<Peekable<<Node::OwnedChildren as IntoIterator>::IntoIter>>,
 }
 
 impl<Node> OwnedBFSLeavesIteratorWithAncestors<Node>

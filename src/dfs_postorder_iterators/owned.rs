@@ -19,7 +19,7 @@ where
 {
     root: Option<Node>,
     item_stack: Vec<Node::OwnedValue>,
-    traversal_stack: Vec<Node::OwnedChildren>,
+    traversal_stack: Vec<<Node::OwnedChildren as IntoIterator>::IntoIter>,
 }
 
 impl<Node> OwnedDFSPostorderIterator<Node>
@@ -69,7 +69,7 @@ where
 {
     root: Option<Node>,
     item_stack: Vec<Node::OwnedValue>,
-    traversal_stack: Vec<Node::OwnedChildren>,
+    traversal_stack: Vec<<Node::OwnedChildren as IntoIterator>::IntoIter>,
 }
 
 impl<'a, Node> OwnedDFSPostorderIteratorWithAncestors<Node>
@@ -85,7 +85,7 @@ where
     }
 
     #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(self) -> OwnedDFSLeavesPostorderIteratorWithAncestors<Node, Node::OwnedChildren> {
+    pub fn leaves(self) -> OwnedDFSLeavesPostorderIteratorWithAncestors<Node, <Node::OwnedChildren as IntoIterator>::IntoIter> {
         OwnedDFSLeavesPostorderIteratorWithAncestors {
             root: self.root,
             item_stack: self.item_stack,
@@ -116,7 +116,7 @@ where
 {
     root: Option<Node>,
     item_stack: Vec<Node::OwnedValue>,
-    traversal_stack: Vec<BinaryChildren<Node>>,
+    traversal_stack: Vec<<BinaryChildren<Node> as IntoIterator>::IntoIter>,
 }
 
 impl<Node> OwnedBinaryDFSPostorderIterator<Node>

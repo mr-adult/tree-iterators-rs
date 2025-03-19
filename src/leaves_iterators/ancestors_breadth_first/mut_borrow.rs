@@ -21,7 +21,7 @@ where
     item_stack: Vec<Node::MutBorrowedValue>,
     tree_cache: TreeNodeVecDeque<Node::MutBorrowedValue>,
     traversal_stack: Vec<TreeNodeVecDeque<Node::MutBorrowedValue>>,
-    iterator_queue: VecDeque<Peekable<Node::MutBorrowedChildren>>,
+    iterator_queue: VecDeque<Peekable<<Node::MutBorrowedChildren as IntoIterator>::IntoIter>>,
 }
 
 impl<'a, Node> MutBorrowedBFSLeavesIteratorWithAncestors<'a, Node>

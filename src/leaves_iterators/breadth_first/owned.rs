@@ -13,7 +13,7 @@ where
 {
     pub(crate) root: Option<Node>,
     pub(crate) old_traversal_queue: VecDeque<Iter>,
-    pub(crate) new_traversal_queue: VecDeque<Peekable<Node::OwnedChildren>>,
+    pub(crate) new_traversal_queue: VecDeque<Peekable<<<Node as OwnedTreeNode>::OwnedChildren as IntoIterator>::IntoIter>>,
 }
 
 impl<'a, Node, Iter> OwnedLeavesIterator<Node, Iter>

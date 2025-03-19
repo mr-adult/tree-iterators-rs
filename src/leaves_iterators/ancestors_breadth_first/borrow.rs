@@ -21,7 +21,7 @@ where
     item_stack: Vec<Node::BorrowedValue>,
     tree_cache: TreeNodeVecDeque<Node::BorrowedValue>,
     traversal_stack: Vec<TreeNodeVecDeque<Node::BorrowedValue>>,
-    iterator_queue: VecDeque<Peekable<Node::BorrowedChildren>>,
+    iterator_queue: VecDeque<Peekable<<Node::BorrowedChildren as IntoIterator>::IntoIter>>,
 }
 
 impl<'a, Node> BorrowedBFSLeavesIteratorWithAncestors<'a, Node>

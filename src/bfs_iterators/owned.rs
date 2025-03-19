@@ -19,7 +19,7 @@ where
     Node: OwnedTreeNode,
 {
     root: Option<Node>,
-    traversal_queue: VecDeque<Node::OwnedChildren>,
+    traversal_queue: VecDeque<<Node::OwnedChildren as IntoIterator>::IntoIter>,
 }
 
 impl<Node> OwnedBFSIterator<Node>
@@ -34,7 +34,9 @@ where
     }
 
     #[doc = include_str!("../../doc_files/leaves.md")]
-    pub fn leaves(self) -> OwnedLeavesIterator<Node, Node::OwnedChildren> {
+    pub fn leaves(
+        self,
+    ) -> OwnedLeavesIterator<Node, <Node::OwnedChildren as IntoIterator>::IntoIter> {
         OwnedLeavesIterator {
             root: self.root,
             old_traversal_queue: self.traversal_queue,
@@ -67,7 +69,7 @@ where
     pub(crate) item_stack: Vec<Node::OwnedValue>,
     pub(crate) tree_cache: TreeNodeVecDeque<Node::OwnedValue>,
     pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::OwnedValue>>,
-    pub(crate) iterator_queue: VecDeque<Node::OwnedChildren>,
+    pub(crate) iterator_queue: VecDeque<<Node::OwnedChildren as IntoIterator>::IntoIter>,
 }
 
 impl<'a, Node> OwnedBFSIteratorWithAncestors<Node>
@@ -84,7 +86,7 @@ where
         let mut item_stack = Vec::new();
 
         item_stack.push(value);
-        iterator_queue.push_back(children);
+        iterator_queue.push_back(children.into_iter());
 
         OwnedBFSIteratorWithAncestors {
             is_root: true,

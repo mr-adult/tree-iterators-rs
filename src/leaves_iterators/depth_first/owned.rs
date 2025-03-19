@@ -8,8 +8,8 @@ where
     Node: OwnedTreeNode,
 {
     pub(crate) root: Option<Node>,
-    pub(crate) traversal_stack_bottom: Vec<Node::OwnedChildren>,
-    pub(crate) traversal_stack_top: Vec<Node::OwnedChildren>,
+    pub(crate) traversal_stack_bottom: Vec<<Node::OwnedChildren as IntoIterator>::IntoIter>,
+    pub(crate) traversal_stack_top: Vec<<Node::OwnedChildren as IntoIterator>::IntoIter>,
     pub(crate) item_stack: Vec<Node::OwnedValue>,
 }
 

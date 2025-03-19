@@ -10,7 +10,7 @@ where
 {
     pub(crate) root: Option<&'a mut Node>,
     pub(crate) traversal_stack_bottom: Vec<Iter>,
-    pub(crate) traversal_stack_top: Vec<Node::MutBorrowedChildren>,
+    pub(crate) traversal_stack_top: Vec<<Node::MutBorrowedChildren as IntoIterator>::IntoIter>,
     pub(crate) item_stack: Vec<Node::MutBorrowedValue>,
 }
 

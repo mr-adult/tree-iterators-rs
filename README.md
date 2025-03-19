@@ -765,17 +765,11 @@ traversal APIs available to us.
 
 #### Owned implementation
 
-We can start with the OwnedTreeNode implementation as follows. Since we chose to
-use a LinkedList as our children property, we have to wrap its iterator in a
-Some() Option variant. The hardest part of implementing this is figuring out the
-type of LinkedList's into_iter() method return type.
+We can start with the OwnedTreeNode implementation as follows.
 
 ```rust
 use tree_iterators_rs::prelude::*;
-use std::collections::{
-	LinkedList,
-	linked_list::IntoIter
-};
+use std::collections::LinkedList;
 
 struct LLTreeNode<T> {
     value: T,
@@ -784,12 +778,12 @@ struct LLTreeNode<T> {
 
 impl<T> OwnedTreeNode for LLTreeNode<T> {
     type OwnedValue = T;
-    type OwnedChildren = IntoIter<LLTreeNode<T>>;
+    type OwnedChildren = LinkedList<LLTreeNode<T>>;
 
     fn get_value_and_children(self) -> (Self::OwnedValue, Self::OwnedChildren) {
         (
             self.value,
-            self.children.into_iter()
+            self.children
         )
     }
 }
@@ -801,15 +795,13 @@ dfs_preorder(), and dfs_postorder() methods.
 #### Mutable Borrow Implementation
 
 The mutable borrow implementation is very similar to the owned one. The only
-difference is that the 'Value' associated type changed to a mutable reference
-and we are calling iter_mut() instead of into_iter().
+difference is that the 'Value' and 'Children' associated types changed to
+mutable references and we are returning an mutable reference to the children
+LinkedList instead of an owned LinkedList.
 
 ```rust
 use tree_iterators_rs::prelude::*;
-use std::collections::{
-	LinkedList,
-	linked_list::IterMut
-};
+use std::collections::LinkedList;
 
 struct LLTreeNode<T> {
     value: T,
@@ -820,12 +812,12 @@ impl<'a, T> MutBorrowedTreeNode<'a> for LLTreeNode<T>
     where Self: 'a {
 
     type MutBorrowedValue = &'a mut T;
-    type MutBorrowedChildren = IterMut<'a, LLTreeNode<T>>;
+    type MutBorrowedChildren = &'a mut LinkedList<LLTreeNode<T>>;
 
     fn get_value_and_children_iter_mut(&'a mut self) -> (Self::MutBorrowedValue, Self::MutBorrowedChildren) {
         (
             &mut self.value,
-            self.children.iter_mut()
+            &mut self.children
         )
     }
 }
@@ -836,16 +828,11 @@ bfs_iter_mut(), dfs_preorder_iter_mut(), and dfs_postorder_iter_mut() methods.
 
 #### Borrow Implementation
 
-The borrow implementation is also very similar to the owned one. The only
-difference is that the 'Value' associated type changed to an immutable reference
-and we are calling iter() instead of into_iter().
+The borrow implementation is very similar to the mutably borrowed one.
 
 ```rust
 use tree_iterators_rs::prelude::*;
-use std::collections::{
-	LinkedList,
-	linked_list::Iter
-};
+use std::collections::LinkedList;
 
 struct LLTreeNode<T> {
     value: T,
@@ -856,12 +843,12 @@ impl<'a, T> BorrowedTreeNode<'a> for LLTreeNode<T>
     where Self: 'a {
 
     type BorrowedValue = &'a T;
-    type BorrowedChildren = Iter<'a, LLTreeNode<T>>;
+    type BorrowedChildren = &'a LinkedList<LLTreeNode<T>>;
 
     fn get_value_and_children_iter(&'a self) -> (Self::BorrowedValue, Self::BorrowedChildren) {
         (
             &self.value,
-            self.children.iter()
+            &self.children
         )
     }
 }
@@ -877,5 +864,4 @@ door to some pretty exotic data transformations and use cases. Each iterator is
 as lazy as possible and only calls the get_value_and_children method variant
 once per node in the tree. This means you are able to lazily build/generate the
 tree as traversal progresses if you choose to. This opens the door to using this
-library to do some crazy things. I would love to hear about any use cases like
-this that you come up with. Please leave a note/issue on the github repo!
+library to do some crazy things.

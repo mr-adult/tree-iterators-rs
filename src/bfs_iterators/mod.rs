@@ -8,7 +8,7 @@ macro_rules! bfs_next {
             match core::mem::take(&mut self.root) {
                 Some(root) => {
                     let (value, children) = root.$get_value_and_children();
-                    self.traversal_queue.push_back(children);
+                    self.traversal_queue.push_back(children.into_iter());
                     return Some(value);
                 }
                 None => loop {
@@ -22,7 +22,7 @@ macro_rules! bfs_next {
                             }
                             Some(next) => {
                                 let (value, children) = next.$get_value_and_children();
-                                self.traversal_queue.push_back(children);
+                                self.traversal_queue.push_back(children.into_iter());
                                 return Some(value);
                             }
                         },
@@ -156,7 +156,7 @@ macro_rules! bfs_streaming_iterator_impl {
                             }
                             let (value, children) = next.$get_value_and_children();
                             self.item_stack.push(value);
-                            self.iterator_queue.push_back(children);
+                            self.iterator_queue.push_back(children.into_iter());
                             break;
                         }
 

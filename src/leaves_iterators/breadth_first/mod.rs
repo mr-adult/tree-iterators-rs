@@ -9,7 +9,7 @@ macro_rules! bfs_next {
                 Some(root) => {
                     let (value, children) = root.$get_value_and_children();
 
-                    let mut peekable = children.peekable();
+                    let mut peekable = children.into_iter().peekable();
                     let has_children = peekable.peek().is_some();
                     self.new_traversal_queue.push_back(peekable);
                     return Some((has_children, value));
@@ -29,7 +29,7 @@ macro_rules! bfs_next {
                                     Some(next) => {
                                         let (value, children) = next.$get_value_and_children();
 
-                                        let mut peekable = children.peekable();
+                                        let mut peekable = children.into_iter().peekable();
                                         let has_children = peekable.peek().is_some();
                                         self.new_traversal_queue.push_back(peekable);
 
@@ -46,7 +46,7 @@ macro_rules! bfs_next {
                             Some(next) => {
                                 let (value, children) = next.$get_value_and_children();
 
-                                let mut peekable = children.peekable();
+                                let mut peekable = children.into_iter().peekable();
                                 let has_children = peekable.peek().is_some();
                                 self.new_traversal_queue.push_back(peekable);
 
