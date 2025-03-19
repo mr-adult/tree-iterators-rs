@@ -50,39 +50,37 @@ macro_rules! postorder_streaming_iterator_impl {
                         self.item_stack.push(value);
                         is_first_iteration = false;
                     }
-                    None => {
-                        loop {
-                            let stack_len = self.traversal_stack.len();
-                            if stack_len < 1 {
+                    None => loop {
+                        let stack_len = self.traversal_stack.len();
+                        if stack_len < 1 {
+                            self.item_stack.pop();
+                            return;
+                        }
+                        match self.traversal_stack.get_mut(stack_len - 1) {
+                            None => {
                                 self.item_stack.pop();
                                 return;
                             }
-                            match self.traversal_stack.get_mut(stack_len - 1) {
+                            Some(next_iter) => match next_iter.next() {
                                 None => {
-                                    self.item_stack.pop();
+                                    if self.item_stack.len() > self.traversal_stack.len() {
+                                        self.item_stack.pop();
+                                    }
+                                    self.traversal_stack.pop();
                                     return;
                                 }
-                                Some(next_iter) => match next_iter.next() {
-                                    None => {
-                                        if self.item_stack.len() > self.traversal_stack.len() {
-                                            self.item_stack.pop();
-                                        }
-                                        self.traversal_stack.pop();
-                                        return;
+                                Some(node) => {
+                                    let (value, children) = node.$get_value_and_children();
+                                    if is_first_iteration {
+                                        self.item_stack.pop();
                                     }
-                                    Some(node) => {
-                                        let (value, children) = node.$get_value_and_children();
-                                        if is_first_iteration {
-                                            self.item_stack.pop();
-                                        }
-                                        self.traversal_stack.push(children);
-                                        self.item_stack.push(value);
-                                    }
-                                },
-                            }
-                            is_first_iteration = false;
+                                    self.traversal_stack.push(children);
+                                    self.item_stack.push(value);
+                                }
+                            },
                         }
-                    }
+                        is_first_iteration = false;
+                    },
                 }
             }
         }
