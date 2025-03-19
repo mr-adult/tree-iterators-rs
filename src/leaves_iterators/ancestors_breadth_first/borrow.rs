@@ -6,7 +6,7 @@ use crate::{
     bfs_iterators::borrow::{
         BorrowedBFSIteratorWithAncestors, BorrowedBinaryBFSIteratorWithAncestors,
     },
-    prelude::{AncestorsLeavesIterator, BinaryChildren, BorrowedBinaryTreeNode, BorrowedTreeNode},
+    prelude::{BinaryChildren, BorrowedBinaryTreeNode, BorrowedTreeNode},
 };
 
 use super::{bfs_next, streaming_leaves};
@@ -45,11 +45,6 @@ where
     }
 
     bfs_next!(get_value_and_children_iter);
-}
-
-impl<'a, Node> AncestorsLeavesIterator for BorrowedBFSLeavesIteratorWithAncestors<'a, Node> where
-    Node: BorrowedTreeNode<'a>
-{
 }
 
 impl<'a, Node> StreamingIterator for BorrowedBFSLeavesIteratorWithAncestors<'a, Node>
@@ -102,9 +97,4 @@ where
     type Item = [Node::BorrowedValue];
 
     streaming_leaves!();
-}
-
-impl<'a, Node> AncestorsLeavesIterator for BorrowedBinaryBFSLeavesIteratorWithAncestors<'a, Node> where
-    Node: BorrowedBinaryTreeNode<'a>
-{
 }

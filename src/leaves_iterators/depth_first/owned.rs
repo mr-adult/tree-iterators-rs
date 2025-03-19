@@ -1,4 +1,4 @@
-use crate::prelude::{BinaryChildren, LeavesIterator, OwnedBinaryTreeNode, OwnedTreeNode};
+use crate::prelude::{BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode};
 use alloc::vec::Vec;
 
 use super::dfs_postorder_leaves_next;
@@ -22,8 +22,6 @@ where
     dfs_postorder_leaves_next!(get_value_and_children);
 }
 
-impl<'a, Node> LeavesIterator for OwnedLeavesIterator<Node> where Node: OwnedTreeNode {}
-
 pub struct OwnedBinaryLeavesIterator<Node, Iter>
 where
     Node: OwnedBinaryTreeNode,
@@ -43,11 +41,4 @@ where
     type Item = Node::OwnedValue;
 
     dfs_postorder_leaves_next!(get_value_and_children);
-}
-
-impl<Node, Iter> LeavesIterator for OwnedBinaryLeavesIterator<Node, Iter>
-where
-    Node: OwnedBinaryTreeNode,
-    Iter: Iterator<Item = Node>,
-{
 }

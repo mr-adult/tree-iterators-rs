@@ -11,10 +11,7 @@ use crate::{
         },
         breadth_first::owned::{OwnedBinaryLeavesIterator, OwnedLeavesIterator},
     },
-    prelude::{
-        AncestorsIteratorMut, AncestorsLeavesIteratorMut, BinaryChildren, LeavesIterator,
-        OwnedBinaryTreeNode, OwnedTreeNode, TreeIteratorMut,
-    },
+    prelude::{BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode},
 };
 
 pub struct OwnedBFSIterator<Node>
@@ -35,13 +32,9 @@ where
             traversal_queue: VecDeque::new(),
         }
     }
-}
 
-impl<Node> TreeIteratorMut for OwnedBFSIterator<Node>
-where
-    Node: OwnedTreeNode,
-{
-    fn leaves(self) -> impl LeavesIterator<Item = Self::Item> {
+    #[doc = include_str!("../../doc_files/leaves.md")]
+    pub fn leaves(self) -> OwnedLeavesIterator<Node, Node::OwnedChildren> {
         OwnedLeavesIterator {
             root: self.root,
             old_traversal_queue: self.traversal_queue,
@@ -49,7 +42,8 @@ where
         }
     }
 
-    fn attach_ancestors(self) -> impl AncestorsIteratorMut<Item = [Node::OwnedValue]> {
+    #[doc = include_str!("../../doc_files/attach_ancestors.md")]
+    pub fn attach_ancestors(self) -> OwnedBFSIteratorWithAncestors<Node> {
         match self.root {
             None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => OwnedBFSIteratorWithAncestors::new(root)
@@ -101,6 +95,11 @@ where
         }
     }
 
+    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
+    pub fn leaves(self) -> OwnedBFSLeavesIteratorWithAncestors<Node> {
+        OwnedBFSLeavesIteratorWithAncestors::new(self)
+    }
+
     bfs_advance_iterator!(get_value_and_children);
 }
 
@@ -118,15 +117,6 @@ where
     Node: OwnedTreeNode,
 {
     get_mut!();
-}
-
-impl<Node> AncestorsIteratorMut for OwnedBFSIteratorWithAncestors<Node>
-where
-    Node: OwnedTreeNode,
-{
-    fn leaves(self) -> impl AncestorsLeavesIteratorMut<Item = Self::Item> {
-        OwnedBFSLeavesIteratorWithAncestors::new(self)
-    }
 }
 
 pub struct OwnedBinaryBFSIterator<Node>
@@ -147,13 +137,9 @@ where
             traversal_queue: VecDeque::new(),
         }
     }
-}
 
-impl<Node> TreeIteratorMut for OwnedBinaryBFSIterator<Node>
-where
-    Node: OwnedBinaryTreeNode,
-{
-    fn leaves(self) -> impl LeavesIterator<Item = Self::Item> {
+    #[doc = include_str!("../../doc_files/leaves.md")]
+    pub fn leaves(self) -> OwnedBinaryLeavesIterator<Node, BinaryChildren<Node>> {
         OwnedBinaryLeavesIterator {
             root: self.root,
             old_traversal_queue: self.traversal_queue,
@@ -161,7 +147,8 @@ where
         }
     }
 
-    fn attach_ancestors(self) -> impl AncestorsIteratorMut<Item = [Node::OwnedValue]> {
+    #[doc = include_str!("../../doc_files/attach_ancestors.md")]
+    pub fn attach_ancestors(self) -> OwnedBinaryBFSIteratorWithAncestors<Node> {
         match self.root {
             None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => OwnedBinaryBFSIteratorWithAncestors::new(root)
@@ -213,16 +200,12 @@ where
         }
     }
 
-    bfs_advance_iterator!(get_value_and_children);
-}
-
-impl<Node> AncestorsIteratorMut for OwnedBinaryBFSIteratorWithAncestors<Node>
-where
-    Node: OwnedBinaryTreeNode,
-{
-    fn leaves(self) -> impl AncestorsLeavesIteratorMut<Item = Self::Item> {
+    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
+    pub fn leaves(self) -> OwnedBinaryBFSLeavesIteratorWithAncestors<Node> {
         OwnedBinaryBFSLeavesIteratorWithAncestors::new(self)
     }
+
+    bfs_advance_iterator!(get_value_and_children);
 }
 
 impl<'a, Node> StreamingIterator for OwnedBinaryBFSIteratorWithAncestors<Node>
@@ -239,9 +222,4 @@ where
     Node: OwnedBinaryTreeNode,
 {
     get_mut!();
-}
-
-impl<Node> AncestorsLeavesIteratorMut for OwnedBinaryBFSIteratorWithAncestors<Node> where
-    Node: OwnedBinaryTreeNode
-{
 }

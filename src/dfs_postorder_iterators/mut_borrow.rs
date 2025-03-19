@@ -6,10 +6,7 @@ use crate::{
         },
         depth_first::mut_borrow::{MutBorrowedBinaryLeavesIterator, MutBorrowedLeavesIterator},
     },
-    prelude::{
-        AncestorsIteratorMut, AncestorsLeavesIteratorMut, BinaryChildren, LeavesIterator,
-        MutBorrowedBinaryTreeNode, MutBorrowedTreeNode, TreeIteratorMut,
-    },
+    prelude::{BinaryChildren, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode},
 };
 use alloc::vec::Vec;
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
@@ -36,13 +33,9 @@ where
             traversal_stack: Vec::new(),
         }
     }
-}
 
-impl<'a, Node> TreeIteratorMut for MutBorrowedDFSPostorderIterator<'a, Node>
-where
-    Node: MutBorrowedTreeNode<'a>,
-{
-    fn leaves(self) -> impl LeavesIterator<Item = Self::Item> {
+    #[doc = include_str!("../../doc_files/leaves.md")]
+    pub fn leaves(self) -> MutBorrowedLeavesIterator<'a, Node, Node::MutBorrowedChildren> {
         MutBorrowedLeavesIterator {
             root: self.root,
             traversal_stack_bottom: self.traversal_stack,
@@ -51,7 +44,8 @@ where
         }
     }
 
-    fn attach_ancestors(self) -> impl AncestorsIteratorMut<Item = [Node::MutBorrowedValue]> {
+    #[doc = include_str!("../../doc_files/attach_ancestors.md")]
+    pub fn attach_ancestors(self) -> MutBorrowedDFSPostorderIteratorWithAncestors<'a, Node> {
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS postorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
@@ -89,6 +83,19 @@ where
             traversal_stack: Vec::new(),
         }
     }
+
+    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
+    pub fn leaves(
+        self,
+    ) -> MutBorrowedDFSLeavesPostorderIteratorWithAncestors<'a, Node, Node::MutBorrowedChildren>
+    {
+        MutBorrowedDFSLeavesPostorderIteratorWithAncestors {
+            root: self.root,
+            item_stack: self.item_stack,
+            old_traversal_stack: self.traversal_stack.into_iter().collect(),
+            new_traversal_stack: Vec::new(),
+        }
+    }
 }
 
 impl<'a, Node> StreamingIterator for MutBorrowedDFSPostorderIteratorWithAncestors<'a, Node>
@@ -104,20 +111,6 @@ where
     Node: MutBorrowedTreeNode<'a>,
 {
     get_mut!();
-}
-
-impl<'a, Node> AncestorsIteratorMut for MutBorrowedDFSPostorderIteratorWithAncestors<'a, Node>
-where
-    Node: MutBorrowedTreeNode<'a>,
-{
-    fn leaves(self) -> impl AncestorsLeavesIteratorMut<Item = Self::Item> {
-        MutBorrowedDFSLeavesPostorderIteratorWithAncestors {
-            root: self.root,
-            item_stack: self.item_stack,
-            old_traversal_stack: self.traversal_stack.into_iter().collect(),
-            new_traversal_stack: Vec::new(),
-        }
-    }
 }
 
 pub struct MutBorrowedBinaryDFSPostorderIterator<'a, Node>
@@ -140,13 +133,9 @@ where
             traversal_stack: Vec::new(),
         }
     }
-}
 
-impl<'a, Node> TreeIteratorMut for MutBorrowedBinaryDFSPostorderIterator<'a, Node>
-where
-    Node: MutBorrowedBinaryTreeNode<'a>,
-{
-    fn leaves(self) -> impl LeavesIterator<Item = Self::Item> {
+    #[doc = include_str!("../../doc_files/leaves.md")]
+    pub fn leaves(self) -> MutBorrowedBinaryLeavesIterator<'a, Node, BinaryChildren<&'a mut Node>> {
         MutBorrowedBinaryLeavesIterator {
             root: self.root,
             traversal_stack_bottom: self.traversal_stack,
@@ -155,7 +144,8 @@ where
         }
     }
 
-    fn attach_ancestors(self) -> impl AncestorsIteratorMut<Item = [Node::MutBorrowedValue]> {
+    #[doc = include_str!("../../doc_files/attach_ancestors.md")]
+    pub fn attach_ancestors(self) -> MutBorrowedBinaryDFSPostorderIteratorWithAncestors<'a, Node> {
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS postorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
@@ -193,6 +183,22 @@ where
             traversal_stack: Vec::new(),
         }
     }
+
+    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
+    pub fn leaves(
+        self,
+    ) -> MutBorrowedBinaryDFSLeavesPostorderIteratorWithAncestors<
+        'a,
+        Node,
+        BinaryChildren<&'a mut Node>,
+    > {
+        MutBorrowedBinaryDFSLeavesPostorderIteratorWithAncestors {
+            root: self.root,
+            item_stack: self.item_stack,
+            old_traversal_stack: self.traversal_stack.into_iter().collect(),
+            new_traversal_stack: Vec::new(),
+        }
+    }
 }
 
 impl<'a, Node> StreamingIterator for MutBorrowedBinaryDFSPostorderIteratorWithAncestors<'a, Node>
@@ -208,18 +214,4 @@ where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
     get_mut!();
-}
-
-impl<'a, Node> AncestorsIteratorMut for MutBorrowedBinaryDFSPostorderIteratorWithAncestors<'a, Node>
-where
-    Node: MutBorrowedBinaryTreeNode<'a>,
-{
-    fn leaves(self) -> impl AncestorsLeavesIteratorMut<Item = Self::Item> {
-        MutBorrowedBinaryDFSLeavesPostorderIteratorWithAncestors {
-            root: self.root,
-            item_stack: self.item_stack,
-            old_traversal_stack: self.traversal_stack.into_iter().collect(),
-            new_traversal_stack: Vec::new(),
-        }
-    }
 }
