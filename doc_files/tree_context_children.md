@@ -1,18 +1,18 @@
-The children of the current node.
+The children of the current node. This will always be empty for depth first
+postorder searches and will always be populated for depth first preorder and
+breadth first searches.
 
 NOTE: If Children is an Iterator type, consuming items from the iterator will
 result in them disappearing from tree traversal.
 
 If Children is a collection type like [`Vec`] or
-[`alloc::collections::LinkedList`] then the children can be safely modified and
-read at will. Some caveats to this are:
+[`alloc::collections::LinkedList`] then the children can be both safely modified
+and read at will. Some caveats to this are:
 
-1. if an item is added during depth first preorder traversal or breadth first
-   traversal, it is easy to create infinite loops since that node will also be
-   visited (and another node added). It is recommended that you only add nodes
-   to the tree during depth first postorder traversals.
-2. removing an item from the collection may cause it to never be hit in a
-   breadth first or depth first preorder search.
+1. if an item is added during traversal, it is easy to accidentally create
+   infinite loops since the added node will also be visited. Tread cautiously.
+2. removing an item from the collection may cause it to never be visited by the
+   tree iterators.
 
 children can also act as a way to search sub-trees when a node meets a
 condition.
@@ -33,6 +33,7 @@ let mut iter = root.dfs_preorder().attach_context();
 while let Some(node_context) = iter.next() {
     subtree_contains_10 = node_context
         .children()
+        .unwrap()
         .iter()
         .flat_map(|child| child.dfs_preorder_iter())
         .any(|descendent| *descendent == 10);

@@ -566,6 +566,7 @@ let mut iter = root.dfs_preorder().attach_context();
 while let Some(node_context) = iter.next() {
     subtree_contains_10 = node_context
         .children()
+        .unwrap()
         .iter()
         .flat_map(|child| child.dfs_preorder_iter())
         .any(|descendent| *descendent == 10);
@@ -643,11 +644,20 @@ let root = create_example_tree();
 let mut result = String::new();
 
 root.dfs_postorder_iter()
-	.attach_ancestors()
-	.filter(|slice| 
-		slice.iter().all(|value| **value % 2 == 0)
+	.attach_context()
+	.filter(|node_context| 
+		node_context
+            .ancestors()
+            .iter()
+            .all(|value| **value % 2 == 0)
 	)
-	.map(|slice| slice[slice.len() - 1])
+	.map(|node_context|
+        node_context
+            .ancestors()
+            .last()
+            .unwrap()
+            .clone()
+    )
 	.for_each(|value| {
 		result.push(' ');
 		result.push_str(&value.to_string())
@@ -663,11 +673,11 @@ yield the same result as the depth first preorder iterator:
 ```rust
 use streaming_iterator::StreamingIterator;
 use tree_iterators_rs::{
-	examples::create_example_tree,
+	examples::create_example_binary_tree,
 	prelude::*
 };
 
-let root = create_example_tree();
+let root = create_example_binary_tree();
 let mut result = String::new();
 
 root.bfs_iter()
