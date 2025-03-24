@@ -45,17 +45,13 @@ where
     }
 
     #[doc = include_str!("../doc_files/tree_context_children.md")]
-    pub fn children(&self) -> &Node::BorrowedChildren {
-        self.children
-            .as_ref()
-            .expect("There to always be children when a caller can get access to a TreeContextRef")
+    pub fn children(&self) -> Option<&Node::BorrowedChildren> {
+        self.children.as_ref()
     }
 
     #[doc = include_str!("../doc_files/tree_context_children.md")]
-    pub fn children_mut(&mut self) -> &mut Node::BorrowedChildren {
-        self.children
-            .as_mut()
-            .expect("There to always be children when a caller can get access to a TreeContextRef")
+    pub fn children_mut(&mut self) -> Option<&mut Node::BorrowedChildren> {
+        self.children.as_mut()
     }
 }
 
@@ -102,17 +98,13 @@ where
     }
 
     #[doc = include_str!("../doc_files/tree_context_children.md")]
-    pub fn children(&self) -> &Node::MutBorrowedChildren {
-        self.children
-            .as_ref()
-            .expect("There to always be children when a caller can get access to a TreeContextRef")
+    pub fn children(&self) -> Option<&Node::MutBorrowedChildren> {
+        self.children.as_ref()
     }
 
     #[doc = include_str!("../doc_files/tree_context_children.md")]
-    pub fn children_mut(&mut self) -> &mut Node::MutBorrowedChildren {
-        self.children
-            .as_mut()
-            .expect("There to always be children when a caller can get access to a TreeContextRef")
+    pub fn children_mut(&mut self) -> Option<&mut Node::MutBorrowedChildren> {
+        self.children.as_mut()
     }
 }
 
@@ -159,16 +151,12 @@ where
     }
 
     #[doc = include_str!("../doc_files/tree_context_children.md")]
-    pub fn children(&self) -> &Node::OwnedChildren {
-        self.children
-            .as_ref()
-            .expect("There to always be children when a caller can get access to a TreeContextRef")
+    pub fn children(&self) -> Option<&Node::OwnedChildren> {
+        self.children.as_ref()
     }
 
     #[doc = include_str!("../doc_files/tree_context_children.md")]
-    pub fn children_mut(&mut self) -> &mut Node::OwnedChildren {
-        self.children
-            .as_mut()
-            .expect("There to always be children when a caller can get access to a TreeContextRef")
+    pub fn children_mut(&mut self) -> Option<&mut Node::OwnedChildren> {
+        self.children.as_mut()
     }
 }

@@ -95,7 +95,7 @@ where
         Node,
         <Node::BorrowedChildren as IntoIterator>::IntoIter,
     > {
-        if let Some(children) = self.current_context.children.take() {
+        if let Some(children) = self.current_context.children {
             self.traversal_stack.push(children.into_iter());
         }
 

@@ -7,11 +7,14 @@ use crate::{
         depth_first::borrow::{BorrowedBinaryLeavesIterator, BorrowedLeavesIterator},
     },
     prelude::{BinaryChildren, BorrowedBinaryTreeNode, BorrowedTreeNode},
+    tree_context::TreeContextRef,
 };
 use alloc::vec::Vec;
 use streaming_iterator::StreamingIterator;
 
-use super::{dfs_postorder_next, postorder_streaming_iterator_impl};
+use super::{
+    dfs_postorder_next, postorder_binary_streaming_iterator_impl, postorder_streaming_iterator_impl,
+};
 
 pub struct BorrowedDFSPostorderIterator<'a, Node>
 where
@@ -35,7 +38,9 @@ where
     }
 
     #[doc = include_str!("../../doc_files/leaves.md")]
-    pub fn leaves(self) -> BorrowedLeavesIterator<'a, Node, <Node::BorrowedChildren as IntoIterator>::IntoIter> {
+    pub fn leaves(
+        self,
+    ) -> BorrowedLeavesIterator<'a, Node, <Node::BorrowedChildren as IntoIterator>::IntoIter> {
         BorrowedLeavesIterator {
             root: self.root,
             traversal_stack_bottom: self.traversal_stack,
@@ -45,11 +50,11 @@ where
     }
 
     #[doc = include_str!("../../doc_files/attach_ancestors.md")]
-    pub fn attach_ancestors(self) -> BorrowedDFSPostorderIteratorWithAncestors<'a, Node> {
+    pub fn attach_context(self) -> BorrowedDFSPostorderIteratorWithContext<'a, Node> {
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS postorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
-                BorrowedDFSPostorderIteratorWithAncestors::new(root)
+                BorrowedDFSPostorderIteratorWithContext::new(root)
             }
         }
     }
@@ -63,45 +68,53 @@ where
     dfs_postorder_next!(get_value_and_children_iter);
 }
 
-pub struct BorrowedDFSPostorderIteratorWithAncestors<'a, Node>
+pub struct BorrowedDFSPostorderIteratorWithContext<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
 {
     root: Option<&'a Node>,
-    item_stack: Vec<Node::BorrowedValue>,
     traversal_stack: Vec<<Node::BorrowedChildren as IntoIterator>::IntoIter>,
+    current_context: TreeContextRef<'a, Node>,
 }
 
-impl<'a, Node> BorrowedDFSPostorderIteratorWithAncestors<'a, Node>
+impl<'a, Node> BorrowedDFSPostorderIteratorWithContext<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
 {
-    fn new(root: &'a Node) -> BorrowedDFSPostorderIteratorWithAncestors<'_, Node> {
+    fn new(root: &'a Node) -> BorrowedDFSPostorderIteratorWithContext<'_, Node> {
         Self {
             root: Some(root),
-            item_stack: Vec::new(),
             traversal_stack: Vec::new(),
+            current_context: TreeContextRef::new(),
         }
     }
 
     #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
     pub fn leaves(
-        self,
-    ) -> BorrowedDFSLeavesPostorderIteratorWithAncestors<'a, Node, <Node::BorrowedChildren as IntoIterator>::IntoIter> {
+        mut self,
+    ) -> BorrowedDFSLeavesPostorderIteratorWithAncestors<
+        'a,
+        Node,
+        <Node::BorrowedChildren as IntoIterator>::IntoIter,
+    > {
+        if let Some(children) = self.current_context.children {
+            self.traversal_stack.push(children.into_iter());
+        }
+
         BorrowedDFSLeavesPostorderIteratorWithAncestors {
             root: self.root,
-            item_stack: self.item_stack,
+            item_stack: self.current_context.ancestors,
             old_traversal_stack: self.traversal_stack.into_iter().collect(),
             new_traversal_stack: Vec::new(),
         }
     }
 }
 
-impl<'a, Node> StreamingIterator for BorrowedDFSPostorderIteratorWithAncestors<'a, Node>
+impl<'a, Node> StreamingIterator for BorrowedDFSPostorderIteratorWithContext<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
 {
-    type Item = [Node::BorrowedValue];
+    type Item = TreeContextRef<'a, Node>;
     postorder_streaming_iterator_impl!(get_value_and_children_iter);
 }
 
@@ -137,7 +150,7 @@ where
     }
 
     #[doc = include_str!("../../doc_files/attach_ancestors.md")]
-    pub fn attach_ancestors(self) -> BorrowedBinaryDFSPostorderIteratorWithAncestors<'a, Node> {
+    pub fn attach_context(self) -> BorrowedBinaryDFSPostorderIteratorWithAncestors<'a, Node> {
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS postorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
@@ -195,5 +208,5 @@ where
     Node: BorrowedBinaryTreeNode<'a>,
 {
     type Item = [Node::BorrowedValue];
-    postorder_streaming_iterator_impl!(get_value_and_children_iter);
+    postorder_binary_streaming_iterator_impl!(get_value_and_children_iter);
 }
