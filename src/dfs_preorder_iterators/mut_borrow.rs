@@ -12,7 +12,7 @@ use crate::{
     prelude::{BinaryChildren, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode},
 };
 
-use super::{advance_dfs, dfs_preorder_next, get_mut, preorder_streaming_iterator_impl};
+use super::{dfs_preorder_next, get_mut, preorder_streaming_iterator_impl};
 
 pub struct MutBorrowedDFSPreorderIterator<'a, Node>
 where
@@ -34,7 +34,10 @@ where
     }
 
     #[doc = include_str!("../../doc_files/leaves.md")]
-    pub fn leaves(self) -> MutBorrowedLeavesIterator<'a, Node, <Node::MutBorrowedChildren as IntoIterator>::IntoIter> {
+    pub fn leaves(
+        self,
+    ) -> MutBorrowedLeavesIterator<'a, Node, <Node::MutBorrowedChildren as IntoIterator>::IntoIter>
+    {
         MutBorrowedLeavesIterator {
             root: self.root,
             traversal_stack_bottom: self.traversal_stack,
@@ -86,8 +89,11 @@ where
     #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
     pub fn leaves(
         self,
-    ) -> MutBorrowedDFSLeavesPostorderIteratorWithAncestors<'a, Node, <Node::MutBorrowedChildren as IntoIterator>::IntoIter>
-    {
+    ) -> MutBorrowedDFSLeavesPostorderIteratorWithAncestors<
+        'a,
+        Node,
+        <Node::MutBorrowedChildren as IntoIterator>::IntoIter,
+    > {
         MutBorrowedDFSLeavesPostorderIteratorWithAncestors {
             root: self.root,
             item_stack: self.item_stack,
@@ -95,8 +101,6 @@ where
             new_traversal_stack: Vec::new(),
         }
     }
-
-    advance_dfs!(get_value_and_children_iter_mut);
 }
 
 impl<'a, Node> StreamingIterator for MutBorrowedDFSPreorderIteratorWithAncestors<'a, Node>
@@ -104,7 +108,7 @@ where
     Node: MutBorrowedTreeNode<'a>,
 {
     type Item = [Node::MutBorrowedValue];
-    preorder_streaming_iterator_impl!();
+    preorder_streaming_iterator_impl!(get_value_and_children_iter_mut);
 }
 
 impl<'a, Node> StreamingIteratorMut for MutBorrowedDFSPreorderIteratorWithAncestors<'a, Node>
@@ -200,8 +204,6 @@ where
             new_traversal_stack: Vec::new(),
         }
     }
-
-    advance_dfs!(get_value_and_children_iter_mut);
 }
 
 impl<'a, Node> StreamingIterator for MutBorrowedBinaryDFSPreorderIteratorWithAncestors<'a, Node>
@@ -209,7 +211,7 @@ where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
     type Item = [Node::MutBorrowedValue];
-    preorder_streaming_iterator_impl!();
+    preorder_streaming_iterator_impl!(get_value_and_children_iter_mut);
 }
 
 impl<'a, Node> StreamingIteratorMut for MutBorrowedBinaryDFSPreorderIteratorWithAncestors<'a, Node>

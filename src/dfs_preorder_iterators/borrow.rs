@@ -11,7 +11,7 @@ use crate::{
 use alloc::vec::Vec;
 use streaming_iterator::StreamingIterator;
 
-use super::{advance_dfs, dfs_preorder_next, preorder_streaming_iterator_impl};
+use super::{dfs_preorder_next, preorder_streaming_iterator_impl};
 
 pub struct BorrowedDFSPreorderIterator<'a, Node>
 where
@@ -33,7 +33,9 @@ where
     }
 
     #[doc = include_str!("../../doc_files/leaves.md")]
-    pub fn leaves(self) -> BorrowedLeavesIterator<'a, Node, <Node::BorrowedChildren as IntoIterator>::IntoIter> {
+    pub fn leaves(
+        self,
+    ) -> BorrowedLeavesIterator<'a, Node, <Node::BorrowedChildren as IntoIterator>::IntoIter> {
         BorrowedLeavesIterator {
             root: self.root,
             traversal_stack_bottom: self.traversal_stack,
@@ -85,7 +87,11 @@ where
     #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
     pub fn leaves(
         self,
-    ) -> BorrowedDFSLeavesPostorderIteratorWithAncestors<'a, Node, <Node::BorrowedChildren as IntoIterator>::IntoIter> {
+    ) -> BorrowedDFSLeavesPostorderIteratorWithAncestors<
+        'a,
+        Node,
+        <Node::BorrowedChildren as IntoIterator>::IntoIter,
+    > {
         BorrowedDFSLeavesPostorderIteratorWithAncestors {
             root: self.root,
             item_stack: self.item_stack,
@@ -93,8 +99,6 @@ where
             new_traversal_stack: Vec::new(),
         }
     }
-
-    advance_dfs!(get_value_and_children_iter);
 }
 
 impl<'a, Node> StreamingIterator for BorrowedDFSPreorderIteratorWithAncestors<'a, Node>
@@ -102,7 +106,7 @@ where
     Node: BorrowedTreeNode<'a>,
 {
     type Item = [Node::BorrowedValue];
-    preorder_streaming_iterator_impl!();
+    preorder_streaming_iterator_impl!(get_value_and_children_iter);
 }
 
 pub struct BorrowedBinaryDFSPreorderIterator<'a, Node>
@@ -186,8 +190,6 @@ where
             new_traversal_stack: Vec::new(),
         }
     }
-
-    advance_dfs!(get_value_and_children_iter);
 }
 
 impl<'a, Node> StreamingIterator for BorrowedBinaryDFSPreorderIteratorWithAncestors<'a, Node>
@@ -195,5 +197,5 @@ where
     Node: BorrowedBinaryTreeNode<'a>,
 {
     type Item = [Node::BorrowedValue];
-    preorder_streaming_iterator_impl!();
+    preorder_streaming_iterator_impl!(get_value_and_children_iter);
 }
