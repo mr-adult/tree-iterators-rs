@@ -1,24 +1,55 @@
 The children of the current node.
 
-NOTE: If Children is an Iterator type, consuming items
-from the iterator will result in them being disappearing from
-tree traversal.
+NOTE: If Children is an Iterator type, consuming items from the iterator will
+result in them disappearing from tree traversal.
 
 If Children is a collection type like [`Vec`] or
-[`alloc::collections::LinkedList`] then the children can be
-safely modified and read at will. Some caveats to this are:
-1. if an item is added during depth first preorder traversal
-or breadth first traversal, it is easy to create infinite loops
-since that node will also be visited (and another node added).
-It is recommended that you only add nodes to the tree during
-depth first postorder traversals.
+[`alloc::collections::LinkedList`] then the children can be safely modified and
+read at will. Some caveats to this are:
 
-children can also act as a way to search sub-trees when a node
-meets a condition.
+1. if an item is added during depth first preorder traversal or breadth first
+   traversal, it is easy to create infinite loops since that node will also be
+   visited (and another node added). It is recommended that you only add nodes
+   to the tree during depth first postorder traversals.
+2. removing an item from the collection may cause it to never be hit in a
+   breadth first or depth first preorder search.
+
+children can also act as a way to search sub-trees when a node meets a
+condition.
+
+NOTE: Be sure to add a use statement for streaming_iterator::StreamingIterator
+to pull in the filter, map, reduce, for_each, etc. methods from the
+streaming_iterator crate.
+
 ```rust
 use tree_iterators_rs::examples::create_example_tree;
 use tree_iterators_rs::prelude::*;
+use streaming_iterator::StreamingIterator;
 
-let tree = create_example_tree();
-todo!()
+let root = create_example_tree();
+
+let mut subtree_contains_10;
+let mut iter = root.dfs_preorder().attach_context();
+while let Some(node_context) = iter.next() {
+    subtree_contains_10 = node_context
+        .children()
+        .iter()
+        .flat_map(|child| child.dfs_preorder_iter())
+        .any(|descendent| *descendent == 10);
+
+    println!("{:?} {}", node_context.ancestors(), subtree_contains_10);
+}
+
+// Results:
+// [0] true
+// [0, 1] false
+// [0, 1, 3] false
+// [0, 1, 4] false
+// [0, 2] true
+// [0, 2, 5] false
+// [0, 2, 6] true
+// [0, 2, 6, 7] true
+// [0, 2, 6, 7, 8] true
+// [0, 2, 6, 7, 8, 9] true
+// [0, 2, 6, 7, 8, 9, 10] false
 ```
