@@ -12,7 +12,7 @@ use crate::{
     prelude::{BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode},
 };
 
-use super::{advance_dfs, dfs_preorder_next, get_mut, preorder_streaming_iterator_impl};
+use super::{dfs_preorder_next, get_mut, preorder_streaming_iterator_impl};
 
 pub struct OwnedDFSPreorderIterator<Node>
 where
@@ -84,7 +84,12 @@ where
     }
 
     #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(self) -> OwnedDFSLeavesPostorderIteratorWithAncestors<Node, <Node::OwnedChildren as IntoIterator>::IntoIter> {
+    pub fn leaves(
+        self,
+    ) -> OwnedDFSLeavesPostorderIteratorWithAncestors<
+        Node,
+        <Node::OwnedChildren as IntoIterator>::IntoIter,
+    > {
         OwnedDFSLeavesPostorderIteratorWithAncestors {
             root: self.root,
             item_stack: self.item_stack,
@@ -92,8 +97,6 @@ where
             new_traversal_stack: Vec::new(),
         }
     }
-
-    advance_dfs!(get_value_and_children);
 }
 
 impl<Node> StreamingIterator for OwnedDFSPreorderIteratorWithAncestors<Node>
@@ -101,7 +104,7 @@ where
     Node: OwnedTreeNode,
 {
     type Item = [Node::OwnedValue];
-    preorder_streaming_iterator_impl!();
+    preorder_streaming_iterator_impl!(get_value_and_children);
 }
 
 impl<Node> StreamingIteratorMut for OwnedDFSPreorderIteratorWithAncestors<Node>
@@ -191,8 +194,6 @@ where
             new_traversal_stack: Vec::new(),
         }
     }
-
-    advance_dfs!(get_value_and_children);
 }
 
 impl<'a, Node> StreamingIterator for OwnedBinaryDFSPreorderIteratorWithAncestors<Node>
@@ -200,7 +201,7 @@ where
     Node: OwnedBinaryTreeNode,
 {
     type Item = [Node::OwnedValue];
-    preorder_streaming_iterator_impl!();
+    preorder_streaming_iterator_impl!(get_value_and_children);
 }
 
 impl<'a, Node> StreamingIteratorMut for OwnedBinaryDFSPreorderIteratorWithAncestors<Node>
