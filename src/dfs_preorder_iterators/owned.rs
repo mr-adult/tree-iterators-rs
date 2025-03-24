@@ -9,10 +9,13 @@ use crate::{
         },
         depth_first::owned::{OwnedBinaryLeavesIterator, OwnedLeavesIterator},
     },
-    prelude::{BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode},
+    prelude::{BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode, TreeContext},
 };
 
-use super::{dfs_preorder_next, get_mut, preorder_streaming_iterator_impl};
+use super::{
+    dfs_preorder_next, get_mut, get_mut_binary, preorder_streaming_binary_iterator_impl,
+    preorder_streaming_iterator_impl,
+};
 
 pub struct OwnedDFSPreorderIterator<Node>
 where
@@ -44,11 +47,11 @@ where
     }
 
     #[doc = include_str!("../../doc_files/attach_ancestors.md")]
-    pub fn attach_ancestors(self) -> OwnedDFSPreorderIteratorWithAncestors<Node> {
+    pub fn attach_context(self) -> OwnedDFSPreorderIteratorWithContext<Node> {
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS preorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
-                OwnedDFSPreorderIteratorWithAncestors::new(root)
+                OwnedDFSPreorderIteratorWithContext::new(root)
             }
         }
     }
@@ -62,16 +65,16 @@ where
     dfs_preorder_next!(get_value_and_children);
 }
 
-pub struct OwnedDFSPreorderIteratorWithAncestors<Node>
+pub struct OwnedDFSPreorderIteratorWithContext<Node>
 where
     Node: OwnedTreeNode,
 {
     root: Option<Node>,
     traversal_stack: Vec<<Node::OwnedChildren as IntoIterator>::IntoIter>,
-    item_stack: Vec<Node::OwnedValue>,
+    current_context: TreeContext<Node>,
 }
 
-impl<'a, Node> OwnedDFSPreorderIteratorWithAncestors<Node>
+impl<'a, Node> OwnedDFSPreorderIteratorWithContext<Node>
 where
     Node: OwnedTreeNode,
 {
@@ -79,35 +82,39 @@ where
         Self {
             root: Some(root),
             traversal_stack: Vec::new(),
-            item_stack: Vec::new(),
+            current_context: TreeContext::new(),
         }
     }
 
     #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
     pub fn leaves(
-        self,
+        mut self,
     ) -> OwnedDFSLeavesPostorderIteratorWithAncestors<
         Node,
         <Node::OwnedChildren as IntoIterator>::IntoIter,
     > {
+        if let Some(children) = self.current_context.children.take() {
+            self.traversal_stack.push(children.into_iter());
+        }
+
         OwnedDFSLeavesPostorderIteratorWithAncestors {
             root: self.root,
-            item_stack: self.item_stack,
+            item_stack: self.current_context.ancestors,
             old_traversal_stack: self.traversal_stack,
             new_traversal_stack: Vec::new(),
         }
     }
 }
 
-impl<Node> StreamingIterator for OwnedDFSPreorderIteratorWithAncestors<Node>
+impl<Node> StreamingIterator for OwnedDFSPreorderIteratorWithContext<Node>
 where
     Node: OwnedTreeNode,
 {
-    type Item = [Node::OwnedValue];
+    type Item = TreeContext<Node>;
     preorder_streaming_iterator_impl!(get_value_and_children);
 }
 
-impl<Node> StreamingIteratorMut for OwnedDFSPreorderIteratorWithAncestors<Node>
+impl<Node> StreamingIteratorMut for OwnedDFSPreorderIteratorWithContext<Node>
 where
     Node: OwnedTreeNode,
 {
@@ -201,12 +208,12 @@ where
     Node: OwnedBinaryTreeNode,
 {
     type Item = [Node::OwnedValue];
-    preorder_streaming_iterator_impl!(get_value_and_children);
+    preorder_streaming_binary_iterator_impl!(get_value_and_children);
 }
 
 impl<'a, Node> StreamingIteratorMut for OwnedBinaryDFSPreorderIteratorWithAncestors<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
-    get_mut!();
+    get_mut_binary!();
 }

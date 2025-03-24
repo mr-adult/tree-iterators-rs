@@ -535,17 +535,68 @@ println!("{}", result);
 
 ## Iterator Modifiers
 
+### Attach Context
+
+`attach_context()` is a method that can be chained after any of the above APIs
+(when called on a TreeNode) or any other type that implements one of the
+*TreeNode traits. This API converts the iterator structure into one that returns
+the entire context of the current node in the tree. This includes:
+
+1. the entire stack of values back up to the root node
+2. the current node's children collection
+3. the index path to the current node.
+
+This information is incredibly useful and can be used to do thing like check if
+any subtrees contain certain information. In the following example, we are
+scanning each subtree to see if it contains a node with a value of '10'.
+
+NOTE: Be sure to add a use statement for streaming_iterator::StreamingIterator
+to pull in the filter, map, reduce, for_each, etc. methods from the
+streaming_iterator crate.
+
+```rust
+use tree_iterators_rs::examples::create_example_tree;
+use tree_iterators_rs::prelude::*;
+use streaming_iterator::StreamingIterator;
+
+let root = create_example_tree();
+
+let mut subtree_contains_10;
+let mut iter = root.dfs_preorder().attach_context();
+while let Some(node_context) = iter.next() {
+    subtree_contains_10 = node_context
+        .children()
+        .iter()
+        .flat_map(|child| child.dfs_preorder_iter())
+        .any(|descendent| *descendent == 10);
+
+    println!("{:?} {}", node_context.ancestors(), subtree_contains_10);
+}
+
+// Results:
+// [0] true
+// [0, 1] false
+// [0, 1, 3] false
+// [0, 1, 4] false
+// [0, 2] true
+// [0, 2, 5] false
+// [0, 2, 6] true
+// [0, 2, 6, 7] true
+// [0, 2, 6, 7, 8] true
+// [0, 2, 6, 7, 8, 9] true
+// [0, 2, 6, 7, 8, 9, 10] false
+```
+
 ### Attach Ancestors
 
-[attach_ancestors()](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.TreeIterator.html#method.attach_ancestors)
-is a method that can be called after any of the above APIs to change the
-iterator structure into one that returns a slice of all ancestors and the
-current value in the tree. If one of these is called, the (now streaming)
-iterator will yield a slice where the item at index 0 is the root value, the
-item at index len() - 1 is the current value, and everything in between is the
-other ancestors. As an example, when we are at the value of 10 in our traversal
-(see above documentation), the slice will look like this: \[0, 2, 6, 7, 8, 9,
-10\].
+`attach_ancestors()` is a method that can be called after any of the above APIs
+to change the iterator structure into one that returns a slice of all ancestors
+and the current value in the tree. If one of these is called, the (now
+streaming) iterator will yield a slice where the item at index 0 is the root
+value, the item at index len() - 1 is the current value, and everything in
+between is the other ancestors. As an example, when we are at the value of 10 in
+our traversal (see above documentation), the slice will look like this: \[0, 2,
+6, 7, 8, 9, 10\].
 
 For example, we can use this API to filter down to only the values where all of
 the ancestors and the current node are even numbers in the example tree.
@@ -553,33 +604,6 @@ the ancestors and the current node are even numbers in the example tree.
 NOTE: Be sure to add a use statement for streaming_iterator::StreamingIterator
 to pull in the filter, map, reduce, for_each, etc. methods from the
 streaming_iterator crate.
-
-```rust
-use streaming_iterator::StreamingIterator;
-use tree_iterators_rs::{
-	examples::create_example_tree,
-	prelude::*
-};
-
-let root = create_example_tree();
-let mut result = String::new();
-
-root.dfs_preorder_iter()
-	.attach_ancestors()
-	.filter(|slice| 
-		slice.iter().all(|value| **value % 2 == 0)
-	)
-	.map(|slice| slice[slice.len() - 1])
-	.for_each(|value| {
-		result.push(' ');
-		result.push_str(&value.to_string())
-	});
-
-// result: 0 2 6
-println!("{}", result);
-```
-
-We can do the same with the in order iterator if we use a binary tree:
 
 ```rust
 use streaming_iterator::StreamingIterator;

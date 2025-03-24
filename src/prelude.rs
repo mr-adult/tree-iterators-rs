@@ -1034,10 +1034,32 @@ pub(crate) mod tests {
     use alloc::vec;
 
     #[cfg(test)]
+    extern crate std;
+    #[cfg(test)]
+    use std::collections::HashMap;
+    #[cfg(test)]
+    #[cfg(test)]
+    pub(crate) fn get_value_to_path_map() -> HashMap<usize, Vec<usize>> {
+        let mut result = HashMap::new();
+        result.insert(0, vec![]);
+        result.insert(1, vec![0]);
+        result.insert(2, vec![1]);
+        result.insert(3, vec![0, 0]);
+        result.insert(4, vec![0, 1]);
+        result.insert(5, vec![1, 0]);
+        result.insert(6, vec![1, 1]);
+        result.insert(7, vec![1, 1, 0]);
+        result.insert(8, vec![1, 1, 0, 0]);
+        result.insert(9, vec![1, 1, 0, 0, 0]);
+        result.insert(10, vec![1, 1, 0, 0, 0, 0]);
+        result
+    }
+
+    #[cfg(test)]
     mod dfs_preorder_tests {
         use super::{
             assert_len, create_binary_tree_for_testing, create_trees_for_testing,
-            get_expected_metadata_for_value,
+            get_expected_metadata_for_value, get_value_to_path_map,
         };
         use crate::prelude::*;
         use streaming_iterator::StreamingIterator;
@@ -1092,42 +1114,67 @@ pub(crate) mod tests {
         #[test]
         fn dfs_preorder_attach_ancestors_works() {
             let expected = get_expected_order_dfs_preorder();
+            let expected_paths = get_value_to_path_map();
 
             for mut test_tree in create_trees_for_testing() {
                 let mut i = 0;
-                let mut iter_with_metadata = test_tree.dfs_preorder_iter().attach_ancestors();
+                let mut iter_with_metadata = test_tree.dfs_preorder_iter().attach_context();
                 while let Some(value) = iter_with_metadata.next() {
-                    assert_eq!(expected[i], *value[value.len() - 1]);
-                    let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                    assert_eq!(expected[i], *value.ancestors()[value.ancestors().len() - 1]);
+                    let expected = get_expected_metadata_for_value(
+                        *value.ancestors()[value.ancestors().len() - 1],
+                    );
                     for j in 0..expected.len() {
-                        assert_eq!(expected[j], *value[j]);
+                        assert_eq!(expected[j], *value.ancestors[j]);
                     }
+                    assert_eq!(
+                        *expected_paths
+                            .get(*value.ancestors().last().unwrap())
+                            .unwrap(),
+                        value.path
+                    );
                     i += 1;
                 }
                 assert_eq!(expected.len(), i);
                 drop(iter_with_metadata);
 
                 let mut i = 0;
-                let mut iter_with_metadata = test_tree.dfs_preorder_iter_mut().attach_ancestors();
+                let mut iter_with_metadata = test_tree.dfs_preorder_iter_mut().attach_context();
                 while let Some(value) = iter_with_metadata.next() {
-                    assert_eq!(expected[i], *value[value.len() - 1]);
-                    let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                    assert_eq!(expected[i], *value.ancestors()[value.ancestors().len() - 1]);
+                    let expected = get_expected_metadata_for_value(
+                        *value.ancestors()[value.ancestors().len() - 1],
+                    );
                     for j in 0..expected.len() {
-                        assert_eq!(expected[j], *value[j]);
+                        assert_eq!(expected[j], *value.ancestors()[j]);
                     }
+                    assert_eq!(
+                        *expected_paths
+                            .get(*value.ancestors().last().unwrap())
+                            .unwrap(),
+                        value.path
+                    );
                     i += 1;
                 }
                 assert_eq!(expected.len(), i);
                 drop(iter_with_metadata);
 
                 let mut i = 0;
-                let mut iter_with_metadata = test_tree.dfs_preorder().attach_ancestors();
+                let mut iter_with_metadata = test_tree.dfs_preorder().attach_context();
                 while let Some(value) = iter_with_metadata.next() {
-                    assert_eq!(expected[i], value[value.len() - 1]);
-                    let expected = get_expected_metadata_for_value(value[value.len() - 1]);
+                    assert_eq!(expected[i], value.ancestors()[value.ancestors().len() - 1]);
+                    let expected = get_expected_metadata_for_value(
+                        value.ancestors()[value.ancestors().len() - 1],
+                    );
                     for j in 0..expected.len() {
-                        assert_eq!(expected[j], value[j]);
+                        assert_eq!(expected[j], value.ancestors()[j]);
                     }
+                    assert_eq!(
+                        *expected_paths
+                            .get(value.ancestors().last().unwrap())
+                            .unwrap(),
+                        value.path
+                    );
                     i += 1;
                 }
                 assert_eq!(expected.len(), i);
@@ -1616,7 +1663,7 @@ pub(crate) mod tests {
             test_tree: &TreeNode<T>,
         ) -> impl Iterator<Item = Box<dyn StreamingIterator<Item = [&T]> + '_>> + '_ {
             [
-                Box::new(test_tree.dfs_preorder_iter().attach_ancestors().leaves())
+                Box::new(test_tree.dfs_preorder_iter().attach_context().leaves())
                     as Box<dyn StreamingIterator<Item = [&T]>>,
                 Box::new(test_tree.dfs_postorder_iter().attach_ancestors().leaves()),
                 Box::new(test_tree.bfs_iter().attach_ancestors().leaves()),
@@ -1636,7 +1683,7 @@ pub(crate) mod tests {
                     Box::new(
                         (*(test_tree as *mut TreeNode<T>))
                             .dfs_preorder_iter_mut()
-                            .attach_ancestors()
+                            .attach_context()
                             .leaves(),
                     ) as Box<dyn StreamingIterator<Item = [&mut T]>>,
                     Box::new(
@@ -1660,7 +1707,7 @@ pub(crate) mod tests {
             test_tree: TreeNode<T>,
         ) -> [Box<dyn StreamingIterator<Item = [T]>>; 3] {
             [
-                Box::new(test_tree.clone().dfs_preorder().attach_ancestors().leaves())
+                Box::new(test_tree.clone().dfs_preorder().attach_context().leaves())
                     as Box<dyn StreamingIterator<Item = [T]>>,
                 Box::new(
                     test_tree
@@ -1801,10 +1848,10 @@ pub(crate) mod tests {
             for mut test_tree in create_trees_for_testing() {
                 // interrupt traversal at all points.
                 for _ in 0..expected_dfs_preorder.len() {
-                    let mut preorder_iter = test_tree.dfs_preorder_iter().attach_ancestors();
+                    let mut preorder_iter = test_tree.dfs_preorder_iter().attach_context();
                     let mut num_leaves_seen = 0;
                     while let Some(value) = preorder_iter.next() {
-                        if *value[value.len() - 1]
+                        if *value.ancestors()[value.ancestors().len() - 1]
                             == expected_leaves[num_leaves_seen]
                                 [expected_leaves[num_leaves_seen].len() - 1]
                         {
@@ -1820,11 +1867,10 @@ pub(crate) mod tests {
                     }
                     drop(preorder_iter_leaves);
 
-                    let mut preorder_iter_mut =
-                        test_tree.dfs_preorder_iter_mut().attach_ancestors();
+                    let mut preorder_iter_mut = test_tree.dfs_preorder_iter_mut().attach_context();
                     let mut num_leaves_seen = 0;
                     while let Some(value) = preorder_iter_mut.next() {
-                        if *value[value.len() - 1]
+                        if *value.ancestors()[value.ancestors().len() - 1]
                             == expected_leaves[num_leaves_seen]
                                 [expected_leaves[num_leaves_seen].len() - 1]
                         {
@@ -1840,10 +1886,10 @@ pub(crate) mod tests {
                     }
                     drop(preorder_iter_leaves);
 
-                    let mut preorder = test_tree.clone().dfs_preorder().attach_ancestors();
+                    let mut preorder = test_tree.clone().dfs_preorder().attach_context();
                     let mut num_leaves_seen = 0;
                     while let Some(value) = preorder.next() {
-                        if value[value.len() - 1]
+                        if value.ancestors()[value.ancestors().len() - 1]
                             == expected_leaves[num_leaves_seen]
                                 [expected_leaves[num_leaves_seen].len() - 1]
                         {
