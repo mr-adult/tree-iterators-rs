@@ -26,8 +26,8 @@ impl<'a, Node> MutBorrowedDFSPreorderIterator<'a, Node>
 where
     Node: MutBorrowedTreeNode<'a>,
 {
-    pub(crate) fn new(root: &'a mut Node) -> MutBorrowedDFSPreorderIterator<'a, Node> {
-        MutBorrowedDFSPreorderIterator {
+    pub(crate) fn new(root: &'a mut Node) -> Self {
+        Self {
             root: Some(root),
             traversal_stack: Vec::new(),
         }
@@ -75,8 +75,8 @@ impl<'a, Node> MutBorrowedDFSPreorderIteratorWithAncestors<'a, Node>
 where
     Node: MutBorrowedTreeNode<'a>,
 {
-    pub(crate) fn new(root: &'a mut Node) -> MutBorrowedDFSPreorderIteratorWithAncestors<'a, Node> {
-        MutBorrowedDFSPreorderIteratorWithAncestors {
+    pub(crate) fn new(root: &'a mut Node) -> Self {
+        Self {
             root: Some(root),
             traversal_stack: Vec::new(),
             item_stack: Vec::new(),
@@ -126,8 +126,8 @@ impl<'a, Node> MutBorrowedBinaryDFSPreorderIterator<'a, Node>
 where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
-    pub(crate) fn new(root: &'a mut Node) -> MutBorrowedBinaryDFSPreorderIterator<'a, Node> {
-        MutBorrowedBinaryDFSPreorderIterator {
+    pub(crate) fn new(root: &'a mut Node) -> Self {
+        Self {
             root: Some(root),
             traversal_stack: Vec::new(),
         }

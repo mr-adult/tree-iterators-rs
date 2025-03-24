@@ -25,8 +25,8 @@ impl<'a, Node> BorrowedDFSPreorderIterator<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
 {
-    pub(crate) fn new(root: &'a Node) -> BorrowedDFSPreorderIterator<'a, Node> {
-        BorrowedDFSPreorderIterator {
+    pub(crate) fn new(root: &'a Node) -> Self {
+        Self {
             root: Some(root),
             traversal_stack: Vec::new(),
         }
@@ -74,8 +74,8 @@ impl<'a, Node> BorrowedDFSPreorderIteratorWithAncestors<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
 {
-    pub(crate) fn new(root: &'a Node) -> BorrowedDFSPreorderIteratorWithAncestors<'a, Node> {
-        BorrowedDFSPreorderIteratorWithAncestors {
+    pub(crate) fn new(root: &'a Node) -> Self {
+        Self {
             root: Some(root),
             traversal_stack: Vec::new(),
             item_stack: Vec::new(),
@@ -117,8 +117,8 @@ impl<'a, Node> BorrowedBinaryDFSPreorderIterator<'a, Node>
 where
     Node: BorrowedBinaryTreeNode<'a>,
 {
-    pub(crate) fn new(root: &'a Node) -> BorrowedBinaryDFSPreorderIterator<'a, Node> {
-        BorrowedBinaryDFSPreorderIterator {
+    pub(crate) fn new(root: &'a Node) -> Self {
+        Self {
             root: Some(root),
             traversal_stack: Vec::new(),
         }
@@ -166,8 +166,8 @@ impl<'a, Node> BorrowedBinaryDFSPreorderIteratorWithAncestors<'a, Node>
 where
     Node: BorrowedBinaryTreeNode<'a>,
 {
-    pub(crate) fn new(root: &'a Node) -> BorrowedBinaryDFSPreorderIteratorWithAncestors<'a, Node> {
-        BorrowedBinaryDFSPreorderIteratorWithAncestors {
+    pub(crate) fn new(root: &'a Node) -> Self {
+        Self {
             root: Some(root),
             traversal_stack: Vec::new(),
             item_stack: Vec::new(),

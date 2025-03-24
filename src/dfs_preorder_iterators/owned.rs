@@ -26,8 +26,8 @@ impl<Node> OwnedDFSPreorderIterator<Node>
 where
     Node: OwnedTreeNode,
 {
-    pub(crate) fn new(root: Node) -> OwnedDFSPreorderIterator<Node> {
-        OwnedDFSPreorderIterator {
+    pub(crate) fn new(root: Node) -> Self {
+        Self {
             root: Some(root),
             traversal_stack: Vec::new(),
         }
@@ -75,8 +75,8 @@ impl<'a, Node> OwnedDFSPreorderIteratorWithAncestors<Node>
 where
     Node: OwnedTreeNode,
 {
-    pub(crate) fn new(root: Node) -> OwnedDFSPreorderIteratorWithAncestors<Node> {
-        OwnedDFSPreorderIteratorWithAncestors {
+    pub(crate) fn new(root: Node) -> Self {
+        Self {
             root: Some(root),
             traversal_stack: Vec::new(),
             item_stack: Vec::new(),
@@ -123,8 +123,8 @@ impl<Node> OwnedBinaryDFSPreorderIterator<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
-    pub(crate) fn new(root: Node) -> OwnedBinaryDFSPreorderIterator<Node> {
-        OwnedBinaryDFSPreorderIterator {
+    pub(crate) fn new(root: Node) -> Self {
+        Self {
             root: Some(root),
             traversal_stack: Vec::new(),
         }
@@ -172,8 +172,8 @@ impl<'a, Node> OwnedBinaryDFSPreorderIteratorWithAncestors<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
-    pub(crate) fn new(root: Node) -> OwnedBinaryDFSPreorderIteratorWithAncestors<Node> {
-        OwnedBinaryDFSPreorderIteratorWithAncestors {
+    pub(crate) fn new(root: Node) -> Self {
+        Self {
             root: Some(root),
             traversal_stack: Vec::new(),
             item_stack: Vec::new(),
