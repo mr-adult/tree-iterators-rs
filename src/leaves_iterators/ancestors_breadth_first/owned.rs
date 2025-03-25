@@ -3,7 +3,7 @@ use core::iter::Peekable;
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
 
 use crate::{
-    bfs_iterators::owned::{OwnedBFSIteratorWithAncestors, OwnedBinaryBFSIteratorWithAncestors},
+    bfs_iterators::owned::{OwnedBFSIteratorWithContext, OwnedBinaryBFSIteratorWithAncestors},
     prelude::{BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode},
 };
 
@@ -27,11 +27,15 @@ where
     Node: OwnedTreeNode,
 {
     pub(crate) fn new(
-        source: OwnedBFSIteratorWithAncestors<Node>,
+        mut source: OwnedBFSIteratorWithContext<Node>,
     ) -> OwnedBFSLeavesIteratorWithAncestors<Node> {
+        if let Some(children) = source.current_context.children {
+            source.iterator_queue.push_back(children.into_iter());
+        }
+
         OwnedBFSLeavesIteratorWithAncestors {
             is_root: source.is_root,
-            item_stack: source.item_stack,
+            item_stack: source.current_context.ancestors,
             iterator_queue: source
                 .iterator_queue
                 .into_iter()

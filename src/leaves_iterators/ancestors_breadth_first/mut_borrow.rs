@@ -4,7 +4,7 @@ use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
 
 use crate::{
     bfs_iterators::mut_borrow::{
-        MutBorrowedBFSIteratorWithAncestors, MutBorrowedBinaryBFSIteratorWithAncestors,
+        MutBorrowedBFSIteratorWithContext, MutBorrowedBinaryBFSIteratorWithAncestors,
     },
     prelude::{BinaryChildren, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode},
 };
@@ -29,11 +29,15 @@ where
     Node: MutBorrowedTreeNode<'a>,
 {
     pub(crate) fn new(
-        source: MutBorrowedBFSIteratorWithAncestors<'a, Node>,
+        mut source: MutBorrowedBFSIteratorWithContext<'a, Node>,
     ) -> MutBorrowedBFSLeavesIteratorWithAncestors<'a, Node> {
+        if let Some(children) = source.current_context.children {
+            source.iterator_queue.push_back(children.into_iter());
+        }
+
         MutBorrowedBFSLeavesIteratorWithAncestors {
             is_root: source.is_root,
-            item_stack: source.item_stack,
+            item_stack: source.current_context.ancestors,
             iterator_queue: source
                 .iterator_queue
                 .into_iter()

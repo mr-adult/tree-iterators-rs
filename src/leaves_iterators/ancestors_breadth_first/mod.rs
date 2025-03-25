@@ -138,6 +138,7 @@ macro_rules! bfs_next {
 
             tree_node.children.push_back(Some(TreeNodeVecDeque {
                 value: Some(self.item_stack.pop().unwrap()),
+                path_segment: 0,
                 children: VecDeque::new(),
             }));
         }
