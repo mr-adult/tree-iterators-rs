@@ -9,9 +9,13 @@ use crate::{
         breadth_first::borrow::{BorrowedBinaryLeavesIterator, BorrowedLeavesIterator},
     },
     prelude::{BinaryChildren, BorrowedBinaryTreeNode, BorrowedTreeNode},
+    tree_context::TreeContextRef,
 };
 
-use super::{bfs_advance_iterator, bfs_next, bfs_streaming_iterator_impl, TreeNodeVecDeque};
+use super::{
+    bfs_advance_iterator, bfs_binary_advance_iterator, bfs_binary_streaming_iterator_impl,
+    bfs_next, bfs_streaming_iterator_impl, TreeNodeVecDeque,
+};
 
 pub struct BorrowedBFSIterator<'a, Node>
 where
@@ -42,10 +46,10 @@ where
     }
 
     #[doc = include_str!("../../doc_files/attach_ancestors.md")]
-    pub fn attach_ancestors(self) -> BorrowedBFSIteratorWithAncestors<'a, Node> {
+    pub fn attach_context(self) -> BorrowedBFSIteratorWithContext<'a, Node> {
         match self.root {
             None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
-            Some(root) => BorrowedBFSIteratorWithAncestors::new(root)
+            Some(root) => BorrowedBFSIteratorWithContext::new(root)
         }
     }
 }
@@ -58,39 +62,42 @@ where
     bfs_next!(get_value_and_children_iter);
 }
 
-pub struct BorrowedBFSIteratorWithAncestors<'a, Node>
+pub struct BorrowedBFSIteratorWithContext<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
 {
     pub(crate) is_root: bool,
-    pub(crate) item_stack: Vec<Node::BorrowedValue>,
     pub(crate) tree_cache: TreeNodeVecDeque<Node::BorrowedValue>,
     pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::BorrowedValue>>,
     pub(crate) iterator_queue: VecDeque<<Node::BorrowedChildren as IntoIterator>::IntoIter>,
+    pub(crate) current_context: TreeContextRef<'a, Node>,
+    pub(crate) path_counter: usize,
 }
 
-impl<'a, Node> BorrowedBFSIteratorWithAncestors<'a, Node>
+impl<'a, Node> BorrowedBFSIteratorWithContext<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
 {
-    fn new(root: &'a Node) -> BorrowedBFSIteratorWithAncestors<'a, Node> {
+    fn new(root: &'a Node) -> BorrowedBFSIteratorWithContext<'a, Node> {
         let (value, children) = root.get_value_and_children_iter();
         let tree_cache = TreeNodeVecDeque {
             value: None,
+            path_segment: 0,
             children: VecDeque::new(),
         };
-        let mut iterator_queue = VecDeque::new();
-        let mut item_stack = Vec::new();
 
-        item_stack.push(value);
-        iterator_queue.push_back(children.into_iter());
+        let iterator_queue = VecDeque::new();
+        let mut current_context = TreeContextRef::new();
+        current_context.ancestors.push(value);
+        current_context.children = Some(children);
 
-        BorrowedBFSIteratorWithAncestors {
+        BorrowedBFSIteratorWithContext {
             is_root: true,
-            item_stack,
+            current_context,
             iterator_queue,
             traversal_stack: Vec::new(),
             tree_cache,
+            path_counter: 0,
         }
     }
 
@@ -99,14 +106,14 @@ where
         BorrowedBFSLeavesIteratorWithAncestors::new(self)
     }
 
-    bfs_advance_iterator!(get_value_and_children_iter);
+    bfs_advance_iterator!();
 }
 
-impl<'a, Node> StreamingIterator for BorrowedBFSIteratorWithAncestors<'a, Node>
+impl<'a, Node> StreamingIterator for BorrowedBFSIteratorWithContext<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
 {
-    type Item = [Node::BorrowedValue];
+    type Item = TreeContextRef<'a, Node>;
 
     bfs_streaming_iterator_impl!(get_value_and_children_iter);
 }
@@ -173,10 +180,7 @@ where
 {
     fn new(root: &'a Node) -> BorrowedBinaryBFSIteratorWithAncestors<'a, Node> {
         let (value, children) = root.get_value_and_children_iter();
-        let tree_cache = TreeNodeVecDeque {
-            value: None,
-            children: VecDeque::new(),
-        };
+        let tree_cache = TreeNodeVecDeque::default();
         let mut iterator_queue = VecDeque::new();
         let mut item_stack = Vec::new();
 
@@ -197,7 +201,7 @@ where
         BorrowedBinaryBFSLeavesIteratorWithAncestors::new(self)
     }
 
-    bfs_advance_iterator!(get_value_and_children_iter);
+    bfs_binary_advance_iterator!(get_value_and_children_iter);
 }
 
 impl<'a, Node> StreamingIterator for BorrowedBinaryBFSIteratorWithAncestors<'a, Node>
@@ -206,5 +210,5 @@ where
 {
     type Item = [Node::BorrowedValue];
 
-    bfs_streaming_iterator_impl!(get_value_and_children_iter);
+    bfs_binary_streaming_iterator_impl!(get_value_and_children_iter);
 }

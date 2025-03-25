@@ -2,7 +2,8 @@ use alloc::{collections::VecDeque, vec::Vec};
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
 
 use super::{
-    bfs_advance_iterator, bfs_next, bfs_streaming_iterator_impl, get_mut, TreeNodeVecDeque,
+    bfs_advance_iterator, bfs_binary_advance_iterator, bfs_binary_streaming_iterator_impl,
+    bfs_next, bfs_streaming_iterator_impl, get_mut, get_mut_binary, TreeNodeVecDeque,
 };
 use crate::{
     leaves_iterators::{
@@ -13,6 +14,7 @@ use crate::{
         breadth_first::mut_borrow::{MutBorrowedBinaryLeavesIterator, MutBorrowedLeavesIterator},
     },
     prelude::{BinaryChildren, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode},
+    tree_context::TreeContextMut,
 };
 
 pub struct MutBorrowedBFSIterator<'a, Node>
@@ -44,10 +46,10 @@ where
     }
 
     #[doc = include_str!("../../doc_files/attach_ancestors.md")]
-    pub fn attach_ancestors(self) -> MutBorrowedBFSIteratorWithAncestors<'a, Node> {
+    pub fn attach_context(self) -> MutBorrowedBFSIteratorWithContext<'a, Node> {
         match self.root {
             None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
-            Some(root) => MutBorrowedBFSIteratorWithAncestors::new(root)
+            Some(root) => MutBorrowedBFSIteratorWithContext::new(root)
         }
     }
 }
@@ -60,39 +62,37 @@ where
     bfs_next!(get_value_and_children_iter_mut);
 }
 
-pub struct MutBorrowedBFSIteratorWithAncestors<'a, Node>
+pub struct MutBorrowedBFSIteratorWithContext<'a, Node>
 where
     Node: MutBorrowedTreeNode<'a>,
 {
     pub(crate) is_root: bool,
-    pub(crate) item_stack: Vec<Node::MutBorrowedValue>,
     pub(crate) tree_cache: TreeNodeVecDeque<Node::MutBorrowedValue>,
     pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::MutBorrowedValue>>,
     pub(crate) iterator_queue: VecDeque<<Node::MutBorrowedChildren as IntoIterator>::IntoIter>,
+    pub(crate) current_context: TreeContextMut<'a, Node>,
+    pub(crate) path_counter: usize,
 }
 
-impl<'a, Node> MutBorrowedBFSIteratorWithAncestors<'a, Node>
+impl<'a, Node> MutBorrowedBFSIteratorWithContext<'a, Node>
 where
     Node: MutBorrowedTreeNode<'a>,
 {
-    fn new(root: &'a mut Node) -> MutBorrowedBFSIteratorWithAncestors<'a, Node> {
+    fn new(root: &'a mut Node) -> MutBorrowedBFSIteratorWithContext<'a, Node> {
         let (value, children) = root.get_value_and_children_iter_mut();
-        let tree_cache = TreeNodeVecDeque {
-            value: None,
-            children: VecDeque::new(),
-        };
-        let mut iterator_queue = VecDeque::new();
-        let mut item_stack = Vec::new();
+        let tree_cache = TreeNodeVecDeque::default();
+        let iterator_queue = VecDeque::new();
+        let mut current_context = TreeContextMut::new();
+        current_context.ancestors.push(value);
+        current_context.children = Some(children);
 
-        item_stack.push(value);
-        iterator_queue.push_back(children.into_iter());
-
-        MutBorrowedBFSIteratorWithAncestors {
+        MutBorrowedBFSIteratorWithContext {
             is_root: true,
-            item_stack,
             iterator_queue,
             traversal_stack: Vec::new(),
             tree_cache,
+            current_context,
+            path_counter: 0,
         }
     }
 
@@ -101,19 +101,19 @@ where
         MutBorrowedBFSLeavesIteratorWithAncestors::new(self)
     }
 
-    bfs_advance_iterator!(get_value_and_children_iter_mut);
+    bfs_advance_iterator!();
 }
 
-impl<'a, Node> StreamingIterator for MutBorrowedBFSIteratorWithAncestors<'a, Node>
+impl<'a, Node> StreamingIterator for MutBorrowedBFSIteratorWithContext<'a, Node>
 where
     Node: MutBorrowedTreeNode<'a>,
 {
-    type Item = [Node::MutBorrowedValue];
+    type Item = TreeContextMut<'a, Node>;
 
     bfs_streaming_iterator_impl!(get_value_and_children_iter_mut);
 }
 
-impl<'a, Node> StreamingIteratorMut for MutBorrowedBFSIteratorWithAncestors<'a, Node>
+impl<'a, Node> StreamingIteratorMut for MutBorrowedBFSIteratorWithContext<'a, Node>
 where
     Node: MutBorrowedTreeNode<'a>,
 {
@@ -182,10 +182,7 @@ where
 {
     fn new(root: &'a mut Node) -> MutBorrowedBinaryBFSIteratorWithAncestors<'a, Node> {
         let (value, children) = root.get_value_and_children_iter_mut();
-        let tree_cache = TreeNodeVecDeque {
-            value: None,
-            children: VecDeque::new(),
-        };
+        let tree_cache = TreeNodeVecDeque::default();
         let mut iterator_queue = VecDeque::new();
         let mut item_stack = Vec::new();
 
@@ -206,7 +203,7 @@ where
         MutBorrowedBinaryBFSLeavesIteratorWithAncestors::new(self)
     }
 
-    bfs_advance_iterator!(get_value_and_children_iter_mut);
+    bfs_binary_advance_iterator!(get_value_and_children_iter_mut);
 }
 
 impl<'a, Node> StreamingIterator for MutBorrowedBinaryBFSIteratorWithAncestors<'a, Node>
@@ -215,12 +212,12 @@ where
 {
     type Item = [Node::MutBorrowedValue];
 
-    bfs_streaming_iterator_impl!(get_value_and_children_iter_mut);
+    bfs_binary_streaming_iterator_impl!(get_value_and_children_iter_mut);
 }
 
 impl<'a, Node> StreamingIteratorMut for MutBorrowedBinaryBFSIteratorWithAncestors<'a, Node>
 where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
-    get_mut!();
+    get_mut_binary!();
 }
