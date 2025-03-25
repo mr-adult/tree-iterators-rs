@@ -77,7 +77,7 @@ where
         let (value, children) = root.get_value_and_children_iter();
         let tree_cache = TreeNodeVecDeque {
             value: None,
-            children: None,
+            children: VecDeque::new(),
         };
         let mut iterator_queue = VecDeque::new();
         let mut item_stack = Vec::new();
@@ -175,7 +175,7 @@ where
         let (value, children) = root.get_value_and_children_iter();
         let tree_cache = TreeNodeVecDeque {
             value: None,
-            children: None,
+            children: VecDeque::new(),
         };
         let mut iterator_queue = VecDeque::new();
         let mut item_stack = Vec::new();
