@@ -36,13 +36,13 @@ pub use super::tree_context::TreeContext;
 /// you to easily work with and modify binary trees.
 #[derive(Clone, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct BinaryTreeNode<T> {
+pub struct BinaryTree<T> {
     /// This node's value
     pub value: T,
     /// The left child of the current node.
-    pub left: Option<Box<BinaryTreeNode<T>>>,
+    pub left: Option<Box<BinaryTree<T>>>,
     /// The right child of the current node.
-    pub right: Option<Box<BinaryTreeNode<T>>>,
+    pub right: Option<Box<BinaryTree<T>>>,
 }
 
 /// A default implemenation of a tree node. This struct
@@ -50,11 +50,11 @@ pub struct BinaryTreeNode<T> {
 /// you to easily work with and modify arbitrary trees.
 #[derive(Clone, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct TreeNode<T> {
+pub struct Tree<T> {
     /// This node's value
     pub value: T,
     /// The children of the current node.
-    pub children: Vec<TreeNode<T>>,
+    pub children: Vec<Tree<T>>,
 }
 
 /// Helper type to define the BinaryTreeNode's
@@ -907,7 +907,7 @@ where
     }
 }
 
-impl<T> OwnedTreeNode for TreeNode<T> {
+impl<T> OwnedTreeNode for Tree<T> {
     type OwnedValue = T;
     type OwnedChildren = Vec<Self>;
 
@@ -919,7 +919,7 @@ impl<T> OwnedTreeNode for TreeNode<T> {
     }
 }
 
-impl<'a, T> MutBorrowedTreeNode<'a> for TreeNode<T>
+impl<'a, T> MutBorrowedTreeNode<'a> for Tree<T>
 where
     T: 'a,
 {
@@ -936,7 +936,7 @@ where
     }
 }
 
-impl<'a, T> BorrowedTreeNode<'a> for TreeNode<T>
+impl<'a, T> BorrowedTreeNode<'a> for Tree<T>
 where
     T: 'a,
 {
@@ -951,7 +951,7 @@ where
     }
 }
 
-impl<T> OwnedBinaryTreeNode for BinaryTreeNode<T> {
+impl<T> OwnedBinaryTreeNode for BinaryTree<T> {
     type OwnedValue = T;
 
     fn get_value_and_children_binary(self) -> (Self::OwnedValue, [Option<Self>; 2]) {
@@ -971,7 +971,7 @@ impl<T> OwnedBinaryTreeNode for BinaryTreeNode<T> {
     }
 }
 
-impl<'a, T> MutBorrowedBinaryTreeNode<'a> for BinaryTreeNode<T>
+impl<'a, T> MutBorrowedBinaryTreeNode<'a> for BinaryTree<T>
 where
     Self: 'a,
 {
@@ -996,7 +996,7 @@ where
     }
 }
 
-impl<'a, T> BorrowedBinaryTreeNode<'a> for BinaryTreeNode<T>
+impl<'a, T> BorrowedBinaryTreeNode<'a> for BinaryTree<T>
 where
     Self: 'a,
 {
@@ -1710,7 +1710,7 @@ pub(crate) mod tests {
         }
 
         fn get_borrowed_leaves_iters<T>(
-            test_tree: &TreeNode<T>,
+            test_tree: &Tree<T>,
         ) -> impl Iterator<Item = Box<dyn StreamingIterator<Item = [&T]> + '_>> + '_ {
             [
                 Box::new(test_tree.dfs_preorder_iter().attach_context().leaves())
@@ -1722,7 +1722,7 @@ pub(crate) mod tests {
         }
 
         fn get_mut_borrowed_leaves_iters<T>(
-            test_tree: &mut TreeNode<T>,
+            test_tree: &mut Tree<T>,
         ) -> impl Iterator<Item = Box<dyn StreamingIterator<Item = [&mut T]> + '_>> + '_ {
             // Rust doesn't like this, but we know that only 1 iterator will be accessed at a time
             // and no reallocations will be done as we are doing a readonly test,
@@ -1731,19 +1731,19 @@ pub(crate) mod tests {
             unsafe {
                 [
                     Box::new(
-                        (*(test_tree as *mut TreeNode<T>))
+                        (*(test_tree as *mut Tree<T>))
                             .dfs_preorder_iter_mut()
                             .attach_context()
                             .leaves(),
                     ) as Box<dyn StreamingIterator<Item = [&mut T]>>,
                     Box::new(
-                        (*(test_tree as *mut TreeNode<T>))
+                        (*(test_tree as *mut Tree<T>))
                             .dfs_postorder_iter_mut()
                             .attach_context()
                             .leaves(),
                     ),
                     Box::new(
-                        (*(test_tree as *mut TreeNode<T>))
+                        (*(test_tree as *mut Tree<T>))
                             .bfs_iter_mut()
                             .attach_context()
                             .leaves(),
@@ -1754,7 +1754,7 @@ pub(crate) mod tests {
         }
 
         fn get_owned_leaves_iters<T: Clone + 'static>(
-            test_tree: TreeNode<T>,
+            test_tree: Tree<T>,
         ) -> [Box<dyn StreamingIterator<Item = [T]>>; 3] {
             [
                 Box::new(test_tree.clone().dfs_preorder().attach_context().leaves())
@@ -1821,7 +1821,7 @@ pub(crate) mod tests {
         }
 
         fn get_borrowed_leaves_binary_iters<T>(
-            test_tree: &BinaryTreeNode<T>,
+            test_tree: &BinaryTree<T>,
         ) -> [Box<dyn StreamingIterator<Item = [&T]> + '_>; 4] {
             [
                 Box::new(test_tree.dfs_preorder_iter().attach_ancestors().leaves())
@@ -1833,30 +1833,30 @@ pub(crate) mod tests {
         }
 
         fn get_mut_borrowed_leaves_binary_iters<T>(
-            test_tree: &mut BinaryTreeNode<T>,
+            test_tree: &mut BinaryTree<T>,
         ) -> impl Iterator<Item = Box<dyn StreamingIterator<Item = [&mut T]> + '_>> {
             unsafe {
                 [
                     Box::new(
-                        (*(test_tree as *mut BinaryTreeNode<T>))
+                        (*(test_tree as *mut BinaryTree<T>))
                             .dfs_preorder_iter_mut()
                             .attach_ancestors()
                             .leaves(),
                     ) as Box<dyn StreamingIterator<Item = [&mut T]>>,
                     Box::new(
-                        (*(test_tree as *mut BinaryTreeNode<T>))
+                        (*(test_tree as *mut BinaryTree<T>))
                             .dfs_inorder_iter_mut()
                             .attach_ancestors()
                             .leaves(),
                     ),
                     Box::new(
-                        (*(test_tree as *mut BinaryTreeNode<T>))
+                        (*(test_tree as *mut BinaryTree<T>))
                             .dfs_postorder_iter_mut()
                             .attach_ancestors()
                             .leaves(),
                     ),
                     Box::new(
-                        (*(test_tree as *mut BinaryTreeNode<T>))
+                        (*(test_tree as *mut BinaryTree<T>))
                             .bfs_iter_mut()
                             .attach_ancestors()
                             .leaves(),
@@ -1867,7 +1867,7 @@ pub(crate) mod tests {
         }
 
         fn get_owned_leaves_binary_iters<T: Clone + 'static>(
-            test_tree: BinaryTreeNode<T>,
+            test_tree: BinaryTree<T>,
         ) -> [Box<dyn StreamingIterator<Item = [T]>>; 4] {
             [
                 Box::new(test_tree.clone().dfs_preorder().attach_ancestors().leaves())
@@ -2439,7 +2439,7 @@ pub(crate) mod tests {
         }
 
         fn get_borrowed_leaves_iters<T>(
-            test_tree: &TreeNode<T>,
+            test_tree: &Tree<T>,
         ) -> impl Iterator<Item = Box<dyn Iterator<Item = &T> + '_>> + '_ {
             [
                 Box::new(test_tree.dfs_preorder_iter().leaves()) as Box<dyn Iterator<Item = &T>>,
@@ -2450,7 +2450,7 @@ pub(crate) mod tests {
         }
 
         fn get_mut_borrowed_leaves_iters<T>(
-            test_tree: &mut TreeNode<T>,
+            test_tree: &mut Tree<T>,
         ) -> impl Iterator<Item = Box<dyn Iterator<Item = &mut T> + '_>> + '_ {
             // Rust doesn't like this, but we know that only 1 iterator will be accessed at a time
             // and no reallocations will be done as we are doing a readonly test,
@@ -2459,23 +2459,23 @@ pub(crate) mod tests {
             unsafe {
                 [
                     Box::new(
-                        (*(test_tree as *mut TreeNode<T>))
+                        (*(test_tree as *mut Tree<T>))
                             .dfs_preorder_iter_mut()
                             .leaves(),
                     ) as Box<dyn Iterator<Item = &mut T>>,
                     Box::new(
-                        (*(test_tree as *mut TreeNode<T>))
+                        (*(test_tree as *mut Tree<T>))
                             .dfs_postorder_iter_mut()
                             .leaves(),
                     ),
-                    Box::new((*(test_tree as *mut TreeNode<T>)).bfs_iter_mut().leaves()),
+                    Box::new((*(test_tree as *mut Tree<T>)).bfs_iter_mut().leaves()),
                 ]
                 .into_iter()
             }
         }
 
         fn get_owned_leaves_iters<T: Clone + 'static>(
-            test_tree: TreeNode<T>,
+            test_tree: Tree<T>,
         ) -> [Box<dyn Iterator<Item = T>>; 3] {
             [
                 Box::new(test_tree.clone().dfs_preorder().leaves()) as Box<dyn Iterator<Item = T>>,
@@ -2521,7 +2521,7 @@ pub(crate) mod tests {
         }
 
         fn get_borrowed_leaves_binary_iters<T>(
-            test_tree: &BinaryTreeNode<T>,
+            test_tree: &BinaryTree<T>,
         ) -> [Box<dyn Iterator<Item = &T> + '_>; 4] {
             [
                 Box::new(test_tree.dfs_preorder_iter().leaves()) as Box<dyn Iterator<Item = &T>>,
@@ -2532,27 +2532,27 @@ pub(crate) mod tests {
         }
 
         fn get_mut_borrowed_leaves_binary_iters<T>(
-            test_tree: &mut BinaryTreeNode<T>,
+            test_tree: &mut BinaryTree<T>,
         ) -> impl Iterator<Item = Box<dyn Iterator<Item = &mut T> + '_>> {
             unsafe {
                 [
                     Box::new(
-                        (*(test_tree as *mut BinaryTreeNode<T>))
+                        (*(test_tree as *mut BinaryTree<T>))
                             .dfs_preorder_iter_mut()
                             .leaves(),
                     ) as Box<dyn Iterator<Item = &mut T>>,
                     Box::new(
-                        (*(test_tree as *mut BinaryTreeNode<T>))
+                        (*(test_tree as *mut BinaryTree<T>))
                             .dfs_inorder_iter_mut()
                             .leaves(),
                     ),
                     Box::new(
-                        (*(test_tree as *mut BinaryTreeNode<T>))
+                        (*(test_tree as *mut BinaryTree<T>))
                             .dfs_postorder_iter_mut()
                             .leaves(),
                     ),
                     Box::new(
-                        (*(test_tree as *mut BinaryTreeNode<T>))
+                        (*(test_tree as *mut BinaryTree<T>))
                             .bfs_iter_mut()
                             .leaves(),
                     ),
@@ -2562,7 +2562,7 @@ pub(crate) mod tests {
         }
 
         fn get_owned_leaves_binary_iters<T: Clone + 'static>(
-            test_tree: BinaryTreeNode<T>,
+            test_tree: BinaryTree<T>,
         ) -> [Box<dyn Iterator<Item = T>>; 4] {
             [
                 Box::new(test_tree.clone().dfs_preorder().leaves()) as Box<dyn Iterator<Item = T>>,
@@ -2985,45 +2985,45 @@ pub(crate) mod tests {
         }
     }
 
-    fn create_trees_for_testing() -> Vec<TreeNode<usize>> {
+    fn create_trees_for_testing() -> Vec<Tree<usize>> {
         vec![create_tree_for_testing(Vec::new())]
     }
 
     pub(crate) fn create_tree_for_testing(
-        empty_children_list: Vec<TreeNode<usize>>,
-    ) -> TreeNode<usize> {
-        TreeNode {
+        empty_children_list: Vec<Tree<usize>>,
+    ) -> Tree<usize> {
+        Tree {
             value: 0,
             children: vec![
-                TreeNode {
+                Tree {
                     value: 1,
                     children: vec![
-                        TreeNode {
+                        Tree {
                             value: 3,
                             children: empty_children_list.clone(),
                         },
-                        TreeNode {
+                        Tree {
                             value: 4,
                             children: empty_children_list.clone(),
                         },
                     ],
                 },
-                TreeNode {
+                Tree {
                     value: 2,
                     children: vec![
-                        TreeNode {
+                        Tree {
                             value: 5,
                             children: empty_children_list.clone(),
                         },
-                        TreeNode {
+                        Tree {
                             value: 6,
-                            children: vec![TreeNode {
+                            children: vec![Tree {
                                 value: 7,
-                                children: vec![TreeNode {
+                                children: vec![Tree {
                                     value: 8,
-                                    children: vec![TreeNode {
+                                    children: vec![Tree {
                                         value: 9,
-                                        children: vec![TreeNode {
+                                        children: vec![Tree {
                                             value: 10,
                                             children: empty_children_list.clone(),
                                         }],
@@ -3037,40 +3037,40 @@ pub(crate) mod tests {
         }
     }
 
-    pub fn create_binary_tree_for_testing() -> BinaryTreeNode<usize> {
-        BinaryTreeNode {
+    pub fn create_binary_tree_for_testing() -> BinaryTree<usize> {
+        BinaryTree {
             value: 0,
-            left: Some(Box::new(BinaryTreeNode {
+            left: Some(Box::new(BinaryTree {
                 value: 1,
-                left: Some(Box::new(BinaryTreeNode {
+                left: Some(Box::new(BinaryTree {
                     value: 3,
                     left: None,
                     right: None,
                 })),
-                right: Some(Box::new(BinaryTreeNode {
+                right: Some(Box::new(BinaryTree {
                     value: 4,
                     left: None,
                     right: None,
                 })),
             })),
-            right: Some(Box::new(BinaryTreeNode {
+            right: Some(Box::new(BinaryTree {
                 value: 2,
-                left: Some(Box::new(BinaryTreeNode {
+                left: Some(Box::new(BinaryTree {
                     value: 5,
                     left: None,
                     right: None,
                 })),
-                right: Some(Box::new(BinaryTreeNode {
+                right: Some(Box::new(BinaryTree {
                     value: 6,
-                    left: Some(Box::new(BinaryTreeNode {
+                    left: Some(Box::new(BinaryTree {
                         value: 7,
                         left: None,
-                        right: Some(Box::new(BinaryTreeNode {
+                        right: Some(Box::new(BinaryTree {
                             value: 8,
-                            left: Some(Box::new(BinaryTreeNode {
+                            left: Some(Box::new(BinaryTree {
                                 value: 9,
                                 left: None,
-                                right: Some(Box::new(BinaryTreeNode {
+                                right: Some(Box::new(BinaryTree {
                                     value: 10,
                                     left: None,
                                     right: None,
