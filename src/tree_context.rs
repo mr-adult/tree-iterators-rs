@@ -2,7 +2,10 @@ use core::mem::MaybeUninit;
 
 use alloc::vec::Vec;
 
-use crate::prelude::{BorrowedTreeNode, MutBorrowedTreeNode, OwnedTreeNode};
+use crate::prelude::{
+    BorrowedBinaryTreeNode, BorrowedTreeNode, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode,
+    OwnedBinaryTreeNode, OwnedTreeNode,
+};
 
 #[derive(Debug)]
 pub struct TreeContextRef<'a, Node>
@@ -54,6 +57,61 @@ where
 
     #[doc = include_str!("../doc_files/tree_context_children.md")]
     pub fn children_mut(&mut self) -> &mut Node::BorrowedChildren {
+        // children should always be populated unless the iterator is in the middle of its .next() method.
+        unsafe { self.children.assume_init_mut() }
+    }
+}
+
+#[derive(Debug)]
+pub struct BinaryTreeContextRef<'a, Node>
+where
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+    #[doc = include_str!("../doc_files/path.md")]
+    pub(crate) path: Vec<usize>,
+
+    #[doc = include_str!("../doc_files/ancestors_vec.md")]
+    pub(crate) ancestors: Vec<Node::BorrowedValue>,
+
+    #[doc = include_str!("../doc_files/tree_context_children.md")]
+    pub(crate) children: MaybeUninit<[Option<&'a Node>; 2]>,
+}
+
+impl<'a, Node> BinaryTreeContextRef<'a, Node>
+where
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+    pub(crate) fn new() -> Self {
+        Self {
+            path: Vec::new(),
+            ancestors: Vec::new(),
+            children: MaybeUninit::uninit(),
+        }
+    }
+
+    #[doc = include_str!("../doc_files/path.md")]
+    pub fn path(&self) -> &[usize] {
+        &self.path
+    }
+
+    #[doc = include_str!("../doc_files/ancestors_vec.md")]
+    pub fn ancestors(&self) -> &[Node::BorrowedValue] {
+        &self.ancestors
+    }
+
+    #[doc = include_str!("../doc_files/ancestors_vec.md")]
+    pub fn ancestors_mut(&mut self) -> &mut [Node::BorrowedValue] {
+        &mut self.ancestors
+    }
+
+    #[doc = include_str!("../doc_files/tree_context_children.md")]
+    pub fn children(&self) -> &[Option<&'a Node>; 2] {
+        // children should always be populated unless the iterator is in the middle of its .next() method.
+        unsafe { self.children.assume_init_ref() }
+    }
+
+    #[doc = include_str!("../doc_files/tree_context_children.md")]
+    pub fn children_mut(&mut self) -> &mut [Option<&'a Node>; 2] {
         // children should always be populated unless the iterator is in the middle of its .next() method.
         unsafe { self.children.assume_init_mut() }
     }
@@ -115,6 +173,61 @@ where
 }
 
 #[derive(Debug)]
+pub struct BinaryTreeContextMut<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    #[doc = include_str!("../doc_files/path.md")]
+    pub(crate) path: Vec<usize>,
+
+    #[doc = include_str!("../doc_files/ancestors_vec.md")]
+    pub(crate) ancestors: Vec<Node::MutBorrowedValue>,
+
+    #[doc = include_str!("../doc_files/tree_context_children.md")]
+    pub(crate) children: MaybeUninit<[Option<&'a mut Node>; 2]>,
+}
+
+impl<'a, Node> BinaryTreeContextMut<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    pub(crate) fn new() -> Self {
+        Self {
+            path: Vec::new(),
+            ancestors: Vec::new(),
+            children: MaybeUninit::uninit(),
+        }
+    }
+
+    #[doc = include_str!("../doc_files/path.md")]
+    pub fn path(&self) -> &[usize] {
+        &self.path
+    }
+
+    #[doc = include_str!("../doc_files/ancestors_vec.md")]
+    pub fn ancestors(&self) -> &[Node::MutBorrowedValue] {
+        &self.ancestors
+    }
+
+    #[doc = include_str!("../doc_files/ancestors_vec.md")]
+    pub fn ancestors_mut(&mut self) -> &mut [Node::MutBorrowedValue] {
+        &mut self.ancestors
+    }
+
+    #[doc = include_str!("../doc_files/tree_context_children.md")]
+    pub fn children(&self) -> &[Option<&'a mut Node>; 2] {
+        // children should always be populated unless the iterator is in the middle of its .next() method.
+        unsafe { self.children.assume_init_ref() }
+    }
+
+    #[doc = include_str!("../doc_files/tree_context_children.md")]
+    pub fn children_mut(&mut self) -> &mut [Option<&'a mut Node>; 2] {
+        // children should always be populated unless the iterator is in the middle of its .next() method.
+        unsafe { self.children.assume_init_mut() }
+    }
+}
+
+#[derive(Debug)]
 pub struct TreeContext<Node>
 where
     Node: OwnedTreeNode,
@@ -170,6 +283,61 @@ where
 }
 
 #[derive(Debug)]
+pub struct BinaryTreeContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    #[doc = include_str!("../doc_files/path.md")]
+    pub(crate) path: Vec<usize>,
+
+    #[doc = include_str!("../doc_files/ancestors_vec.md")]
+    pub(crate) ancestors: Vec<Node::OwnedValue>,
+
+    #[doc = include_str!("../doc_files/tree_context_children.md")]
+    pub(crate) children: MaybeUninit<[Option<Node>; 2]>,
+}
+
+impl<Node> BinaryTreeContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    pub(crate) fn new() -> Self {
+        Self {
+            path: Vec::new(),
+            ancestors: Vec::new(),
+            children: MaybeUninit::uninit(),
+        }
+    }
+
+    #[doc = include_str!("../doc_files/path.md")]
+    pub fn path(&self) -> &[usize] {
+        &self.path
+    }
+
+    #[doc = include_str!("../doc_files/ancestors_vec.md")]
+    pub fn ancestors(&self) -> &[Node::OwnedValue] {
+        &self.ancestors
+    }
+
+    #[doc = include_str!("../doc_files/ancestors_vec.md")]
+    pub fn ancestors_mut(&mut self) -> &mut [Node::OwnedValue] {
+        &mut self.ancestors
+    }
+
+    #[doc = include_str!("../doc_files/tree_context_children.md")]
+    pub fn children(&self) -> &[Option<Node>; 2] {
+        // children should always be populated unless the iterator is in the middle of its .next() method.
+        unsafe { self.children.assume_init_ref() }
+    }
+
+    #[doc = include_str!("../doc_files/tree_context_children.md")]
+    pub fn children_mut(&mut self) -> &mut [Option<Node>; 2] {
+        // children should always be populated unless the iterator is in the middle of its .next() method.
+        unsafe { self.children.assume_init_mut() }
+    }
+}
+
+#[derive(Debug)]
 pub struct TreeContextNoChildren<Node>
 where
     Node: OwnedTreeNode,
@@ -184,6 +352,45 @@ where
 impl<Node> TreeContextNoChildren<Node>
 where
     Node: OwnedTreeNode,
+{
+    pub(crate) fn new() -> Self {
+        Self {
+            path: Vec::new(),
+            ancestors: Vec::new(),
+        }
+    }
+
+    #[doc = include_str!("../doc_files/path.md")]
+    pub fn path(&self) -> &[usize] {
+        &self.path
+    }
+
+    #[doc = include_str!("../doc_files/ancestors_vec.md")]
+    pub fn ancestors(&self) -> &[Node::OwnedValue] {
+        &self.ancestors
+    }
+
+    #[doc = include_str!("../doc_files/ancestors_vec.md")]
+    pub fn ancestors_mut(&mut self) -> &mut [Node::OwnedValue] {
+        &mut self.ancestors
+    }
+}
+
+#[derive(Debug)]
+pub struct BinaryTreeContextNoChildren<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    #[doc = include_str!("../doc_files/path.md")]
+    pub(crate) path: Vec<usize>,
+
+    #[doc = include_str!("../doc_files/ancestors_vec.md")]
+    pub(crate) ancestors: Vec<Node::OwnedValue>,
+}
+
+impl<Node> BinaryTreeContextNoChildren<Node>
+where
+    Node: OwnedBinaryTreeNode,
 {
     pub(crate) fn new() -> Self {
         Self {
