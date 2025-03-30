@@ -7,11 +7,7 @@ macro_rules! bfs_next {
         fn bfs_next(&mut self) -> bool {
             if self.is_root {
                 self.is_root = false;
-                let first_iter = self
-                    .iterator_queue
-                    .get_mut(0)
-                    .expect("root node to have a children collection on the stack");
-                return first_iter.peek().is_some();
+                return true;
             }
 
             loop {

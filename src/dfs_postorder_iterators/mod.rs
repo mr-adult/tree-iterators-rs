@@ -41,17 +41,12 @@ macro_rules! dfs_postorder_next {
 macro_rules! postorder_streaming_iterator_impl {
     ($get_value_and_children: ident) => {
         fn advance(&mut self) {
-            if let Some(children) = self.current_context.children.take() {
-                self.traversal_stack.push(children.into_iter());
-                self.current_context.path.push(usize::MAX);
-            }
-
             let mut is_first_iteration = true;
             if let Some(next) = self.root.take() {
                 let (value, children) = next.$get_value_and_children();
                 self.traversal_stack.push(children.into_iter());
-                self.current_context.path.push(usize::MAX);
                 self.current_context.ancestors.push(value);
+                self.current_context.path.push(usize::MAX);
                 is_first_iteration = false;
             }
 
@@ -69,8 +64,8 @@ macro_rules! postorder_streaming_iterator_impl {
                         }
 
                         self.traversal_stack.push(children.into_iter());
-                        self.current_context.path.push(usize::MAX);
                         self.current_context.ancestors.push(value);
+                        self.current_context.path.push(usize::MAX);
                         is_first_iteration = false;
                         continue;
                     }
@@ -78,11 +73,13 @@ macro_rules! postorder_streaming_iterator_impl {
                     if self.current_context.ancestors.len() > self.traversal_stack.len() {
                         self.current_context.ancestors.pop();
                     }
+
                     self.traversal_stack.pop();
                     self.current_context.path.pop();
                     return;
                 } else {
                     self.current_context.ancestors.pop();
+                    self.current_context.path.pop();
                     return;
                 }
             }

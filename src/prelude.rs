@@ -1038,7 +1038,6 @@ pub(crate) mod tests {
     #[cfg(test)]
     use std::collections::HashMap;
     #[cfg(test)]
-    #[cfg(test)]
     pub(crate) fn get_value_to_path_map() -> HashMap<usize, Vec<usize>> {
         let mut result = HashMap::new();
         result.insert(0, vec![]);

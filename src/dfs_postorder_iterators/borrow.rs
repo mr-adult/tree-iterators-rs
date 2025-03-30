@@ -97,8 +97,8 @@ where
         Node,
         <Node::BorrowedChildren as IntoIterator>::IntoIter,
     > {
-        if let Some(children) = self.current_context.children {
-            self.traversal_stack.push(children.into_iter());
+        if self.root.is_none() && !self.is_done() {
+            self.traversal_stack.push(unsafe { self.current_context.children.assume_init() }.into_iter())
         }
 
         BorrowedDFSLeavesPostorderIteratorWithAncestors {
