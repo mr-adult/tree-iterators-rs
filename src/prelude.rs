@@ -2552,11 +2552,7 @@ pub(crate) mod tests {
                             .dfs_postorder_iter_mut()
                             .leaves(),
                     ),
-                    Box::new(
-                        (*(test_tree as *mut BinaryTree<T>))
-                            .bfs_iter_mut()
-                            .leaves(),
-                    ),
+                    Box::new((*(test_tree as *mut BinaryTree<T>)).bfs_iter_mut().leaves()),
                 ]
                 .into_iter()
             }
@@ -2990,9 +2986,7 @@ pub(crate) mod tests {
         vec![create_tree_for_testing(Vec::new())]
     }
 
-    pub(crate) fn create_tree_for_testing(
-        empty_children_list: Vec<Tree<usize>>,
-    ) -> Tree<usize> {
+    pub(crate) fn create_tree_for_testing(empty_children_list: Vec<Tree<usize>>) -> Tree<usize> {
         Tree {
             value: 0,
             children: vec![
