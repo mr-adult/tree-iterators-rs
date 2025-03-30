@@ -31,7 +31,10 @@ use super::dfs_postorder_iterators::{
     owned::{OwnedBinaryDFSPostorderIterator, OwnedDFSPostorderIterator},
 };
 
-pub use super::tree_context::TreeContext;
+pub use super::tree_context::{
+    BinaryTreeContext, BinaryTreeContextMut, BinaryTreeContextRef, TreeContext, TreeContextMut,
+    TreeContextNoChildren, TreeContextRef,
+};
 
 /// A default implemenation of a binary tree node. This struct
 /// provides a series of tree traversal utilities to allow
