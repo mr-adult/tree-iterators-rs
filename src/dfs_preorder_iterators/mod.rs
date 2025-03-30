@@ -26,7 +26,7 @@ macro_rules! dfs_preorder_next {
     };
 }
 
-macro_rules! preorder_streaming_binary_iterator_impl {
+macro_rules! preorder_ancestors_streaming_iterator_impl {
     ($get_value_and_children: ident) => {
         fn advance(&mut self) {
             let next = self.root.take().or_else(|| loop {
@@ -59,7 +59,7 @@ macro_rules! preorder_streaming_binary_iterator_impl {
     };
 }
 
-macro_rules! get_mut_binary {
+macro_rules! get_mut_ancestors {
     () => {
         fn get_mut(&mut self) -> Option<&mut Self::Item> {
             if self.item_stack.len() == 0 {
@@ -71,7 +71,7 @@ macro_rules! get_mut_binary {
     };
 }
 
-macro_rules! preorder_streaming_iterator_impl {
+macro_rules! preorder_context_streaming_iterator_impl {
     ($get_value_and_children: ident) => {
         fn advance(&mut self) {
             if let Some(root) = self.root.take() {
@@ -124,7 +124,7 @@ macro_rules! preorder_streaming_iterator_impl {
     };
 }
 
-macro_rules! get_mut {
+macro_rules! get_mut_context {
     () => {
         fn get_mut(&mut self) -> Option<&mut Self::Item> {
             if self.current_context.ancestors.is_empty() {
@@ -137,7 +137,7 @@ macro_rules! get_mut {
 }
 
 pub(crate) use dfs_preorder_next;
-pub(crate) use get_mut;
-pub(crate) use get_mut_binary;
-pub(crate) use preorder_streaming_binary_iterator_impl;
-pub(crate) use preorder_streaming_iterator_impl;
+pub(crate) use get_mut_ancestors;
+pub(crate) use get_mut_context;
+pub(crate) use preorder_ancestors_streaming_iterator_impl;
+pub(crate) use preorder_context_streaming_iterator_impl;
