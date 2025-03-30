@@ -34,16 +34,17 @@ includes things like:
 - tracking the path to each node from the root of the tree,
 - managing mutable/immutable references to the nodes of the tree,
 - ensuring that all operations can be done safely within Rust's borrow checker
+  rules
 
 Additionally, with its iterator-based APIs, this library allows you to trivially
 swap your iteration method simply by replacing one iteration method (ex.
-`.bfs()`) with another (ex. `.dfs_preorder()`). These methods also make your
+`.bfs()`) with another (ex. `.dfs_preorder()`). These methods make your
 intention much clearer than hand-rolling the algorithm at every location.
 
-The other benefit of this library is its tight integration with the rest of
-Rust's iterators. Because each API returns an iterator, you can proceed to use
-the iterator APIs like filter, map, and reduce on each node of your trees. This
-can very powerfully simplify code.
+Because each API returns an iterator, you can proceed to use the iterator APIs
+like [`filter`](core::iter::Iterator::filter),
+[`map`](core::iter::Iterator::map), and [`reduce`](core::iter::Iterator::reduce)
+on each node of your trees. This can very powerfully simplify code.
 
 ## Getting Started
 
@@ -80,7 +81,8 @@ available in this crate.
 In addition to these APIs, all of the above APIs' iterators can be transformed
 into other iterators by chaining one of the following methods:
 
-- [`.attach_ancestors()`](#attach-ancestors) after this API call.
+- [`.attach_context()`](#attach-context)
+- [`.attach_ancestors()`](#attach-ancestors)
 - [`.leaves()`](#leaves)
 
 ## Change Log
@@ -426,11 +428,13 @@ println!("{}", result);
 ```
 
 An equivalent set of code not using this crate would look like the following.
-NOTE: The dfs_inorder API does not use recursion and thus does not incur the
-overhead of stack frames that this example does. For purposes of simplicity in
-the example, recursion was used. Rust's ownership model is difficult to work
-around with this traversal type and would make the example more complex than
-necessary.
+
+> **_NOTE:_** The dfs_inorder API does not use recursion and thus does not incur
+> the overhead of stack frames that this example does.
+
+For purposes of simplicity in the example, recursion was used. Rust's ownership
+model is difficult to work around with this traversal type and would make the
+example more complex than necessary.
 
 ```rust
 use tree_iterators_rs::{
@@ -542,24 +546,23 @@ println!("{}", result);
 
 ### Attach Context
 
-`attach_context()` is a method that can be chained after any of the above APIs
-or any other type that implements one of the TreeNode traits. This API converts
-the iterator structure into one that returns the entire context of the current
-node in the tree. This includes:
+`attach_context()` is a method that can be chained after any of the tree
+traversal APIs. This API converts the iterator structure into one that returns
+the entire context of the current node in the tree. This includes:
 
 1. the entire stack of ancestor values back up to the root node
-2. the current node's children collection (except owned dfs_inorder and
-   dfs_postorder APIs can't hold onto this information without causing
-   performance issues by clone()'ing).
+2. the current node's children collection (except in the case of owned
+   dfs_inorder and dfs_postorder APIs, which can't hold onto this information
+   without causing performance issues by clone()'ing).
 3. the path (list of indexes) to get to the current node.
 
 This information is incredibly useful and can be used to do thing like check if
 any subtrees contain certain information. In the following example, we are
 scanning each subtree to see if it contains a node with a value of '10'.
 
-NOTE: Be sure to add a use statement for streaming_iterator::StreamingIterator
-to pull in the filter, map, reduce, for_each, etc. methods from the
-streaming_iterator crate.
+> **_NOTE:_** Be sure to add a use statement for
+> streaming_iterator::StreamingIterator to pull in the filter, map, reduce,
+> for_each, etc. methods from the streaming_iterator crate.
 
 ```rust
 use tree_iterators_rs::examples::create_example_tree;
@@ -568,13 +571,24 @@ use streaming_iterator::StreamingIterator;
 
 let root = create_example_tree();
 
-let mut iter = root.dfs_preorder().attach_context();
+let mut iter = root
+    .dfs_preorder()
+    .attach_context();
+
 while let Some(node_context) = iter.next() {
-    let subtree_contains_10 = node_context
+    let current_node_is_10 = *node_context
+        .ancestors()
+        .last()
+        .expect("ancestors() is guaranteed to be non-empty")
+        == 10;
+
+    let any_descendent_is_10 = node_context
         .children()
         .iter()
         .flat_map(|child| child.dfs_preorder_iter())
         .any(|descendent| *descendent == 10);
+
+    let subtree_contains_10 = current_node_is_10 || any_descendent_is_10;
 
     println!("{:?} {}", node_context.ancestors(), subtree_contains_10);
 }
@@ -590,14 +604,14 @@ while let Some(node_context) = iter.next() {
 // [0, 2, 6, 7] true
 // [0, 2, 6, 7, 8] true
 // [0, 2, 6, 7, 8, 9] true
-// [0, 2, 6, 7, 8, 9, 10] false
+// [0, 2, 6, 7, 8, 9, 10] true
 ```
 
 ### Attach Ancestors
 
-`attach_ancestors()` is a method that can be called after any of the traversal
-APIs to change the iterator structure into one that returns a slice of all
-ancestors and the current value in the tree. If one of these is called, the (now
+`attach_ancestors()` is a method that can be called after any of the tree
+traversal APIs to change the iterator structure into one that returns a slice of
+all ancestors and the current value in the tree. If this is called, the (now
 streaming) iterator will yield a slice where the item at index 0 is the root
 value, the item at index len() - 1 is the current value, and everything in
 between is the other ancestors. As an example, when we are at the value of 10 in
@@ -607,9 +621,9 @@ the slice will look like this: \[0, 2, 6, 7, 8, 9, 10\].
 For example, we can use this API to filter down to only the values where all of
 the ancestors and the current node are even numbers in the example tree.
 
-NOTE: Be sure to add a use statement for streaming_iterator::StreamingIterator
-to pull in the filter, map, reduce, for_each, etc. methods from the
-streaming_iterator crate.
+> **_NOTE:_** Be sure to add a use statement for
+> streaming_iterator::StreamingIterator to pull in the filter, map, reduce,
+> for_each, etc. methods from the streaming_iterator crate.
 
 ```rust
 use streaming_iterator::StreamingIterator;
@@ -622,70 +636,6 @@ let root = create_example_binary_tree();
 let mut result = String::new();
 
 root.dfs_inorder_iter()
-	.attach_ancestors()
-	.filter(|slice| 
-		slice.iter().all(|value| **value % 2 == 0)
-	)
-	.map(|slice| slice[slice.len() - 1])
-	.for_each(|value| {
-		result.push(' ');
-		result.push_str(&value.to_string())
-	});
-
-// result: 0 2 6
-println!("{}", result);
-```
-
-We can do the same with the postorder iterator to get the result in reverse:
-
-```rust
-use streaming_iterator::StreamingIterator;
-use tree_iterators_rs::{
-	examples::create_example_tree,
-	prelude::*
-};
-
-let root = create_example_tree();
-let mut result = String::new();
-
-root.dfs_postorder_iter()
-	.attach_context()
-	.filter(|node_context| 
-		node_context
-            .ancestors()
-            .iter()
-            .all(|value| **value % 2 == 0)
-	)
-	.map(|node_context|
-        node_context
-            .ancestors()
-            .last()
-            .unwrap()
-            .clone()
-    )
-	.for_each(|value| {
-		result.push(' ');
-		result.push_str(&value.to_string())
-	});
-
-// result: 6 2 0
-println!("{}", result);
-```
-
-And we can do the same with a breadth-first search. This just so happens to
-yield the same result as the depth first preorder iterator:
-
-```rust
-use streaming_iterator::StreamingIterator;
-use tree_iterators_rs::{
-	examples::create_example_binary_tree,
-	prelude::*
-};
-
-let root = create_example_binary_tree();
-let mut result = String::new();
-
-root.bfs_iter()
 	.attach_ancestors()
 	.filter(|slice| 
 		slice.iter().all(|value| **value % 2 == 0)

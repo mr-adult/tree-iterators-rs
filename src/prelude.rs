@@ -1434,7 +1434,7 @@ pub(crate) mod tests {
 
             let mut i = 0;
             let test_tree = create_binary_tree_for_testing();
-            let mut iter_with_metadata = test_tree.dfs_postorder_iter().attach_context();
+            let mut iter_with_metadata = test_tree.dfs_postorder_iter().attach_ancestors();
             while let Some(value) = iter_with_metadata.next() {
                 assert_eq!(expected[i], *value[value.len() - 1]);
                 let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
@@ -1828,7 +1828,7 @@ pub(crate) mod tests {
                 Box::new(test_tree.dfs_preorder_iter().attach_ancestors().leaves())
                     as Box<dyn StreamingIterator<Item = [&T]>>,
                 Box::new(test_tree.dfs_inorder_iter().attach_ancestors().leaves()),
-                Box::new(test_tree.dfs_postorder_iter().attach_context().leaves()),
+                Box::new(test_tree.dfs_postorder_iter().attach_ancestors().leaves()),
                 Box::new(test_tree.bfs_iter().attach_ancestors().leaves()),
             ]
         }
@@ -2249,7 +2249,7 @@ pub(crate) mod tests {
             let mut test_tree = create_binary_tree_for_testing();
             // interrupt traversal at all points.
             for _ in 0..expected_dfs_postorder.len() {
-                let mut postorder_iter = test_tree.dfs_postorder_iter().attach_context();
+                let mut postorder_iter = test_tree.dfs_postorder_iter().attach_ancestors();
                 let mut num_leaves_seen = 0;
                 while let Some(value) = postorder_iter.next() {
                     // dont index outside the array!
