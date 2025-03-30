@@ -47,7 +47,7 @@ where
         }
     }
 
-    #[doc = include_str!("../../doc_files/attach_ancestors.md")]
+    #[doc = include_str!("../../doc_files/attach_context.md")]
     pub fn attach_context(self) -> OwnedDFSPostorderIteratorWithContext<Node> {
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS postorder iterator in the middle of a tree traversal. This is forbidden."),
