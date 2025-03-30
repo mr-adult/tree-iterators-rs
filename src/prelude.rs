@@ -1,6 +1,8 @@
 use alloc::boxed::Box;
 use alloc::vec::Vec;
-use core::fmt::Debug;
+
+use core::{fmt::Debug, iter::FusedIterator};
+
 use core::iter::FlatMap;
 
 #[cfg(feature = "serde")]
@@ -518,7 +520,7 @@ where
 
     /// The type of iterator that can be used to iterate over each node's children
     /// collection.
-    type MutBorrowedChildren: IntoIterator<Item = &'a mut Self>;
+    type MutBorrowedChildren: IntoIterator<Item = &'a mut Self, IntoIter: FusedIterator>;
 
     /// This method gets the value and children from this node. The other
     /// methods of this trait assume that the 'Children' list does not contain
@@ -799,7 +801,7 @@ where
     type BorrowedValue: Sized;
     /// The type of iterator that can be used to iterate over each node's children
     /// collection.
-    type BorrowedChildren: IntoIterator<Item = &'a Self>;
+    type BorrowedChildren: IntoIterator<Item = &'a Self, IntoIter: FusedIterator>;
 
     /// This method gets the value and children from this node, consuming it
     /// in the process. The other methods of this trait assume that the 'Children'

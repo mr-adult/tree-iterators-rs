@@ -179,11 +179,6 @@ where
 
     #[doc = include_str!("../doc_files/ancestors_vec.md")]
     pub(crate) ancestors: Vec<Node::OwnedValue>,
-
-    // IMPORTANT: this cannot be exposed via any API. It will never be populated.
-    // It is only here so that all 3 DFS Postorder implementations can share code.
-    #[doc = include_str!("../doc_files/tree_context_children.md")]
-    pub(crate) children: MaybeUninit<Node::OwnedChildren>,
 }
 
 impl<Node> TreeContextNoChildren<Node>
@@ -194,7 +189,6 @@ where
         Self {
             path: Vec::new(),
             ancestors: Vec::new(),
-            children: MaybeUninit::uninit(),
         }
     }
 

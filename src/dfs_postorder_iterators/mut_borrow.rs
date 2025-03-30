@@ -1,3 +1,5 @@
+use core::mem::MaybeUninit;
+
 use crate::{
     leaves_iterators::{
         ancestors_depth_first::mut_borrow::{
@@ -14,7 +16,6 @@ use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
 
 use super::{
     dfs_postorder_next, get_mut, get_mut_binary, postorder_binary_streaming_iterator_impl,
-    postorder_streaming_iterator_impl,
 };
 
 pub struct MutBorrowedDFSPostorderIterator<'a, Node>
@@ -76,6 +77,7 @@ where
 {
     root: Option<&'a mut Node>,
     traversal_stack: Vec<<Node::MutBorrowedChildren as IntoIterator>::IntoIter>,
+    into_iterator_stack: Vec<Node::MutBorrowedChildren>,
     current_context: TreeContextMut<'a, Node>,
 }
 
@@ -87,23 +89,19 @@ where
         Self {
             root: Some(root),
             traversal_stack: Vec::new(),
+            into_iterator_stack: Vec::new(),
             current_context: TreeContextMut::new(),
         }
     }
 
     #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
     pub fn leaves(
-        mut self,
+        self,
     ) -> MutBorrowedDFSLeavesPostorderIteratorWithAncestors<
         'a,
         Node,
         <Node::MutBorrowedChildren as IntoIterator>::IntoIter,
     > {
-        if self.root.is_none() && !self.is_done() {
-            self.traversal_stack
-                .push(unsafe { self.current_context.children.assume_init() }.into_iter());
-        }
-
         MutBorrowedDFSLeavesPostorderIteratorWithAncestors {
             root: self.root,
             item_stack: self.current_context.ancestors,
@@ -118,7 +116,79 @@ where
     Node: MutBorrowedTreeNode<'a>,
 {
     type Item = TreeContextMut<'a, Node>;
-    postorder_streaming_iterator_impl!(get_value_and_children_iter_mut);
+    fn advance(&mut self) {
+        let mut is_first_iteration = true;
+        if let Some(next) = self.root.take() {
+            let (value, children) = next.get_value_and_children_iter_mut();
+            // ASSUMPTION: self.into_iterator_stack will always outlive self.traversal_stack.
+            // If that assumption is not true, this code will cause Undefined Behavior.
+            self.traversal_stack.push(
+                unsafe { core::ptr::read(&children as *const Node::MutBorrowedChildren) }
+                    .into_iter(),
+            );
+            self.current_context.ancestors.push(value);
+            self.current_context.path.push(usize::MAX);
+            self.into_iterator_stack.push(children);
+            is_first_iteration = false;
+        }
+
+        if self.traversal_stack.len() > self.into_iterator_stack.len() {
+            self.traversal_stack.pop();
+        }
+
+        loop {
+            if let Some(top) = self.traversal_stack.last_mut() {
+                if let Some(node) = top.next() {
+                    // Path is not populated on the first pass over just the root node.
+                    if let Some(last) = self.current_context.path.last_mut() {
+                        *last = last.wrapping_add(1);
+                    }
+
+                    let (value, children) = node.get_value_and_children_iter_mut();
+                    if is_first_iteration {
+                        self.current_context.ancestors.pop();
+                    }
+
+                    // ASSUMPTION: self.into_iterator_stack will always outlive self.traversal_stack.
+                    // If that assumption is not true, this code will cause Undefined Behavior.
+                    self.traversal_stack.push(
+                        unsafe { core::ptr::read(&children as *const Node::MutBorrowedChildren) }
+                            .into_iter(),
+                    );
+                    self.current_context.ancestors.push(value);
+                    self.current_context.path.push(usize::MAX);
+                    self.into_iterator_stack.push(children);
+                    is_first_iteration = false;
+                    continue;
+                }
+
+                if self.current_context.ancestors.len() > self.traversal_stack.len() {
+                    self.current_context.ancestors.pop();
+                }
+
+                if let Some(top) = self.into_iterator_stack.pop() {
+                    self.current_context.children = MaybeUninit::new(top);
+                }
+                self.current_context.path.pop();
+                return;
+            } else {
+                if let Some(top) = self.into_iterator_stack.pop() {
+                    self.current_context.children = MaybeUninit::new(top);
+                }
+                self.current_context.ancestors.pop();
+                self.current_context.path.pop();
+                return;
+            }
+        }
+    }
+
+    fn get(&self) -> Option<&Self::Item> {
+        if self.current_context.ancestors.is_empty() {
+            None
+        } else {
+            Some(&self.current_context)
+        }
+    }
 }
 
 impl<'a, Node> StreamingIteratorMut for MutBorrowedDFSPostorderIteratorWithContext<'a, Node>
