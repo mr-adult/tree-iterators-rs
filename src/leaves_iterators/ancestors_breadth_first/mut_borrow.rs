@@ -3,9 +3,7 @@ use core::iter::Peekable;
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
 
 use crate::{
-    bfs_iterators::mut_borrow::{
-        MutBorrowedBFSIteratorWithContext, MutBorrowedBinaryBFSIteratorWithAncestors,
-    },
+    bfs_iterators::mut_borrow::MutBorrowedBinaryBFSIteratorWithAncestors,
     prelude::{BinaryChildren, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode},
 };
 
@@ -17,39 +15,18 @@ pub struct MutBorrowedBFSLeavesIteratorWithAncestors<'a, Node>
 where
     Node: MutBorrowedTreeNode<'a>,
 {
-    is_root: bool,
-    item_stack: Vec<Node::MutBorrowedValue>,
-    tree_cache: TreeNodeVecDeque<Node::MutBorrowedValue>,
-    traversal_stack: Vec<TreeNodeVecDeque<Node::MutBorrowedValue>>,
-    iterator_queue: VecDeque<Peekable<<Node::MutBorrowedChildren as IntoIterator>::IntoIter>>,
+    pub(crate) is_root: bool,
+    pub(crate) item_stack: Vec<Node::MutBorrowedValue>,
+    pub(crate) tree_cache: TreeNodeVecDeque<Node::MutBorrowedValue>,
+    pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::MutBorrowedValue>>,
+    pub(crate) iterator_queue:
+        VecDeque<Peekable<<Node::MutBorrowedChildren as IntoIterator>::IntoIter>>,
 }
 
 impl<'a, Node> MutBorrowedBFSLeavesIteratorWithAncestors<'a, Node>
 where
     Node: MutBorrowedTreeNode<'a>,
 {
-    pub(crate) fn new(
-        mut source: MutBorrowedBFSIteratorWithContext<'a, Node>,
-    ) -> MutBorrowedBFSLeavesIteratorWithAncestors<'a, Node> {
-        if !source.is_done() {
-            source
-                .iterator_queue
-                .push_back(unsafe { source.current_context.children.assume_init() }.into_iter());
-        }
-
-        MutBorrowedBFSLeavesIteratorWithAncestors {
-            is_root: source.is_root,
-            item_stack: source.current_context.ancestors,
-            iterator_queue: source
-                .iterator_queue
-                .into_iter()
-                .map(|val| val.peekable())
-                .collect(),
-            traversal_stack: source.traversal_stack,
-            tree_cache: source.tree_cache,
-        }
-    }
-
     bfs_next!(get_value_and_children_iter_mut);
 }
 

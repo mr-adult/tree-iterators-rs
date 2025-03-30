@@ -1510,6 +1510,51 @@ pub(crate) mod tests {
         #[test]
         fn bfs_attach_ancestors_works() {
             let expected = get_expected_order_bfs();
+
+            for mut test_tree in create_trees_for_testing() {
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.bfs_iter().attach_ancestors();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], *value[value.len() - 1]);
+                    let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], *value[j]);
+                    }
+                    i += 1;
+                }
+                assert_eq!(expected.len(), i);
+                drop(iter_with_metadata);
+
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.bfs_iter_mut().attach_ancestors();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], *value[value.len() - 1]);
+                    let expected = get_expected_metadata_for_value(*value[value.len() - 1]);
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], *value[j]);
+                    }
+                    i += 1;
+                }
+                assert_eq!(expected.len(), i);
+                drop(iter_with_metadata);
+
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.bfs().attach_ancestors();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], value[value.len() - 1]);
+                    let expected = get_expected_metadata_for_value(value[value.len() - 1]);
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], value[j]);
+                    }
+                    i += 1;
+                }
+                assert_eq!(expected.len(), i);
+            }
+        }
+
+        #[test]
+        fn bfs_attach_context_works() {
+            let expected = get_expected_order_bfs();
             let expected_paths = get_value_to_path_map();
 
             for mut test_tree in create_trees_for_testing() {

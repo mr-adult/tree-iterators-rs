@@ -3,7 +3,7 @@ use core::iter::Peekable;
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
 
 use crate::{
-    bfs_iterators::owned::{OwnedBFSIteratorWithContext, OwnedBinaryBFSIteratorWithAncestors},
+    bfs_iterators::owned::OwnedBinaryBFSIteratorWithAncestors,
     prelude::{BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode},
 };
 
@@ -15,39 +15,17 @@ pub struct OwnedBFSLeavesIteratorWithAncestors<Node>
 where
     Node: OwnedTreeNode,
 {
-    is_root: bool,
-    item_stack: Vec<Node::OwnedValue>,
-    tree_cache: TreeNodeVecDeque<Node::OwnedValue>,
-    traversal_stack: Vec<TreeNodeVecDeque<Node::OwnedValue>>,
-    iterator_queue: VecDeque<Peekable<<Node::OwnedChildren as IntoIterator>::IntoIter>>,
+    pub(crate) is_root: bool,
+    pub(crate) item_stack: Vec<Node::OwnedValue>,
+    pub(crate) tree_cache: TreeNodeVecDeque<Node::OwnedValue>,
+    pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::OwnedValue>>,
+    pub(crate) iterator_queue: VecDeque<Peekable<<Node::OwnedChildren as IntoIterator>::IntoIter>>,
 }
 
 impl<Node> OwnedBFSLeavesIteratorWithAncestors<Node>
 where
     Node: OwnedTreeNode,
 {
-    pub(crate) fn new(
-        mut source: OwnedBFSIteratorWithContext<Node>,
-    ) -> OwnedBFSLeavesIteratorWithAncestors<Node> {
-        if !source.is_done() {
-            source
-                .iterator_queue
-                .push_back(unsafe { source.current_context.children.assume_init() }.into_iter());
-        }
-
-        OwnedBFSLeavesIteratorWithAncestors {
-            is_root: source.is_root,
-            item_stack: source.current_context.ancestors,
-            iterator_queue: source
-                .iterator_queue
-                .into_iter()
-                .map(|val| val.peekable())
-                .collect(),
-            traversal_stack: source.traversal_stack,
-            tree_cache: source.tree_cache,
-        }
-    }
-
     bfs_next!(get_value_and_children);
 }
 

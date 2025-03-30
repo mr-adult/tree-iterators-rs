@@ -15,8 +15,8 @@ use crate::{
 };
 
 use super::{
-    bfs_advance_iterator, bfs_binary_advance_iterator, bfs_binary_streaming_iterator_impl,
-    bfs_next, bfs_streaming_iterator_impl, TreeNodeVecDeque,
+    bfs_ancestors_advance_iterator, bfs_ancestors_streaming_iterator_impl,
+    bfs_context_advance_iterator, bfs_context_streaming_iterator_impl, bfs_next, TreeNodeVecDeque,
 };
 
 pub struct BorrowedBFSIterator<'a, Node>
@@ -54,6 +54,14 @@ where
             Some(root) => BorrowedBFSIteratorWithContext::new(root)
         }
     }
+
+    #[doc = include_str!("../../doc_files/attach_ancestors.md")]
+    pub fn attach_ancestors(self) -> BorrowedBFSIteratorWithAncestors<'a, Node> {
+        match self.root {
+            None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
+            Some(root) => BorrowedBFSIteratorWithAncestors::new(root)
+        }
+    }
 }
 
 impl<'a, Node> Iterator for BorrowedBFSIterator<'a, Node>
@@ -80,7 +88,7 @@ impl<'a, Node> BorrowedBFSIteratorWithContext<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
 {
-    fn new(root: &'a Node) -> BorrowedBFSIteratorWithContext<'a, Node> {
+    fn new(root: &'a Node) -> Self {
         let (value, children) = root.get_value_and_children_iter();
         let tree_cache = TreeNodeVecDeque {
             value: None,
@@ -104,11 +112,26 @@ where
     }
 
     #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(self) -> BorrowedBFSLeavesIteratorWithAncestors<'a, Node> {
-        BorrowedBFSLeavesIteratorWithAncestors::new(self)
+    pub fn leaves(mut self) -> BorrowedBFSLeavesIteratorWithAncestors<'a, Node> {
+        if !self.is_done() {
+            self.iterator_queue
+                .push_back(unsafe { self.current_context.children.assume_init() }.into_iter());
+        }
+
+        BorrowedBFSLeavesIteratorWithAncestors {
+            is_root: self.is_root,
+            item_stack: self.current_context.ancestors,
+            iterator_queue: self
+                .iterator_queue
+                .into_iter()
+                .map(|val| val.peekable())
+                .collect(),
+            traversal_stack: self.traversal_stack,
+            tree_cache: self.tree_cache,
+        }
     }
 
-    bfs_advance_iterator!();
+    bfs_context_advance_iterator!();
 }
 
 impl<'a, Node> StreamingIterator for BorrowedBFSIteratorWithContext<'a, Node>
@@ -117,7 +140,67 @@ where
 {
     type Item = TreeContextRef<'a, Node>;
 
-    bfs_streaming_iterator_impl!(get_value_and_children_iter);
+    bfs_context_streaming_iterator_impl!(get_value_and_children_iter);
+}
+
+pub struct BorrowedBFSIteratorWithAncestors<'a, Node>
+where
+    Node: BorrowedTreeNode<'a>,
+{
+    pub(crate) is_root: bool,
+    pub(crate) item_stack: Vec<Node::BorrowedValue>,
+    pub(crate) tree_cache: TreeNodeVecDeque<Node::BorrowedValue>,
+    pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::BorrowedValue>>,
+    pub(crate) iterator_queue: VecDeque<<Node::BorrowedChildren as IntoIterator>::IntoIter>,
+}
+
+impl<'a, Node> BorrowedBFSIteratorWithAncestors<'a, Node>
+where
+    Node: BorrowedTreeNode<'a>,
+{
+    fn new(root: &'a Node) -> BorrowedBFSIteratorWithAncestors<'a, Node> {
+        let (value, children) = root.get_value_and_children_iter();
+        let tree_cache = TreeNodeVecDeque::default();
+        let mut iterator_queue = VecDeque::new();
+        let mut item_stack = Vec::new();
+
+        item_stack.push(value);
+        iterator_queue.push_back(children.into_iter());
+
+        BorrowedBFSIteratorWithAncestors {
+            is_root: true,
+            item_stack,
+            iterator_queue,
+            traversal_stack: Vec::new(),
+            tree_cache,
+        }
+    }
+
+    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
+    pub fn leaves(self) -> BorrowedBFSLeavesIteratorWithAncestors<'a, Node> {
+        BorrowedBFSLeavesIteratorWithAncestors {
+            is_root: self.is_root,
+            item_stack: self.item_stack,
+            iterator_queue: self
+                .iterator_queue
+                .into_iter()
+                .map(|val| val.peekable())
+                .collect(),
+            traversal_stack: self.traversal_stack,
+            tree_cache: self.tree_cache,
+        }
+    }
+
+    bfs_ancestors_advance_iterator!(get_value_and_children_iter);
+}
+
+impl<'a, Node> StreamingIterator for BorrowedBFSIteratorWithAncestors<'a, Node>
+where
+    Node: BorrowedTreeNode<'a>,
+{
+    type Item = [Node::BorrowedValue];
+
+    bfs_ancestors_streaming_iterator_impl!(get_value_and_children_iter);
 }
 
 pub struct BorrowedBinaryBFSIterator<'a, Node>
@@ -203,7 +286,7 @@ where
         BorrowedBinaryBFSLeavesIteratorWithAncestors::new(self)
     }
 
-    bfs_binary_advance_iterator!(get_value_and_children_iter);
+    bfs_ancestors_advance_iterator!(get_value_and_children_iter);
 }
 
 impl<'a, Node> StreamingIterator for BorrowedBinaryBFSIteratorWithAncestors<'a, Node>
@@ -212,5 +295,5 @@ where
 {
     type Item = [Node::BorrowedValue];
 
-    bfs_binary_streaming_iterator_impl!(get_value_and_children_iter);
+    bfs_ancestors_streaming_iterator_impl!(get_value_and_children_iter);
 }

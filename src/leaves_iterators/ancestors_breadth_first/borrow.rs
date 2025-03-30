@@ -3,9 +3,7 @@ use core::iter::Peekable;
 use streaming_iterator::StreamingIterator;
 
 use crate::{
-    bfs_iterators::borrow::{
-        BorrowedBFSIteratorWithContext, BorrowedBinaryBFSIteratorWithAncestors,
-    },
+    bfs_iterators::borrow::BorrowedBinaryBFSIteratorWithAncestors,
     prelude::{BinaryChildren, BorrowedBinaryTreeNode, BorrowedTreeNode},
 };
 
@@ -17,39 +15,18 @@ pub struct BorrowedBFSLeavesIteratorWithAncestors<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
 {
-    is_root: bool,
-    item_stack: Vec<Node::BorrowedValue>,
-    tree_cache: TreeNodeVecDeque<Node::BorrowedValue>,
-    traversal_stack: Vec<TreeNodeVecDeque<Node::BorrowedValue>>,
-    iterator_queue: VecDeque<Peekable<<Node::BorrowedChildren as IntoIterator>::IntoIter>>,
+    pub(crate) is_root: bool,
+    pub(crate) item_stack: Vec<Node::BorrowedValue>,
+    pub(crate) tree_cache: TreeNodeVecDeque<Node::BorrowedValue>,
+    pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::BorrowedValue>>,
+    pub(crate) iterator_queue:
+        VecDeque<Peekable<<Node::BorrowedChildren as IntoIterator>::IntoIter>>,
 }
 
 impl<'a, Node> BorrowedBFSLeavesIteratorWithAncestors<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
 {
-    pub(crate) fn new(
-        mut source: BorrowedBFSIteratorWithContext<'a, Node>,
-    ) -> BorrowedBFSLeavesIteratorWithAncestors<'a, Node> {
-        if !source.is_done() {
-            source
-                .iterator_queue
-                .push_back(unsafe { source.current_context.children.assume_init() }.into_iter());
-        }
-
-        BorrowedBFSLeavesIteratorWithAncestors {
-            is_root: source.is_root,
-            item_stack: source.current_context.ancestors,
-            iterator_queue: source
-                .iterator_queue
-                .into_iter()
-                .map(|val| val.peekable())
-                .collect(),
-            traversal_stack: source.traversal_stack,
-            tree_cache: source.tree_cache,
-        }
-    }
-
     bfs_next!(get_value_and_children_iter);
 }
 
