@@ -1,12 +1,13 @@
-use core::mem::MaybeUninit;
+use core::{array::IntoIter, mem::MaybeUninit};
 
 use alloc::{collections::VecDeque, vec::Vec};
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
 
 use super::{
     bfs_ancestors_advance_iterator, bfs_ancestors_streaming_iterator_impl,
-    bfs_context_advance_iterator, bfs_context_streaming_iterator_impl, bfs_next, get_mut_ancestors,
-    get_mut_context, TreeNodeVecDeque,
+    bfs_context_advance_iterator, bfs_context_binary_streaming_iterator_impl,
+    bfs_context_streaming_iterator_impl, bfs_next, get_mut_ancestors, get_mut_context,
+    TreeNodeVecDeque,
 };
 use crate::{
     leaves_iterators::{
@@ -16,6 +17,7 @@ use crate::{
         breadth_first::owned::{OwnedBinaryLeavesIterator, OwnedLeavesIterator},
     },
     prelude::{BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode, TreeContext},
+    tree_context::BinaryTreeContext,
 };
 
 pub struct OwnedBFSIterator<Node>
@@ -242,6 +244,14 @@ where
         }
     }
 
+    #[doc = include_str!("../../doc_files/attach_context.md")]
+    pub fn attach_context(self) -> OwnedBinaryBFSIteratorWithContext<Node> {
+        match self.root {
+            None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
+            Some(root) => OwnedBinaryBFSIteratorWithContext::new(root)
+        }
+    }
+
     #[doc = include_str!("../../doc_files/attach_ancestors.md")]
     pub fn attach_ancestors(self) -> OwnedBinaryBFSIteratorWithAncestors<Node> {
         match self.root {
@@ -314,4 +324,66 @@ where
     Node: OwnedBinaryTreeNode,
 {
     get_mut_ancestors!();
+}
+
+pub struct OwnedBinaryBFSIteratorWithContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    pub(crate) is_root: bool,
+    pub(crate) tree_cache: TreeNodeVecDeque<Node::OwnedValue>,
+    pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::OwnedValue>>,
+    pub(crate) iterator_queue: VecDeque<IntoIter<Option<Node>, 2>>,
+    pub(crate) current_context: BinaryTreeContext<Node>,
+    pub(crate) path_counter: usize,
+}
+
+impl<'a, Node> OwnedBinaryBFSIteratorWithContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    fn new(root: Node) -> Self {
+        let (value, children) = root.get_value_and_children_binary();
+        let tree_cache = TreeNodeVecDeque {
+            value: None,
+            path_segment: 0,
+            children: VecDeque::new(),
+        };
+
+        let iterator_queue = VecDeque::new();
+        let mut current_context = BinaryTreeContext::new();
+        current_context.ancestors.push(value);
+        current_context.children = MaybeUninit::new(children);
+
+        Self {
+            is_root: true,
+            current_context,
+            iterator_queue,
+            traversal_stack: Vec::new(),
+            tree_cache,
+            path_counter: 0,
+        }
+    }
+
+    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
+    pub fn leaves(self) -> OwnedBinaryBFSLeavesIteratorWithAncestors<Node> {
+        todo!();
+    }
+
+    bfs_context_advance_iterator!();
+}
+
+impl<'a, Node> StreamingIterator for OwnedBinaryBFSIteratorWithContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    type Item = BinaryTreeContext<Node>;
+    bfs_context_binary_streaming_iterator_impl!(get_value_and_children_binary);
+}
+
+impl<'a, Node> StreamingIteratorMut for OwnedBinaryBFSIteratorWithContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    get_mut_context!();
 }

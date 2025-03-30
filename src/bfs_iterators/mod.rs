@@ -197,6 +197,84 @@ macro_rules! bfs_context_advance_iterator {
     };
 }
 
+macro_rules! bfs_context_binary_streaming_iterator_impl {
+    ($get_value_and_children_binary: ident) => {
+        fn advance(&mut self) {
+            if self.is_root {
+                self.is_root = false;
+                return;
+            }
+
+            let mut children = core::mem::MaybeUninit::uninit();
+            core::mem::swap(&mut children, &mut self.current_context.children);
+            self.iterator_queue
+                .push_back(unsafe { children.assume_init() }.into_iter());
+
+            'outer: loop {
+                let iter = if let Some(iter) = self.iterator_queue.get_mut(0) {
+                    iter
+                } else {
+                    self.current_context.ancestors.clear();
+                    break;
+                };
+
+                while let Some(next) = iter.next() {
+                    if let Some(next) = next {
+                        if self.current_context.ancestors.len() == self.traversal_stack.len() + 2 {
+                            self.pop_from_item_stack();
+                        }
+
+                        self.current_context.path.push(self.path_counter);
+                        self.path_counter += 1;
+
+                        let (value, children) = next.$get_value_and_children_binary();
+                        self.current_context.ancestors.push(value);
+                        self.current_context.children = core::mem::MaybeUninit::new(children);
+                        break 'outer;
+                    } else {
+                        self.path_counter += 1;
+                    }
+                }
+
+                self.path_counter = 0;
+                if self.current_context.ancestors.len() == self.traversal_stack.len() + 2 {
+                    self.pop_from_item_stack();
+                }
+
+                let top_of_traversal_stack = if self.traversal_stack.is_empty() {
+                    &mut self.tree_cache
+                } else {
+                    self.traversal_stack.last_mut().unwrap()
+                };
+
+                if !top_of_traversal_stack.children.is_empty() {
+                    top_of_traversal_stack.children.push_front(None);
+                } else {
+                    // used up all the values, so just pop it
+                    while self.traversal_stack.len() > 0
+                        && (self.traversal_stack.last().unwrap().children.len() <= 1)
+                    {
+                        self.traversal_stack.pop();
+                        self.current_context.ancestors.pop();
+                        self.current_context.path.pop();
+                    }
+                }
+
+                self.advance_dfs();
+                self.iterator_queue.pop_front();
+            }
+        }
+
+        fn get(&self) -> Option<&Self::Item> {
+            if self.current_context.ancestors.is_empty() {
+                None
+            } else {
+                Some(&self.current_context)
+            }
+        }
+    };
+}
+
 macro_rules! bfs_ancestors_streaming_iterator_impl {
     ($get_value_and_children: ident) => {
         fn advance(&mut self) {
@@ -356,6 +434,7 @@ macro_rules! bfs_ancestors_advance_iterator {
 pub(crate) use bfs_ancestors_advance_iterator;
 pub(crate) use bfs_ancestors_streaming_iterator_impl;
 pub(crate) use bfs_context_advance_iterator;
+pub(crate) use bfs_context_binary_streaming_iterator_impl;
 pub(crate) use bfs_context_streaming_iterator_impl;
 pub(crate) use bfs_next;
 pub(crate) use get_mut_ancestors;
