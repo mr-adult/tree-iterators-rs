@@ -1060,6 +1060,23 @@ pub(crate) mod tests {
     }
 
     #[cfg(test)]
+    pub(crate) fn get_value_to_path_map_binary() -> HashMap<usize, Vec<usize>> {
+        let mut result = HashMap::new();
+        result.insert(0, vec![]);
+        result.insert(1, vec![0]);
+        result.insert(2, vec![1]);
+        result.insert(3, vec![0, 0]);
+        result.insert(4, vec![0, 1]);
+        result.insert(5, vec![1, 0]);
+        result.insert(6, vec![1, 1]);
+        result.insert(7, vec![1, 1, 0]);
+        result.insert(8, vec![1, 1, 0, 1]);
+        result.insert(9, vec![1, 1, 0, 1, 0]);
+        result.insert(10, vec![1, 1, 0, 1, 0, 1]);
+        result
+    }
+
+    #[cfg(test)]
     mod dfs_preorder_tests {
         use super::{
             assert_len, create_binary_tree_for_testing, create_trees_for_testing,
@@ -1570,7 +1587,7 @@ pub(crate) mod tests {
     mod bfs_tests {
         use super::{
             assert_len, create_binary_tree_for_testing, create_trees_for_testing,
-            get_expected_metadata_for_value, get_value_to_path_map,
+            get_expected_metadata_for_value, get_value_to_path_map, get_value_to_path_map_binary,
         };
         use crate::prelude::*;
         use streaming_iterator::StreamingIterator;
@@ -1734,6 +1751,74 @@ pub(crate) mod tests {
                 assert_eq!(expected[i], value);
             }
             assert_len!(expected.len(), test_tree.bfs());
+        }
+
+        #[test]
+        fn binary_bfs_attach_context_works() {
+            let expected = get_expected_order_bfs();
+            let expected_paths = get_value_to_path_map_binary();
+
+            let mut test_tree = create_binary_tree_for_testing();
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.bfs_iter().attach_context();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], *value.ancestors()[value.ancestors().len() - 1]);
+                let expected = get_expected_metadata_for_value(
+                    *value.ancestors()[value.ancestors().len() - 1],
+                );
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value.ancestors()[j]);
+                }
+                assert_eq!(
+                    *expected_paths
+                        .get(value.ancestors().last().unwrap())
+                        .unwrap(),
+                    value.path
+                );
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
+            drop(iter_with_metadata);
+
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.bfs_iter_mut().attach_context();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], *value.ancestors()[value.ancestors().len() - 1]);
+                let expected = get_expected_metadata_for_value(
+                    *value.ancestors()[value.ancestors().len() - 1],
+                );
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value.ancestors()[j]);
+                }
+                assert_eq!(
+                    *expected_paths
+                        .get(value.ancestors().last().unwrap())
+                        .unwrap(),
+                    value.path
+                );
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
+            drop(iter_with_metadata);
+
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.bfs().attach_context();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], value.ancestors()[value.ancestors().len() - 1]);
+                let expected =
+                    get_expected_metadata_for_value(value.ancestors()[value.ancestors().len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], value.ancestors()[j]);
+                }
+                assert_eq!(
+                    *expected_paths
+                        .get(value.ancestors().last().unwrap())
+                        .unwrap(),
+                    value.path
+                );
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
         }
 
         #[test]

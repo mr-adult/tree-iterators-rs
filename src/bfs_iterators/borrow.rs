@@ -1,6 +1,5 @@
-use core::mem::MaybeUninit;
-
 use alloc::{collections::VecDeque, vec::Vec};
+use core::{array::IntoIter, mem::MaybeUninit};
 use streaming_iterator::StreamingIterator;
 
 use crate::{
@@ -11,12 +10,13 @@ use crate::{
         breadth_first::borrow::{BorrowedBinaryLeavesIterator, BorrowedLeavesIterator},
     },
     prelude::{BinaryChildren, BorrowedBinaryTreeNode, BorrowedTreeNode},
-    tree_context::TreeContextRef,
+    tree_context::{BinaryTreeContextRef, TreeContextRef},
 };
 
 use super::{
     bfs_ancestors_advance_iterator, bfs_ancestors_streaming_iterator_impl,
-    bfs_context_advance_iterator, bfs_context_streaming_iterator_impl, bfs_next, TreeNodeVecDeque,
+    bfs_context_advance_iterator, bfs_context_binary_streaming_iterator_impl,
+    bfs_context_streaming_iterator_impl, bfs_next, TreeNodeVecDeque,
 };
 
 pub struct BorrowedBFSIterator<'a, Node>
@@ -231,6 +231,14 @@ where
         }
     }
 
+    #[doc = include_str!("../../doc_files/attach_context.md")]
+    pub fn attach_context(self) -> BorrowedBinaryBFSIteratorWithContext<'a, Node> {
+        match self.root {
+            None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
+            Some(root) => BorrowedBinaryBFSIteratorWithContext::new(root)
+        }
+    }
+
     #[doc = include_str!("../../doc_files/attach_ancestors.md")]
     pub fn attach_ancestors(self) -> BorrowedBinaryBFSIteratorWithAncestors<'a, Node> {
         match self.root {
@@ -296,4 +304,59 @@ where
     type Item = [Node::BorrowedValue];
 
     bfs_ancestors_streaming_iterator_impl!(get_value_and_children_iter);
+}
+
+pub struct BorrowedBinaryBFSIteratorWithContext<'a, Node>
+where
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+    pub(crate) is_root: bool,
+    pub(crate) tree_cache: TreeNodeVecDeque<Node::BorrowedValue>,
+    pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::BorrowedValue>>,
+    pub(crate) iterator_queue: VecDeque<IntoIter<Option<&'a Node>, 2>>,
+    pub(crate) current_context: BinaryTreeContextRef<'a, Node>,
+    pub(crate) path_counter: usize,
+}
+
+impl<'a, Node> BorrowedBinaryBFSIteratorWithContext<'a, Node>
+where
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+    fn new(root: &'a Node) -> Self {
+        let (value, children) = root.get_value_and_children_binary_iter();
+        let tree_cache = TreeNodeVecDeque {
+            value: None,
+            path_segment: 0,
+            children: VecDeque::new(),
+        };
+
+        let iterator_queue = VecDeque::new();
+        let mut current_context = BinaryTreeContextRef::new();
+        current_context.ancestors.push(value);
+        current_context.children = MaybeUninit::new(children);
+
+        Self {
+            is_root: true,
+            current_context,
+            iterator_queue,
+            traversal_stack: Vec::new(),
+            tree_cache,
+            path_counter: 0,
+        }
+    }
+
+    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
+    pub fn leaves(self) -> BorrowedBinaryBFSLeavesIteratorWithAncestors<'a, Node> {
+        todo!();
+    }
+
+    bfs_context_advance_iterator!();
+}
+
+impl<'a, Node> StreamingIterator for BorrowedBinaryBFSIteratorWithContext<'a, Node>
+where
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+    type Item = BinaryTreeContextRef<'a, Node>;
+    bfs_context_binary_streaming_iterator_impl!(get_value_and_children_binary_iter);
 }
