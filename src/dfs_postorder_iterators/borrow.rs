@@ -12,9 +12,7 @@ use crate::{
 use alloc::vec::Vec;
 use streaming_iterator::StreamingIterator;
 
-use super::{
-    dfs_postorder_next, postorder_binary_streaming_iterator_impl, postorder_streaming_iterator_impl,
-};
+use super::{dfs_postorder_next, postorder_binary_streaming_iterator_impl};
 
 pub struct BorrowedDFSPostorderIterator<'a, Node>
 where
@@ -74,6 +72,7 @@ where
 {
     root: Option<&'a Node>,
     traversal_stack: Vec<<Node::BorrowedChildren as IntoIterator>::IntoIter>,
+    into_iterator_stack: Vec<Node::BorrowedChildren>,
     current_context: TreeContextRef<'a, Node>,
 }
 
@@ -85,22 +84,19 @@ where
         Self {
             root: Some(root),
             traversal_stack: Vec::new(),
+            into_iterator_stack: Vec::new(),
             current_context: TreeContextRef::new(),
         }
     }
 
     #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
     pub fn leaves(
-        mut self,
+        self,
     ) -> BorrowedDFSLeavesPostorderIteratorWithAncestors<
         'a,
         Node,
         <Node::BorrowedChildren as IntoIterator>::IntoIter,
     > {
-        if self.root.is_none() && !self.is_done() {
-            self.traversal_stack.push(unsafe { self.current_context.children.assume_init() }.into_iter())
-        }
-
         BorrowedDFSLeavesPostorderIteratorWithAncestors {
             root: self.root,
             item_stack: self.current_context.ancestors,
@@ -113,9 +109,72 @@ where
 impl<'a, Node> StreamingIterator for BorrowedDFSPostorderIteratorWithContext<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
+    Node::BorrowedChildren: Clone,
 {
     type Item = TreeContextRef<'a, Node>;
-    postorder_streaming_iterator_impl!(get_value_and_children_iter);
+    fn advance(&mut self) {
+        let mut is_first_iteration = true;
+        if let Some(next) = self.root.take() {
+            let (value, children) = next.get_value_and_children_iter();
+            self.traversal_stack.push(children.clone().into_iter());
+            self.current_context.ancestors.push(value);
+            self.current_context.path.push(usize::MAX);
+            self.into_iterator_stack.push(children);
+            is_first_iteration = false;
+        }
+
+        if self.traversal_stack.len() > self.into_iterator_stack.len() {
+            self.traversal_stack.pop();
+        }
+
+        loop {
+            if let Some(top) = self.traversal_stack.last_mut() {
+                if let Some(node) = top.next() {
+                    // Path is not populated on the first pass over just the root node.
+                    if let Some(last) = self.current_context.path.last_mut() {
+                        *last = last.wrapping_add(1);
+                    }
+
+                    let (value, children) = node.get_value_and_children_iter();
+                    if is_first_iteration {
+                        self.current_context.ancestors.pop();
+                    }
+
+                    self.traversal_stack.push(children.clone().into_iter());
+                    self.into_iterator_stack.push(children);
+                    self.current_context.ancestors.push(value);
+                    self.current_context.path.push(usize::MAX);
+                    is_first_iteration = false;
+                    continue;
+                }
+
+                if self.current_context.ancestors.len() > self.traversal_stack.len() {
+                    self.current_context.ancestors.pop();
+                }
+
+                if let Some(top) = self.into_iterator_stack.pop() {
+                    self.current_context.children = core::mem::MaybeUninit::new(top);
+                }
+                self.current_context.path.pop();
+                return;
+            } else {
+                if let Some(top) = self.into_iterator_stack.pop() {
+                    self.current_context.children = core::mem::MaybeUninit::new(top);
+                }
+                self.current_context.ancestors.pop();
+                self.current_context.path.pop();
+                return;
+            }
+        }
+    }
+
+    fn get(&self) -> Option<&Self::Item> {
+        if self.current_context.ancestors.is_empty() {
+            None
+        } else {
+            Some(&self.current_context)
+        }
+    }
 }
 
 pub struct BorrowedBinaryDFSPostorderIterator<'a, Node>
