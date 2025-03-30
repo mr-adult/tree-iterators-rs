@@ -21,7 +21,8 @@ the IntoIterator trait.
 This crate only contains one feature flag:
 
 - "serde" - this flag can be used to implement Serialize and Deserialize for
-  Tree<T> and BinaryTree<T>.
+  [`Tree<T>`](crate::prelude::Tree) and
+  [`BinaryTree<T>`](crate::prelude::BinaryTree).
 
 ### Benefits
 
@@ -653,13 +654,13 @@ println!("{}", result);
 ### Leaves
 
 `leaves()` is a method that can be called after any of the above APIs (including
-`attach_ancestors()`) to change the iterator structure to one that only returns
-leaves of the tree. In the example tree (see [Binary Tree](#using-binarytree)
-and [Tree](#using-tree)), this will always result in the sequence 3, 4, 5, 10.
-Once this method is called, the iterator transforms to be either a breadth-first
-(if the iterator was previously breadth-first) or a depth first postorder search
-(if the iterator was previously one of pre-, in-, or post-order depth first
-searches).
+`attach_ancestors()` and `attach_context()`) to change the iterator structure to
+one that only returns leaves of the tree. In the example tree (see
+[Binary Tree](#using-binarytree) and [Tree](#using-tree)), this will always
+result in the sequence 3, 4, 5, 10. Once this method is called, the iterator
+transforms to be either a breadth-first (if the iterator was previously
+breadth-first) or a depth first postorder search (if the iterator was previously
+one of pre-, in-, or post-order depth first searches).
 
 I will be using the depth first preorder search in the examples, but this works
 with all of the traversal types. This method can be called immediately if you
