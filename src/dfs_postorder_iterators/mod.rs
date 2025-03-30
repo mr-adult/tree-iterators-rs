@@ -38,7 +38,7 @@ macro_rules! dfs_postorder_next {
     };
 }
 
-macro_rules! get_mut {
+macro_rules! get_mut_context {
     () => {
         fn get_mut(&mut self) -> Option<&mut Self::Item> {
             if self.current_context.ancestors.is_empty() {
@@ -50,7 +50,7 @@ macro_rules! get_mut {
     };
 }
 
-macro_rules! postorder_binary_streaming_iterator_impl {
+macro_rules! postorder_ancestors_streaming_iterator_impl {
     ($get_value_and_children: ident) => {
         fn advance(&mut self) {
             let mut is_first_iteration = true;
@@ -97,7 +97,7 @@ macro_rules! postorder_binary_streaming_iterator_impl {
     };
 }
 
-macro_rules! get_mut_binary {
+macro_rules! get_mut_ancestors {
     () => {
         fn get_mut(&mut self) -> Option<&mut Self::Item> {
             if self.item_stack.len() == 0 {
@@ -110,6 +110,6 @@ macro_rules! get_mut_binary {
 }
 
 pub(crate) use dfs_postorder_next;
-pub(crate) use get_mut;
-pub(crate) use get_mut_binary;
-pub(crate) use postorder_binary_streaming_iterator_impl;
+pub(crate) use get_mut_ancestors;
+pub(crate) use get_mut_context;
+pub(crate) use postorder_ancestors_streaming_iterator_impl;
