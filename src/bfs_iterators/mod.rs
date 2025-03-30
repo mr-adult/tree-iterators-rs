@@ -28,7 +28,7 @@ macro_rules! bfs_next {
     };
 }
 
-macro_rules! bfs_streaming_iterator_impl {
+macro_rules! bfs_context_streaming_iterator_impl {
     ($get_value_and_children: ident) => {
         fn advance(&mut self) {
             if self.is_root {
@@ -102,7 +102,7 @@ macro_rules! bfs_streaming_iterator_impl {
     };
 }
 
-macro_rules! get_mut {
+macro_rules! get_mut_context {
     () => {
         fn get_mut(&mut self) -> Option<&mut Self::Item> {
             if self.current_context.ancestors.is_empty() {
@@ -114,7 +114,7 @@ macro_rules! get_mut {
     };
 }
 
-macro_rules! bfs_advance_iterator {
+macro_rules! bfs_context_advance_iterator {
     () => {
         fn advance_dfs(&mut self) {
             let starting_depth = self.current_context.ancestors.len();
@@ -197,7 +197,7 @@ macro_rules! bfs_advance_iterator {
     };
 }
 
-macro_rules! bfs_binary_streaming_iterator_impl {
+macro_rules! bfs_ancestors_streaming_iterator_impl {
     ($get_value_and_children: ident) => {
         fn advance(&mut self) {
             if self.is_root {
@@ -261,7 +261,7 @@ macro_rules! bfs_binary_streaming_iterator_impl {
     };
 }
 
-macro_rules! get_mut_binary {
+macro_rules! get_mut_ancestors {
     () => {
         fn get_mut(&mut self) -> Option<&mut Self::Item> {
             if self.item_stack.len() == 0 {
@@ -273,7 +273,7 @@ macro_rules! get_mut_binary {
     };
 }
 
-macro_rules! bfs_binary_advance_iterator {
+macro_rules! bfs_ancestors_advance_iterator {
     ($get_value_and_children: ident) => {
         fn advance_dfs(&mut self) {
             let starting_depth = self.item_stack.len();
@@ -353,13 +353,13 @@ macro_rules! bfs_binary_advance_iterator {
     };
 }
 
-pub(crate) use bfs_advance_iterator;
-pub(crate) use bfs_binary_advance_iterator;
-pub(crate) use bfs_binary_streaming_iterator_impl;
+pub(crate) use bfs_ancestors_advance_iterator;
+pub(crate) use bfs_ancestors_streaming_iterator_impl;
+pub(crate) use bfs_context_advance_iterator;
+pub(crate) use bfs_context_streaming_iterator_impl;
 pub(crate) use bfs_next;
-pub(crate) use bfs_streaming_iterator_impl;
-pub(crate) use get_mut;
-pub(crate) use get_mut_binary;
+pub(crate) use get_mut_ancestors;
+pub(crate) use get_mut_context;
 
 #[derive(Debug, Clone)]
 pub(crate) struct TreeNodeVecDeque<T> {
