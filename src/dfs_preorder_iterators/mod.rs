@@ -77,14 +77,15 @@ macro_rules! preorder_streaming_iterator_impl {
             if let Some(root) = self.root.take() {
                 let (value, children) = root.$get_value_and_children();
                 self.current_context.ancestors.push(value);
-                self.current_context.children = Some(children);
+                self.current_context.children = core::mem::MaybeUninit::new(children);
                 return;
             }
 
-            if let Some(children) = self.current_context.children.take() {
-                self.traversal_stack.push(children.into_iter());
-                self.current_context.path.push(usize::MAX);
-            }
+            let mut children = core::mem::MaybeUninit::uninit();
+            core::mem::swap(&mut self.current_context.children, &mut children);
+            self.traversal_stack
+                .push(unsafe { children.assume_init() }.into_iter());
+            self.current_context.path.push(usize::MAX);
 
             let next = loop {
                 if let Some(top) = self.traversal_stack.last_mut() {
@@ -109,7 +110,7 @@ macro_rules! preorder_streaming_iterator_impl {
             if let Some(next) = next {
                 let (value, children) = next.$get_value_and_children();
                 self.current_context.ancestors.push(value);
-                self.current_context.children = Some(children);
+                self.current_context.children = core::mem::MaybeUninit::new(children);
             }
         }
 

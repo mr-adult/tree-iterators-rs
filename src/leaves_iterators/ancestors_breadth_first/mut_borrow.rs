@@ -31,8 +31,10 @@ where
     pub(crate) fn new(
         mut source: MutBorrowedBFSIteratorWithContext<'a, Node>,
     ) -> MutBorrowedBFSLeavesIteratorWithAncestors<'a, Node> {
-        if let Some(children) = source.current_context.children {
-            source.iterator_queue.push_back(children.into_iter());
+        if !source.is_done() {
+            source
+                .iterator_queue
+                .push_back(unsafe { source.current_context.children.assume_init() }.into_iter());
         }
 
         MutBorrowedBFSLeavesIteratorWithAncestors {

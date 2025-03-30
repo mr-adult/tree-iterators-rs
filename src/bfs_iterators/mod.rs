@@ -36,16 +36,17 @@ macro_rules! bfs_streaming_iterator_impl {
                 return;
             }
 
-            if let Some(children) = self.current_context.children.take() {
-                self.iterator_queue.push_back(children.into_iter());
-            }
+            let mut children = core::mem::MaybeUninit::uninit();
+            core::mem::swap(&mut children, &mut self.current_context.children);
+            self.iterator_queue
+                .push_back(unsafe { children.assume_init() }.into_iter());
 
             loop {
                 let iter = if let Some(iter) = self.iterator_queue.get_mut(0) {
                     iter
                 } else {
                     self.current_context.ancestors.clear();
-                    return;
+                    break;
                 };
 
                 if let Some(next) = iter.next() {
@@ -58,7 +59,7 @@ macro_rules! bfs_streaming_iterator_impl {
 
                     let (value, children) = next.$get_value_and_children();
                     self.current_context.ancestors.push(value);
-                    self.current_context.children = Some(children);
+                    self.current_context.children = core::mem::MaybeUninit::new(children);
                     break;
                 }
 

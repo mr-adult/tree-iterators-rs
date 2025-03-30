@@ -33,7 +33,6 @@ let mut iter = root.dfs_preorder().attach_context();
 while let Some(node_context) = iter.next() {
     subtree_contains_10 = node_context
         .children()
-        .unwrap()
         .iter()
         .flat_map(|child| child.dfs_preorder_iter())
         .any(|descendent| *descendent == 10);

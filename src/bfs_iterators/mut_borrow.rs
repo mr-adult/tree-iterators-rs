@@ -1,3 +1,5 @@
+use core::mem::MaybeUninit;
+
 use alloc::{collections::VecDeque, vec::Vec};
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
 
@@ -84,7 +86,7 @@ where
         let iterator_queue = VecDeque::new();
         let mut current_context = TreeContextMut::new();
         current_context.ancestors.push(value);
-        current_context.children = Some(children);
+        current_context.children = MaybeUninit::new(children);
 
         MutBorrowedBFSIteratorWithContext {
             is_root: true,
