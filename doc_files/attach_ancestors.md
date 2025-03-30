@@ -26,7 +26,7 @@ One use case for this API is to filter down to only the values where all of the
 ancestors and the current node are even numbers. This can be accomplished with
 the following code.
 
-```ignore
+```text
 Example Tree:
        0
       / \

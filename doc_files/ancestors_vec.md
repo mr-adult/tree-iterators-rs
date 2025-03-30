@@ -5,7 +5,7 @@ Ex. given the following tree, some example ancestor lists would be:
 - ancestors at 'H' = \[A, C, H\]
 - ancestors at 'K' = \[A, D, K\]
 - ancestors at 'Q' = \[A, D, M, N, O, Q\]
-```ignore
+```text
           A
        /  |  \
      B    C    D

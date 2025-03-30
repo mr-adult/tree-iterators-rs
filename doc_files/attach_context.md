@@ -19,7 +19,7 @@ One use case for the `attach_context()` API is to loop through each node in the
 tree and check if its subtree meets a condition. In this case, we are scanning
 for all subtrees that contain the '10' node.
 
-```ignore
+```text
 Example Tree:
        0
       / \
