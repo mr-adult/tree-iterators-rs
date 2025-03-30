@@ -14,7 +14,7 @@ Ex. given the following tree, some example paths would be:
 - path to 'H' = \[1, 0\]
 - path to 'K' = \[2, 0\]
 - path to 'Q' = \[2, 2, 0, 0, 1\]
-```ignore
+```text
           A
        /  |  \
      B    C    D

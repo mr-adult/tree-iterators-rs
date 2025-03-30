@@ -104,7 +104,7 @@ where
     ///
     /// In this traversal, we scan each level of the tree from left to
     /// right before going down to the next level.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -136,7 +136,7 @@ where
     ///
     /// In this traversal, each node will only be traversed before any
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -169,7 +169,7 @@ where
     ///
     /// In this traversal, each node will be traversed after its left
     /// child and before its right child.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -202,7 +202,7 @@ where
     ///
     /// In this traversal, each node will only be traversed after all
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -256,7 +256,7 @@ where
     ///
     /// In this traversal, we scan each level of the tree from left to
     /// right before going down to the next level.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -288,7 +288,7 @@ where
     ///
     /// In this traversal, each node will only be traversed before any
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -321,7 +321,7 @@ where
     ///
     /// In this traversal, each node will only be traversed after all
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -388,7 +388,7 @@ where
     ///
     /// In this traversal, we scan each level of the tree from left to
     /// right before going down to the next level.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -420,7 +420,7 @@ where
     ///
     /// In this traversal, each node will only be traversed before any
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -453,7 +453,7 @@ where
     ///
     /// In this traversal, each node will be traversed after its left
     /// child and before its right child.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -486,7 +486,7 @@ where
     ///
     /// In this traversal, each node will only be traversed after all
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -541,7 +541,7 @@ where
     ///
     /// In this traversal, we scan each level of the tree from left to
     /// right before going down to the next level.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -573,7 +573,7 @@ where
     ///
     /// In this traversal, each node will only be traversed before any
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -606,7 +606,7 @@ where
     ///
     /// In this traversal, each node will only be traversed after all
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -670,7 +670,7 @@ where
     ///
     /// In this traversal, we scan each level of the tree from left to
     /// right before going down to the next level.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -702,7 +702,7 @@ where
     ///
     /// In this traversal, each node will only be traversed before any
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -735,7 +735,7 @@ where
     ///
     /// In this traversal, each node will be traversed after its left
     /// child and before its right child.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -768,7 +768,7 @@ where
     ///
     /// In this traversal, each node will only be traversed after all
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -820,7 +820,7 @@ where
     ///
     /// In this traversal, we scan each level of the tree from left to
     /// right before going down to the next level.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -852,7 +852,7 @@ where
     ///
     /// In this traversal, each node will only be traversed before any
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -885,7 +885,7 @@ where
     ///
     /// In this traversal, each node will only be traversed after all
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
