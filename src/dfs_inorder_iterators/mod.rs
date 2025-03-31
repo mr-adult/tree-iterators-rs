@@ -32,7 +32,7 @@ macro_rules! dfs_inorder_next {
     };
 }
 
-macro_rules! dfs_inorder_streaming_iterator_impl {
+macro_rules! dfs_inorder_ancestors_streaming_iterator_impl {
     ($get_value_and_left_right: ident) => {
         fn advance(&mut self) {
             let mut current = None;
@@ -98,13 +98,25 @@ macro_rules! dfs_inorder_streaming_iterator_impl {
     };
 }
 
-macro_rules! get_mut {
+macro_rules! get_mut_ancestors {
     () => {
         fn get_mut(&mut self) -> Option<&mut Self::Item> {
             if self.item_stack.len() == 0 {
                 None
             } else {
                 Some(&mut self.item_stack[..])
+            }
+        }
+    };
+}
+
+macro_rules! get_mut_context {
+    () => {
+        fn get_mut(&mut self) -> Option<&mut Self::Item> {
+            if self.current_context.ancestors.is_empty() {
+                None
+            } else {
+                Some(&mut self.current_context)
             }
         }
     };
@@ -120,6 +132,7 @@ pub(crate) enum TraversalStatus {
     WentRight,
 }
 
+pub(crate) use dfs_inorder_ancestors_streaming_iterator_impl;
 pub(crate) use dfs_inorder_next;
-pub(crate) use dfs_inorder_streaming_iterator_impl;
-pub(crate) use get_mut;
+pub(crate) use get_mut_ancestors;
+pub(crate) use get_mut_context;
