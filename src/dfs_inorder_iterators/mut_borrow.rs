@@ -1,4 +1,4 @@
-use core::option::IntoIter;
+use core::{mem::MaybeUninit, option::IntoIter};
 
 use alloc::vec::Vec;
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
@@ -8,10 +8,13 @@ use crate::{
         ancestors_depth_first::mut_borrow::MutBorrowedBinaryDFSLeavesPostorderIteratorWithAncestors,
         depth_first::mut_borrow::MutBorrowedBinaryLeavesIterator,
     },
-    prelude::MutBorrowedBinaryTreeNode,
+    prelude::{BinaryTreeContextMut, MutBorrowedBinaryTreeNode},
 };
 
-use super::{dfs_inorder_next, dfs_inorder_streaming_iterator_impl, get_mut, TraversalStatus};
+use super::{
+    dfs_inorder_ancestors_streaming_iterator_impl, dfs_inorder_next, get_mut_ancestors,
+    get_mut_context, TraversalStatus,
+};
 
 pub struct MutBorrowedDFSInorderIterator<'a, Node>
 where
@@ -49,6 +52,15 @@ where
             traversal_stack_bottom: traversal_stack_bottom,
             traversal_stack_top: Vec::new(),
             item_stack: Vec::new(),
+        }
+    }
+
+    #[doc = include_str!("../../doc_files/attach_context.md")]
+    pub fn attach_context(mut self) -> MutBorrowedDFSInorderIteratorWithContext<'a, Node> {
+        let root = self.right_stack.pop();
+        match self.moved {
+            true => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
+            false => MutBorrowedDFSInorderIteratorWithContext::new(root.unwrap().unwrap())
         }
     }
 
@@ -130,12 +142,166 @@ where
 {
     type Item = [Node::MutBorrowedValue];
 
-    dfs_inorder_streaming_iterator_impl!(get_value_and_children_binary_iter_mut);
+    dfs_inorder_ancestors_streaming_iterator_impl!(get_value_and_children_binary_iter_mut);
 }
 
 impl<'a, Node> StreamingIteratorMut for MutBorrowedDFSInorderIteratorWithAncestors<'a, Node>
 where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
-    get_mut!();
+    get_mut_ancestors!();
+}
+
+pub struct MutBorrowedDFSInorderIteratorWithContext<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    right_stack: Vec<Option<&'a mut Node>>,
+    current_context: BinaryTreeContextMut<'a, Node>,
+    into_iterator_stack: Vec<[Option<&'a mut Node>; 2]>,
+    status_stack: Vec<TraversalStatus>,
+}
+
+impl<'a, Node> MutBorrowedDFSInorderIteratorWithContext<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    pub(crate) fn new(root: &'a mut Node) -> MutBorrowedDFSInorderIteratorWithContext<Node> {
+        let mut right_stack = Vec::new();
+        right_stack.push(Some(root));
+
+        let context = BinaryTreeContextMut::new();
+
+        Self {
+            right_stack,
+            current_context: context,
+            into_iterator_stack: Vec::new(),
+            status_stack: Vec::new(),
+        }
+    }
+
+    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
+    pub fn leaves(
+        mut self,
+    ) -> MutBorrowedBinaryDFSLeavesPostorderIteratorWithAncestors<'a, Node, IntoIter<&'a mut Node>>
+    {
+        let root;
+        let old_traversal_stack;
+
+        if self.right_stack.len() == 1 {
+            root = core::mem::take(self.right_stack.get_mut(0).unwrap());
+            old_traversal_stack = Vec::new();
+        } else {
+            root = None;
+            old_traversal_stack = self
+                .right_stack
+                .into_iter()
+                .map(|opt| opt.into_iter())
+                .collect();
+        }
+
+        MutBorrowedBinaryDFSLeavesPostorderIteratorWithAncestors {
+            root,
+            item_stack: self.current_context.ancestors,
+            old_traversal_stack,
+            new_traversal_stack: Vec::new(),
+        }
+    }
+}
+
+impl<'a, Node> StreamingIterator for MutBorrowedDFSInorderIteratorWithContext<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    type Item = BinaryTreeContextMut<'a, Node>;
+
+    fn advance(&mut self) {
+        let mut current = None;
+        while current.is_none() {
+            if self.right_stack.is_empty() {
+                self.current_context.ancestors.clear();
+                break;
+            }
+
+            while let Some(TraversalStatus::WentRight) = self.status_stack.last() {
+                self.current_context.ancestors.pop();
+                self.current_context.path.pop();
+                self.status_stack.pop();
+            }
+
+            if let Some(last_status) = self.status_stack.last_mut() {
+                if !matches!(last_status, TraversalStatus::ReturnedSelf) {
+                    *last_status = TraversalStatus::ReturnedSelf;
+                    self.current_context.children =
+                        MaybeUninit::new(self.into_iterator_stack.pop().unwrap());
+                    return;
+                }
+            }
+
+            if current.is_some() {
+                continue;
+            }
+
+            if let Some(last_status) = self.status_stack.last_mut() {
+                *last_status = TraversalStatus::WentRight;
+            }
+
+            if let Some(top_of_right_stack) = self.right_stack.pop() {
+                current = top_of_right_stack;
+                continue;
+            }
+
+            while let Some(TraversalStatus::WentRight) = self.status_stack.last() {
+                self.current_context.ancestors.pop();
+                self.current_context.path.pop();
+                self.status_stack.pop();
+                self.current_context.children =
+                    MaybeUninit::new(self.into_iterator_stack.pop().unwrap());
+            }
+            return;
+        }
+
+        while let Some(current_val) = current {
+            let (value, children) = current_val.get_value_and_children_binary_iter_mut();
+
+            self.right_stack
+                .push(unsafe { core::ptr::read(&children[1] as *const Option<&'a mut Node>) });
+            let left = unsafe { core::ptr::read(&children[0] as *const Option<&'a mut Node>) };
+            self.into_iterator_stack.push(children);
+
+            self.current_context.ancestors.push(value);
+            match self.status_stack.last() {
+                None => {}
+                Some(TraversalStatus::WentLeft | TraversalStatus::ReturnedSelf) => {
+                    self.current_context.path.push(0)
+                }
+                Some(TraversalStatus::WentRight) => self.current_context.path.push(1),
+            }
+            self.status_stack.push(TraversalStatus::WentLeft);
+            current = left;
+        }
+
+        if let Some(last_status) = self.status_stack.last_mut() {
+            *last_status = TraversalStatus::ReturnedSelf;
+        }
+
+        if let Some(children) = self.into_iterator_stack.pop() {
+            self.current_context.children = MaybeUninit::new(children);
+        }
+    }
+
+    fn get(&self) -> Option<&Self::Item> {
+        if self.current_context.ancestors.is_empty() {
+            None
+        } else {
+            Some(&self.current_context)
+        }
+    }
+}
+
+impl<'a, Node> StreamingIteratorMut for MutBorrowedDFSInorderIteratorWithContext<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    get_mut_context!();
 }
