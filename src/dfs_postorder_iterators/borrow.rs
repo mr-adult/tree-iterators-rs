@@ -1,3 +1,5 @@
+use core::{array::IntoIter, mem::MaybeUninit};
+
 use crate::{
     leaves_iterators::{
         ancestors_depth_first::borrow::{
@@ -6,7 +8,7 @@ use crate::{
         },
         depth_first::borrow::{BorrowedBinaryLeavesIterator, BorrowedLeavesIterator},
     },
-    prelude::{BinaryChildren, BorrowedBinaryTreeNode, BorrowedTreeNode},
+    prelude::{BinaryChildren, BinaryTreeContextRef, BorrowedBinaryTreeNode, BorrowedTreeNode},
     tree_context::TreeContextRef,
 };
 use alloc::vec::Vec;
@@ -264,6 +266,16 @@ where
         }
     }
 
+    #[doc = include_str!("../../doc_files/attach_context.md")]
+    pub fn attach_context(self) -> BorrowedBinaryDFSPostorderIteratorWithContext<'a, Node> {
+        match self.root {
+            None => panic!("Attempted to attach metadata to a DFS postorder iterator in the middle of a tree traversal. This is forbidden."),
+            Some(root) => {
+                BorrowedBinaryDFSPostorderIteratorWithContext::new(root)
+            }
+        }
+    }
+
     #[doc = include_str!("../../doc_files/attach_ancestors.md")]
     pub fn attach_ancestors(self) -> BorrowedBinaryDFSPostorderIteratorWithAncestors<'a, Node> {
         match self.root {
@@ -324,4 +336,117 @@ where
 {
     type Item = [Node::BorrowedValue];
     postorder_ancestors_streaming_iterator_impl!(get_value_and_children_iter);
+}
+
+pub struct BorrowedBinaryDFSPostorderIteratorWithContext<'a, Node>
+where
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+    root: Option<&'a Node>,
+    traversal_stack: Vec<IntoIter<Option<&'a Node>, 2>>,
+    current_context: BinaryTreeContextRef<'a, Node>,
+    into_iterator_stack: Vec<[Option<&'a Node>; 2]>,
+}
+
+impl<'a, Node> BorrowedBinaryDFSPostorderIteratorWithContext<'a, Node>
+where
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+    fn new(root: &'a Node) -> BorrowedBinaryDFSPostorderIteratorWithContext<'_, Node> {
+        Self {
+            root: Some(root),
+            current_context: BinaryTreeContextRef::new(),
+            traversal_stack: Vec::new(),
+            into_iterator_stack: Vec::new(),
+        }
+    }
+
+    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
+    pub fn leaves(
+        self,
+    ) -> BorrowedBinaryDFSLeavesPostorderIteratorWithAncestors<'a, Node, BinaryChildren<&'a Node>>
+    {
+        todo!();
+    }
+}
+
+impl<'a, Node> StreamingIterator for BorrowedBinaryDFSPostorderIteratorWithContext<'a, Node>
+where
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+    type Item = BinaryTreeContextRef<'a, Node>;
+    fn advance(&mut self) {
+        let mut is_first_iteration = true;
+        if let Some(next) = self.root.take() {
+            let (value, children) = next.get_value_and_children_binary_iter();
+            // ASSUMPTION: self.into_iterator_stack will always outlive self.traversal_stack.
+            // If that assumption is not true, this code will cause Undefined Behavior.
+            self.traversal_stack.push(
+                unsafe { core::ptr::read(&children as *const [Option<&'a Node>; 2]) }.into_iter(),
+            );
+            self.current_context.ancestors.push(value);
+            self.current_context.path.push(usize::MAX);
+            self.into_iterator_stack.push(children);
+            is_first_iteration = false;
+        }
+
+        if self.traversal_stack.len() > self.into_iterator_stack.len() {
+            self.traversal_stack.pop();
+        }
+
+        'outer: loop {
+            if let Some(top) = self.traversal_stack.last_mut() {
+                while let Some(node) = top.next() {
+                    // Path is not populated on the first pass over just the root node.
+                    if let Some(last) = self.current_context.path.last_mut() {
+                        *last = last.wrapping_add(1);
+                    }
+
+                    if let Some(node) = node {
+                        let (value, children) = node.get_value_and_children_binary_iter();
+                        if is_first_iteration {
+                            self.current_context.ancestors.pop();
+                        }
+
+                        // ASSUMPTION: self.into_iterator_stack will always outlive self.traversal_stack.
+                        // If that assumption is not true, this code will cause Undefined Behavior.
+                        self.traversal_stack.push(
+                            unsafe { core::ptr::read(&children as *const [Option<&'a Node>; 2]) }
+                                .into_iter(),
+                        );
+                        self.current_context.ancestors.push(value);
+                        self.current_context.path.push(usize::MAX);
+                        self.into_iterator_stack.push(children);
+                        is_first_iteration = false;
+                        continue 'outer;
+                    }
+                }
+
+                if self.current_context.ancestors.len() > self.traversal_stack.len() {
+                    self.current_context.ancestors.pop();
+                }
+
+                if let Some(top) = self.into_iterator_stack.pop() {
+                    self.current_context.children = MaybeUninit::new(top);
+                }
+                self.current_context.path.pop();
+                return;
+            } else {
+                if let Some(top) = self.into_iterator_stack.pop() {
+                    self.current_context.children = MaybeUninit::new(top);
+                }
+                self.current_context.ancestors.pop();
+                self.current_context.path.pop();
+                return;
+            }
+        }
+    }
+
+    fn get(&self) -> Option<&Self::Item> {
+        if self.current_context.ancestors.is_empty() {
+            None
+        } else {
+            Some(&self.current_context)
+        }
+    }
 }

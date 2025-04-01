@@ -1,3 +1,5 @@
+use core::array::IntoIter;
+
 use crate::{
     leaves_iterators::{
         ancestors_depth_first::owned::{
@@ -7,7 +9,7 @@ use crate::{
         depth_first::owned::{OwnedBinaryLeavesIterator, OwnedLeavesIterator},
     },
     prelude::{BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode},
-    tree_context::TreeContextNoChildren,
+    tree_context::{BinaryTreeContextNoChildren, TreeContextNoChildren},
 };
 use alloc::vec::Vec;
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
@@ -263,6 +265,16 @@ where
         }
     }
 
+    #[doc = include_str!("../../doc_files/attach_context.md")]
+    pub fn attach_context(self) -> OwnedBinaryDFSPostorderIteratorWithContext<Node> {
+        match self.root {
+            None => panic!("Attempted to attach metadata to a DFS postorder iterator in the middle of a tree traversal. This is forbidden."),
+            Some(root) => {
+                OwnedBinaryDFSPostorderIteratorWithContext::new(root)
+            }
+        }
+    }
+
     #[doc = include_str!("../../doc_files/attach_ancestors.md")]
     pub fn attach_ancestors(self) -> OwnedBinaryDFSPostorderIteratorWithAncestors<Node> {
         match self.root {
@@ -329,4 +341,95 @@ where
     Node: OwnedBinaryTreeNode,
 {
     get_mut_ancestors!();
+}
+
+pub struct OwnedBinaryDFSPostorderIteratorWithContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    root: Option<Node>,
+    traversal_stack: Vec<IntoIter<Option<Node>, 2>>,
+    current_context: BinaryTreeContextNoChildren<Node>,
+}
+
+impl<'a, Node> OwnedBinaryDFSPostorderIteratorWithContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    fn new(root: Node) -> OwnedBinaryDFSPostorderIteratorWithContext<Node> {
+        Self {
+            root: Some(root),
+            current_context: BinaryTreeContextNoChildren::new(),
+            traversal_stack: Vec::new(),
+        }
+    }
+
+    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
+    pub fn leaves(
+        self,
+    ) -> OwnedBinaryDFSLeavesPostorderIteratorWithAncestors<Node, BinaryChildren<Node>> {
+        todo!();
+    }
+}
+
+impl<'a, Node> StreamingIterator for OwnedBinaryDFSPostorderIteratorWithContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    type Item = BinaryTreeContextNoChildren<Node>;
+    fn advance(&mut self) {
+        let mut is_first_iteration = true;
+        if let Some(next) = self.root.take() {
+            let (value, children) = next.get_value_and_children_binary();
+            self.traversal_stack.push(children.into_iter());
+            self.current_context.ancestors.push(value);
+            self.current_context.path.push(usize::MAX);
+            is_first_iteration = false;
+        }
+
+        'outer: loop {
+            if let Some(top) = self.traversal_stack.last_mut() {
+                while let Some(node) = top.next() {
+                    if let Some(last) = self.current_context.path.last_mut() {
+                        *last = last.wrapping_add(1);
+                    }
+
+                    if let Some(node) = node {
+                        // Path is not populated on the first pass over just the root node.
+
+                        let (value, children) = node.get_value_and_children_binary();
+                        if is_first_iteration {
+                            self.current_context.ancestors.pop();
+                        }
+
+                        self.traversal_stack.push(children.into_iter());
+                        self.current_context.ancestors.push(value);
+                        self.current_context.path.push(usize::MAX);
+                        is_first_iteration = false;
+                        continue 'outer;
+                    }
+                }
+
+                if self.current_context.ancestors.len() > self.traversal_stack.len() {
+                    self.current_context.ancestors.pop();
+                }
+
+                self.current_context.path.pop();
+                self.traversal_stack.pop();
+                return;
+            } else {
+                self.current_context.ancestors.pop();
+                self.current_context.path.pop();
+                return;
+            }
+        }
+    }
+
+    fn get(&self) -> Option<&Self::Item> {
+        if self.current_context.ancestors.is_empty() {
+            None
+        } else {
+            Some(&self.current_context)
+        }
+    }
 }
