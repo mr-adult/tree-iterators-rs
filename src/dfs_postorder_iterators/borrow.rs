@@ -128,7 +128,11 @@ where
         let mut is_first_iteration = true;
         if let Some(next) = self.root.take() {
             let (value, children) = next.get_value_and_children_iter();
-            self.traversal_stack.push(children.clone().into_iter());
+            // ASSUMPTION: self.into_iterator_stack will always outlive self.traversal_stack.
+            // If that assumption is not true, this code will cause Undefined Behavior.
+            self.traversal_stack.push(
+                unsafe { core::ptr::read(&children as *const Node::BorrowedChildren) }.into_iter(),
+            );
             self.current_context.ancestors.push(value);
             self.current_context.path.push(usize::MAX);
             self.into_iterator_stack.push(children);
@@ -152,10 +156,15 @@ where
                         self.current_context.ancestors.pop();
                     }
 
-                    self.traversal_stack.push(children.clone().into_iter());
-                    self.into_iterator_stack.push(children);
+                    // ASSUMPTION: self.into_iterator_stack will always outlive self.traversal_stack.
+                    // If that assumption is not true, this code will cause Undefined Behavior.
+                    self.traversal_stack.push(
+                        unsafe { core::ptr::read(&children as *const Node::BorrowedChildren) }
+                            .into_iter(),
+                    );
                     self.current_context.ancestors.push(value);
                     self.current_context.path.push(usize::MAX);
+                    self.into_iterator_stack.push(children);
                     is_first_iteration = false;
                     continue;
                 }
@@ -165,13 +174,13 @@ where
                 }
 
                 if let Some(top) = self.into_iterator_stack.pop() {
-                    self.current_context.children = core::mem::MaybeUninit::new(top);
+                    self.current_context.children = MaybeUninit::new(top);
                 }
                 self.current_context.path.pop();
                 return;
             } else {
                 if let Some(top) = self.into_iterator_stack.pop() {
-                    self.current_context.children = core::mem::MaybeUninit::new(top);
+                    self.current_context.children = MaybeUninit::new(top);
                 }
                 self.current_context.ancestors.pop();
                 self.current_context.path.pop();
