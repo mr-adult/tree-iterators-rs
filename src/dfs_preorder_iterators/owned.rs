@@ -1,3 +1,5 @@
+use core::array::IntoIter;
+
 use alloc::vec::Vec;
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
 
@@ -9,12 +11,13 @@ use crate::{
         },
         depth_first::owned::{OwnedBinaryLeavesIterator, OwnedLeavesIterator},
     },
-    prelude::{BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode, TreeContext},
+    prelude::{BinaryChildren, BinaryTreeContext, OwnedBinaryTreeNode, OwnedTreeNode, TreeContext},
 };
 
 use super::{
     dfs_preorder_next, get_mut_ancestors, get_mut_context,
-    preorder_ancestors_streaming_iterator_impl, preorder_context_streaming_iterator_impl,
+    preorder_ancestors_streaming_iterator_impl, preorder_binary_context_streaming_iterator_impl,
+    preorder_context_streaming_iterator_impl,
 };
 
 pub struct OwnedDFSPreorderIterator<Node>
@@ -213,6 +216,16 @@ where
         }
     }
 
+    #[doc = include_str!("../../doc_files/attach_context.md")]
+    pub fn attach_context(self) -> OwnedBinaryDFSPreorderIteratorWithContext<Node> {
+        match self.root {
+            None => panic!("Attempted to attach metadata to a DFS preorder iterator in the middle of a tree traversal. This is forbidden."),
+            Some(root) => {
+                OwnedBinaryDFSPreorderIteratorWithContext::new(root)
+            }
+        }
+    }
+
     #[doc = include_str!("../../doc_files/attach_ancestors.md")]
     pub fn attach_ancestors(self) -> OwnedBinaryDFSPreorderIteratorWithAncestors<Node> {
         match self.root {
@@ -279,4 +292,48 @@ where
     Node: OwnedBinaryTreeNode,
 {
     get_mut_ancestors!();
+}
+
+pub struct OwnedBinaryDFSPreorderIteratorWithContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    root: Option<Node>,
+    traversal_stack: Vec<IntoIter<Option<Node>, 2>>,
+    current_context: BinaryTreeContext<Node>,
+}
+
+impl<Node> OwnedBinaryDFSPreorderIteratorWithContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    pub(crate) fn new(root: Node) -> Self {
+        Self {
+            root: Some(root),
+            traversal_stack: Vec::new(),
+            current_context: BinaryTreeContext::new(),
+        }
+    }
+
+    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
+    pub fn leaves(
+        self,
+    ) -> OwnedBinaryDFSLeavesPostorderIteratorWithAncestors<Node, IntoIter<Node, 2>> {
+        todo!();
+    }
+}
+
+impl<Node> StreamingIterator for OwnedBinaryDFSPreorderIteratorWithContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    type Item = BinaryTreeContext<Node>;
+    preorder_binary_context_streaming_iterator_impl!(get_value_and_children_binary);
+}
+
+impl<Node> StreamingIteratorMut for OwnedBinaryDFSPreorderIteratorWithContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    get_mut_context!();
 }
