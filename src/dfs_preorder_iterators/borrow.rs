@@ -122,6 +122,14 @@ where
     }
 }
 
+impl<'a, Node> StreamingIterator for BorrowedDFSPreorderIteratorWithContext<'a, Node>
+where
+    Node: BorrowedTreeNode<'a>,
+{
+    type Item = TreeContextRef<'a, Node>;
+    preorder_context_streaming_iterator_impl!(get_value_and_children_iter);
+}
+
 pub struct BorrowedDFSPreorderIteratorWithAncestors<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
@@ -167,14 +175,6 @@ where
     type Item = [Node::BorrowedValue];
 
     preorder_ancestors_streaming_iterator_impl!(get_value_and_children_iter);
-}
-
-impl<'a, Node> StreamingIterator for BorrowedDFSPreorderIteratorWithContext<'a, Node>
-where
-    Node: BorrowedTreeNode<'a>,
-{
-    type Item = TreeContextRef<'a, Node>;
-    preorder_context_streaming_iterator_impl!(get_value_and_children_iter);
 }
 
 pub struct BorrowedBinaryDFSPreorderIterator<'a, Node>
