@@ -1,3 +1,5 @@
+use core::array::IntoIter;
+
 use alloc::vec::Vec;
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
 
@@ -9,13 +11,16 @@ use crate::{
         },
         depth_first::mut_borrow::{MutBorrowedBinaryLeavesIterator, MutBorrowedLeavesIterator},
     },
-    prelude::{BinaryChildren, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode},
+    prelude::{
+        BinaryChildren, BinaryTreeContextMut, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode,
+    },
     tree_context::TreeContextMut,
 };
 
 use super::{
     dfs_preorder_next, get_mut_ancestors, get_mut_context,
-    preorder_ancestors_streaming_iterator_impl, preorder_context_streaming_iterator_impl,
+    preorder_ancestors_streaming_iterator_impl, preorder_binary_context_streaming_iterator_impl,
+    preorder_context_streaming_iterator_impl,
 };
 
 pub struct MutBorrowedDFSPreorderIterator<'a, Node>
@@ -219,6 +224,16 @@ where
         }
     }
 
+    #[doc = include_str!("../../doc_files/attach_context.md")]
+    pub fn attach_context(self) -> MutBorrowedBinaryDFSPreorderIteratorWithContext<'a, Node> {
+        match self.root {
+            None => panic!("Attempted to attach metadata to a DFS preorder iterator in the middle of a tree traversal. This is forbidden."),
+            Some(root) => {
+                MutBorrowedBinaryDFSPreorderIteratorWithContext::new(root)
+            }
+        }
+    }
+
     #[doc = include_str!("../../doc_files/attach_ancestors.md")]
     pub fn attach_ancestors(self) -> MutBorrowedBinaryDFSPreorderIteratorWithAncestors<'a, Node> {
         match self.root {
@@ -291,4 +306,49 @@ where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
     get_mut_ancestors!();
+}
+
+pub struct MutBorrowedBinaryDFSPreorderIteratorWithContext<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    root: Option<&'a mut Node>,
+    traversal_stack: Vec<IntoIter<Option<&'a mut Node>, 2>>,
+    current_context: BinaryTreeContextMut<'a, Node>,
+}
+
+impl<'a, Node> MutBorrowedBinaryDFSPreorderIteratorWithContext<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    pub(crate) fn new(root: &'a mut Node) -> Self {
+        Self {
+            root: Some(root),
+            traversal_stack: Vec::new(),
+            current_context: BinaryTreeContextMut::new(),
+        }
+    }
+
+    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
+    pub fn leaves(
+        self,
+    ) -> MutBorrowedBinaryDFSLeavesPostorderIteratorWithAncestors<'a, Node, IntoIter<&'a mut Node, 2>>
+    {
+        todo!();
+    }
+}
+
+impl<'a, Node> StreamingIterator for MutBorrowedBinaryDFSPreorderIteratorWithContext<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    type Item = BinaryTreeContextMut<'a, Node>;
+    preorder_binary_context_streaming_iterator_impl!(get_value_and_children_binary_iter_mut);
+}
+
+impl<'a, Node> StreamingIteratorMut for MutBorrowedBinaryDFSPreorderIteratorWithContext<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    get_mut_context!();
 }
