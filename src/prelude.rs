@@ -2071,9 +2071,7 @@ pub(crate) mod tests {
 
     #[cfg(test)]
     mod ancestors_leaves_tests {
-        extern crate std;
         use alloc::{string::ToString, vec};
-        use std::println;
 
         use super::{assert_len, create_binary_tree_for_testing, create_trees_for_testing};
         use crate::prelude::*;
@@ -2132,8 +2130,6 @@ pub(crate) mod tests {
                 for owned_iter in get_owned_leaves_iters(test_tree) {
                     assert_len!(expected.len(), owned_iter);
                 }
-
-                println!("finished first round");
             }
         }
 
@@ -2211,7 +2207,6 @@ pub(crate) mod tests {
                 borrowed_iter.for_each(|_| count += 1);
                 results.push(count);
             }
-            println!("{:?}", results);
 
             let mut i = 0;
             for borrowed_iter in get_borrowed_leaves_binary_iters(&test_tree) {
@@ -2818,9 +2813,6 @@ pub(crate) mod tests {
 
     #[cfg(test)]
     mod leaves_tests {
-        extern crate std;
-        use std::println;
-
         use super::{assert_len, create_binary_tree_for_testing, create_trees_for_testing};
         use crate::prelude::*;
 
@@ -2861,8 +2853,6 @@ pub(crate) mod tests {
                 for owned_iter in get_owned_leaves_iters(test_tree) {
                     assert_len!(expected.len(), owned_iter);
                 }
-
-                println!("finished first round");
             }
         }
 
