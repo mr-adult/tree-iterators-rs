@@ -136,7 +136,8 @@ macro_rules! bfs_context_advance_iterator {
                 if let Some(mut value) = child {
                     self.current_context
                         .ancestors
-                        .push(core::mem::take(&mut value.value).unwrap());
+                        .push(unsafe { value.value.assume_init() });
+                    value.value = core::mem::MaybeUninit::uninit();
                     self.current_context.path.push(value.path_segment);
                     let has_children = !value.children.is_empty();
                     self.traversal_stack.push(value);
@@ -158,7 +159,8 @@ macro_rules! bfs_context_advance_iterator {
 
                 if self.current_context.ancestors.len() > 1 {
                     let target = self.traversal_stack.last_mut().unwrap();
-                    target.value = self.current_context.ancestors.pop();
+                    target.value =
+                        core::mem::MaybeUninit::new(self.current_context.ancestors.pop().unwrap());
                     target.path_segment = self.current_context.path.pop().unwrap();
                 }
 
@@ -175,12 +177,9 @@ macro_rules! bfs_context_advance_iterator {
         }
 
         fn pop_from_item_stack(&mut self) {
-            if self.current_context.ancestors.len() == 1 {
-                return;
-            }
-
             let tree_node = match self.current_context.ancestors.len() {
-                0 | 1 => panic!("item stack len should never be 0 or 1 here!"),
+                0 => panic!("item stack len should never be 0 here!"),
+                1 => return,
                 2 => &mut self.tree_cache,
                 _ => self
                     .traversal_stack
@@ -189,7 +188,7 @@ macro_rules! bfs_context_advance_iterator {
             };
 
             tree_node.children.push_back(Some(TreeNodeVecDeque {
-                value: Some(self.current_context.ancestors.pop().unwrap()),
+                value: core::mem::MaybeUninit::new(self.current_context.ancestors.pop().unwrap()),
                 path_segment: self.current_context.path.pop().unwrap(),
                 children: VecDeque::new(),
             }));
@@ -371,8 +370,8 @@ macro_rules! bfs_ancestors_advance_iterator {
                 };
 
                 if let Some(mut value) = child {
-                    self.item_stack
-                        .push(core::mem::take(&mut value.value).unwrap());
+                    self.item_stack.push(unsafe { value.value.assume_init() });
+                    value.value = core::mem::MaybeUninit::uninit();
                     let has_children = !value.children.is_empty();
                     self.traversal_stack.push(value);
                     if !has_children && self.item_stack.len() >= starting_depth {
@@ -393,7 +392,7 @@ macro_rules! bfs_ancestors_advance_iterator {
 
                 if self.item_stack.len() > 1 {
                     let target = self.traversal_stack.last_mut().unwrap();
-                    target.value = self.item_stack.pop();
+                    target.value = core::mem::MaybeUninit::new(self.item_stack.pop().unwrap());
                 }
 
                 if let Some(popped) = self.traversal_stack.pop() {
@@ -423,7 +422,7 @@ macro_rules! bfs_ancestors_advance_iterator {
             };
 
             tree_node.children.push_back(Some(TreeNodeVecDeque {
-                value: Some(self.item_stack.pop().unwrap()),
+                value: core::mem::MaybeUninit::new(self.item_stack.pop().unwrap()),
                 path_segment: 0,
                 children: VecDeque::new(),
             }));
@@ -440,17 +439,30 @@ pub(crate) use bfs_next;
 pub(crate) use get_mut_ancestors;
 pub(crate) use get_mut_context;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub(crate) struct TreeNodeVecDeque<T> {
-    pub(crate) value: Option<T>,
+    pub(crate) value: core::mem::MaybeUninit<T>,
     pub(crate) path_segment: usize,
     pub(crate) children: alloc::collections::VecDeque<Option<Self>>,
+}
+
+impl<T> Clone for TreeNodeVecDeque<T>
+where
+    T: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            value: core::mem::MaybeUninit::new(unsafe { self.value.assume_init_ref().clone() }),
+            path_segment: self.path_segment,
+            children: self.children.clone(),
+        }
+    }
 }
 
 impl<T> Default for TreeNodeVecDeque<T> {
     fn default() -> Self {
         Self {
-            value: None,
+            value: core::mem::MaybeUninit::uninit(),
             path_segment: 0,
             children: alloc::collections::VecDeque::new(),
         }
