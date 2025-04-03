@@ -344,11 +344,7 @@ where
 {
     fn new(root: Node) -> Self {
         let (value, children) = root.get_value_and_children_binary();
-        let tree_cache = TreeNodeVecDeque {
-            value: None,
-            path_segment: 0,
-            children: VecDeque::new(),
-        };
+        let tree_cache = TreeNodeVecDeque::default();
 
         let iterator_queue = VecDeque::new();
         let mut current_context = BinaryTreeContext::new();
