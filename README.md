@@ -38,9 +38,9 @@ includes things like:
   rules
 
 Additionally, with its iterator-based APIs, this library allows you to trivially
-swap your iteration method simply by replacing one iteration method (ex.
-`.bfs()`) with another (ex. `.dfs_preorder()`). These methods make your
-intention much clearer than hand-rolling the algorithm at every location.
+swap your iteration method simply by replacing one method call (ex. `.bfs()`)
+with another (ex. `.dfs_preorder()`). These methods make your intention much
+clearer than hand-rolling the algorithm at every location.
 
 Because each API returns an iterator, you can proceed to use the iterator APIs
 like [`filter`](core::iter::Iterator::filter),
@@ -654,13 +654,13 @@ println!("{}", result);
 ### Leaves
 
 `leaves()` is a method that can be called after any of the above APIs (including
-`attach_ancestors()` and `attach_context()`) to change the iterator structure to
-one that only returns leaves of the tree. In the example tree (see
-[Binary Tree](#using-binarytree) and [Tree](#using-tree)), this will always
-result in the sequence 3, 4, 5, 10. Once this method is called, the iterator
-transforms to be either a breadth-first (if the iterator was previously
-breadth-first) or a depth first postorder search (if the iterator was previously
-one of pre-, in-, or post-order depth first searches).
+`attach_ancestors()`) to change the iterator structure to one that only returns
+leaves of the tree. In the example tree (see [Binary Tree](#using-binarytree)
+and [Tree](#using-tree)), this will always result in the sequence 3, 4, 5, 10.
+Once this method is called, the iterator transforms to be either a breadth-first
+(if the iterator was previously breadth-first) or a depth first postorder search
+(if the iterator was previously one of pre-, in-, or post-order depth first
+searches).
 
 I will be using the depth first preorder search in the examples, but this works
 with all of the traversal types. This method can be called immediately if you
