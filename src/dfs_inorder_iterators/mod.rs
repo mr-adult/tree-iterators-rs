@@ -12,7 +12,9 @@ macro_rules! dfs_inorder_next {
                     return self.item_stack.pop();
                 }
 
-                current = self.right_stack.pop().unwrap_or_default();
+                if let Some(popped) = self.right_stack.pop() {
+                    current = popped;
+                }
 
                 if self.right_stack.is_empty() {
                     break;
@@ -37,41 +39,28 @@ macro_rules! dfs_inorder_ancestors_streaming_iterator_impl {
         fn advance(&mut self) {
             let mut current = None;
             while current.is_none() {
-                if self.right_stack.is_empty() {
-                    self.item_stack.clear();
-                    break;
-                }
-
-                while let Some(TraversalStatus::WentRight) = self.status_stack.last() {
-                    self.item_stack.pop();
-                    self.status_stack.pop();
-                }
-
                 if let Some(last_status) = self.status_stack.last_mut() {
-                    if !matches!(last_status, TraversalStatus::ReturnedSelf) {
-                        *last_status = TraversalStatus::ReturnedSelf;
-                        return;
+                    match last_status {
+                        TraversalStatus::WentRight => {
+                            self.item_stack.pop();
+                            self.status_stack.pop();
+                            continue;
+                        }
+                        TraversalStatus::ReturnedSelf => *last_status = TraversalStatus::WentRight,
+                        TraversalStatus::WentLeft => {
+                            *last_status = TraversalStatus::ReturnedSelf;
+                            return;
+                        }
                     }
-                }
-
-                if current.is_some() {
-                    continue;
-                }
-
-                if let Some(last_status) = self.status_stack.last_mut() {
-                    *last_status = TraversalStatus::WentRight;
                 }
 
                 if let Some(top_of_right_stack) = self.right_stack.pop() {
                     current = top_of_right_stack;
                     continue;
+                } else {
+                    self.item_stack.clear();
+                    return;
                 }
-
-                while let Some(TraversalStatus::WentRight) = self.status_stack.last() {
-                    self.item_stack.pop();
-                    self.status_stack.pop();
-                }
-                return;
             }
 
             while let Some(current_val) = current {
@@ -83,9 +72,8 @@ macro_rules! dfs_inorder_ancestors_streaming_iterator_impl {
                 current = left;
             }
 
-            if let Some(last_status) = self.status_stack.last_mut() {
-                *last_status = TraversalStatus::ReturnedSelf;
-            }
+            let status_stack_len = self.status_stack.len();
+            self.status_stack[status_stack_len - 1] = TraversalStatus::ReturnedSelf;
         }
 
         fn get(&self) -> Option<&Self::Item> {
@@ -104,7 +92,7 @@ macro_rules! get_mut_ancestors {
             if self.item_stack.len() == 0 {
                 None
             } else {
-                Some(&mut self.item_stack[..])
+                Some(&mut self.item_stack)
             }
         }
     };

@@ -218,47 +218,33 @@ where
     fn advance(&mut self) {
         let mut current = None;
         while current.is_none() {
-            if self.right_stack.is_empty() {
-                self.current_context.ancestors.clear();
-                break;
-            }
-
-            while let Some(TraversalStatus::WentRight) = self.status_stack.last() {
-                self.current_context.ancestors.pop();
-                self.current_context.path.pop();
-                self.status_stack.pop();
-            }
-
             if let Some(last_status) = self.status_stack.last_mut() {
-                if !matches!(last_status, TraversalStatus::ReturnedSelf) {
-                    *last_status = TraversalStatus::ReturnedSelf;
-                    self.current_context.children =
-                        MaybeUninit::new(self.into_iterator_stack.pop().unwrap());
-                    return;
+                match last_status {
+                    TraversalStatus::WentRight => {
+                        self.current_context.ancestors.pop();
+                        self.current_context.path.pop();
+                        self.status_stack.pop();
+                        continue;
+                    }
+                    TraversalStatus::WentLeft => {
+                        *last_status = TraversalStatus::ReturnedSelf;
+                        self.current_context.children =
+                            MaybeUninit::new(self.into_iterator_stack.pop().unwrap());
+                        return;
+                    }
+                    TraversalStatus::ReturnedSelf => {
+                        *last_status = TraversalStatus::WentRight;
+                    }
                 }
-            }
-
-            if current.is_some() {
-                continue;
-            }
-
-            if let Some(last_status) = self.status_stack.last_mut() {
-                *last_status = TraversalStatus::WentRight;
             }
 
             if let Some(top_of_right_stack) = self.right_stack.pop() {
                 current = top_of_right_stack;
                 continue;
+            } else {
+                self.current_context.ancestors.clear();
+                return;
             }
-
-            while let Some(TraversalStatus::WentRight) = self.status_stack.last() {
-                self.current_context.ancestors.pop();
-                self.current_context.path.pop();
-                self.status_stack.pop();
-                self.current_context.children =
-                    MaybeUninit::new(self.into_iterator_stack.pop().unwrap());
-            }
-            return;
         }
 
         while let Some(current_val) = current {
@@ -281,13 +267,14 @@ where
             current = left;
         }
 
-        if let Some(last_status) = self.status_stack.last_mut() {
-            *last_status = TraversalStatus::ReturnedSelf;
-        }
+        let status_stack_len = self.status_stack.len();
+        self.status_stack[status_stack_len - 1] = TraversalStatus::ReturnedSelf;
 
-        if let Some(children) = self.into_iterator_stack.pop() {
-            self.current_context.children = MaybeUninit::new(children);
-        }
+        self.current_context.children = MaybeUninit::new(
+            self.into_iterator_stack
+                .pop()
+                .expect("There to be a children IntoIterator"),
+        );
     }
 
     fn get(&self) -> Option<&Self::Item> {
