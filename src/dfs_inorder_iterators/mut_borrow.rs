@@ -8,7 +8,7 @@ use crate::{
         ancestors_depth_first::mut_borrow::MutBorrowedBinaryDFSLeavesPostorderIteratorWithAncestors,
         depth_first::mut_borrow::MutBorrowedBinaryLeavesIterator,
     },
-    prelude::{BinaryTreeContextMut, MutBorrowedBinaryTreeNode},
+    prelude::{MutBorrowedBinaryTreeNode, TreeContext},
 };
 
 use super::{
@@ -157,7 +157,7 @@ where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
     right_stack: Vec<Option<&'a mut Node>>,
-    current_context: BinaryTreeContextMut<'a, Node>,
+    current_context: TreeContext<Node::MutBorrowedValue, [Option<&'a mut Node>; 2]>,
     into_iterator_stack: Vec<[Option<&'a mut Node>; 2]>,
     status_stack: Vec<TraversalStatus>,
 }
@@ -170,7 +170,7 @@ where
         let mut right_stack = Vec::new();
         right_stack.push(Some(root));
 
-        let context = BinaryTreeContextMut::new();
+        let context = TreeContext::new();
 
         Self {
             right_stack,
@@ -185,7 +185,7 @@ impl<'a, Node> StreamingIterator for MutBorrowedDFSInorderIteratorWithContext<'a
 where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
-    type Item = BinaryTreeContextMut<'a, Node>;
+    type Item = TreeContext<Node::MutBorrowedValue, [Option<&'a mut Node>; 2]>;
 
     fn advance(&mut self) {
         let mut current = None;

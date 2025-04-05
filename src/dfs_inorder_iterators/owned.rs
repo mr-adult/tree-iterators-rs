@@ -5,8 +5,7 @@ use crate::{
         ancestors_depth_first::owned::OwnedBinaryDFSLeavesPostorderIteratorWithAncestors,
         depth_first::owned::OwnedBinaryLeavesIterator,
     },
-    prelude::OwnedBinaryTreeNode,
-    tree_context::BinaryTreeContextNoChildren,
+    prelude::{OwnedBinaryTreeNode, TreeContext},
 };
 use alloc::vec::Vec;
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
@@ -156,7 +155,7 @@ where
     Node: OwnedBinaryTreeNode,
 {
     right_stack: Vec<Option<Node>>,
-    current_context: BinaryTreeContextNoChildren<Node>,
+    current_context: TreeContext<Node::OwnedValue, ()>,
     status_stack: Vec<TraversalStatus>,
 }
 
@@ -168,7 +167,7 @@ where
         let mut right_stack = Vec::new();
         right_stack.push(Some(root));
 
-        let context = BinaryTreeContextNoChildren::new();
+        let context = TreeContext::new();
 
         Self {
             right_stack,
@@ -182,7 +181,7 @@ impl<Node> StreamingIterator for OwnedDFSInorderIteratorWithContext<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
-    type Item = BinaryTreeContextNoChildren<Node>;
+    type Item = TreeContext<Node::OwnedValue, ()>;
 
     fn advance(&mut self) {
         let mut current = None;

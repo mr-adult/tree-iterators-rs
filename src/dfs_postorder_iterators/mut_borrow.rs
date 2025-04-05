@@ -8,10 +8,7 @@ use crate::{
         },
         depth_first::mut_borrow::{MutBorrowedBinaryLeavesIterator, MutBorrowedLeavesIterator},
     },
-    prelude::{
-        BinaryChildren, BinaryTreeContextMut, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode,
-    },
-    tree_context::TreeContextMut,
+    prelude::{BinaryChildren, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode, TreeContext},
 };
 use alloc::vec::Vec;
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
@@ -91,7 +88,7 @@ where
     root: Option<&'a mut Node>,
     traversal_stack: Vec<<Node::MutBorrowedChildren as IntoIterator>::IntoIter>,
     into_iterator_stack: Vec<Node::MutBorrowedChildren>,
-    current_context: TreeContextMut<'a, Node>,
+    current_context: TreeContext<Node::MutBorrowedValue, Node::MutBorrowedChildren>,
 }
 
 impl<'a, Node> MutBorrowedDFSPostorderIteratorWithContext<'a, Node>
@@ -103,7 +100,7 @@ where
             root: Some(root),
             traversal_stack: Vec::new(),
             into_iterator_stack: Vec::new(),
-            current_context: TreeContextMut::new(),
+            current_context: TreeContext::new(),
         }
     }
 }
@@ -112,7 +109,7 @@ impl<'a, Node> StreamingIterator for MutBorrowedDFSPostorderIteratorWithContext<
 where
     Node: MutBorrowedTreeNode<'a>,
 {
-    type Item = TreeContextMut<'a, Node>;
+    type Item = TreeContext<Node::MutBorrowedValue, Node::MutBorrowedChildren>;
     fn advance(&mut self) {
         if let Some(next) = self.root.take() {
             let (value, children) = next.get_value_and_children_iter_mut();
@@ -355,7 +352,7 @@ where
 {
     root: Option<&'a mut Node>,
     traversal_stack: Vec<IntoIter<Option<&'a mut Node>, 2>>,
-    current_context: BinaryTreeContextMut<'a, Node>,
+    current_context: TreeContext<Node::MutBorrowedValue, [Option<&'a mut Node>; 2]>,
     into_iterator_stack: Vec<[Option<&'a mut Node>; 2]>,
 }
 
@@ -366,7 +363,7 @@ where
     fn new(root: &'a mut Node) -> MutBorrowedBinaryDFSPostorderIteratorWithContext<'_, Node> {
         Self {
             root: Some(root),
-            current_context: BinaryTreeContextMut::new(),
+            current_context: TreeContext::new(),
             traversal_stack: Vec::new(),
             into_iterator_stack: Vec::new(),
         }
@@ -377,7 +374,7 @@ impl<'a, Node> StreamingIterator for MutBorrowedBinaryDFSPostorderIteratorWithCo
 where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
-    type Item = BinaryTreeContextMut<'a, Node>;
+    type Item = TreeContext<Node::MutBorrowedValue, [Option<&'a mut Node>; 2]>;
     fn advance(&mut self) {
         if let Some(next) = self.root.take() {
             let (value, children) = next.get_value_and_children_binary_iter_mut();

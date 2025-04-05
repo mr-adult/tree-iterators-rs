@@ -8,7 +8,7 @@ use crate::{
         ancestors_depth_first::borrow::BorrowedBinaryDFSLeavesPostorderIteratorWithAncestors,
         depth_first::borrow::BorrowedBinaryLeavesIterator,
     },
-    prelude::{BinaryTreeContextRef, BorrowedBinaryTreeNode},
+    prelude::{BorrowedBinaryTreeNode, TreeContext},
 };
 
 use super::{dfs_inorder_ancestors_streaming_iterator_impl, dfs_inorder_next, TraversalStatus};
@@ -145,7 +145,7 @@ where
     Node: BorrowedBinaryTreeNode<'a>,
 {
     right_stack: Vec<Option<&'a Node>>,
-    current_context: BinaryTreeContextRef<'a, Node>,
+    current_context: TreeContext<Node::BorrowedValue, [Option<&'a Node>; 2]>,
     into_iterator_stack: Vec<[Option<&'a Node>; 2]>,
     status_stack: Vec<TraversalStatus>,
 }
@@ -158,7 +158,7 @@ where
         let mut right_stack = Vec::new();
         right_stack.push(Some(root));
 
-        let context = BinaryTreeContextRef::new();
+        let context = TreeContext::new();
 
         Self {
             right_stack,
@@ -173,7 +173,7 @@ impl<'a, Node> StreamingIterator for BorrowedDFSInorderIteratorWithContext<'a, N
 where
     Node: BorrowedBinaryTreeNode<'a>,
 {
-    type Item = BinaryTreeContextRef<'a, Node>;
+    type Item = TreeContext<Node::BorrowedValue, [Option<&'a Node>; 2]>;
 
     fn advance(&mut self) {
         let mut current = None;

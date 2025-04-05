@@ -8,8 +8,7 @@ use crate::{
         },
         depth_first::owned::{OwnedBinaryLeavesIterator, OwnedLeavesIterator},
     },
-    prelude::{BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode},
-    tree_context::{BinaryTreeContextNoChildren, TreeContextNoChildren},
+    prelude::{BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode, TreeContext},
 };
 use alloc::vec::Vec;
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
@@ -85,7 +84,7 @@ where
 {
     root: Option<Node>,
     traversal_stack: Vec<<Node::OwnedChildren as IntoIterator>::IntoIter>,
-    current_context: TreeContextNoChildren<Node>,
+    current_context: TreeContext<Node::OwnedValue, ()>,
 }
 
 impl<'a, Node> OwnedDFSPostorderIteratorWithContext<Node>
@@ -96,7 +95,7 @@ where
         Self {
             root: Some(root),
             traversal_stack: Vec::new(),
-            current_context: TreeContextNoChildren::new(),
+            current_context: TreeContext::new(),
         }
     }
 }
@@ -105,7 +104,7 @@ impl<Node> StreamingIterator for OwnedDFSPostorderIteratorWithContext<Node>
 where
     Node: OwnedTreeNode,
 {
-    type Item = TreeContextNoChildren<Node>;
+    type Item = TreeContext<Node::OwnedValue, ()>;
     fn advance(&mut self) {
         if let Some(next) = self.root.take() {
             let (value, children) = next.get_value_and_children();
@@ -327,7 +326,7 @@ where
 {
     root: Option<Node>,
     traversal_stack: Vec<IntoIter<Option<Node>, 2>>,
-    current_context: BinaryTreeContextNoChildren<Node>,
+    current_context: TreeContext<Node::OwnedValue, ()>,
 }
 
 impl<'a, Node> OwnedBinaryDFSPostorderIteratorWithContext<Node>
@@ -337,7 +336,7 @@ where
     fn new(root: Node) -> OwnedBinaryDFSPostorderIteratorWithContext<Node> {
         Self {
             root: Some(root),
-            current_context: BinaryTreeContextNoChildren::new(),
+            current_context: TreeContext::new(),
             traversal_stack: Vec::new(),
         }
     }
@@ -347,7 +346,7 @@ impl<'a, Node> StreamingIterator for OwnedBinaryDFSPostorderIteratorWithContext<
 where
     Node: OwnedBinaryTreeNode,
 {
-    type Item = BinaryTreeContextNoChildren<Node>;
+    type Item = TreeContext<Node::OwnedValue, ()>;
     fn advance(&mut self) {
         if let Some(next) = self.root.take() {
             let (value, children) = next.get_value_and_children_binary();

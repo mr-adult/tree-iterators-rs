@@ -17,7 +17,6 @@ use crate::{
         breadth_first::owned::{OwnedBinaryLeavesIterator, OwnedLeavesIterator},
     },
     prelude::{BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode, TreeContext},
-    tree_context::BinaryTreeContext,
 };
 
 pub struct OwnedBFSIterator<Node>
@@ -83,7 +82,7 @@ where
     pub(crate) tree_cache: TreeNodeVecDeque<Node::OwnedValue>,
     pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::OwnedValue>>,
     pub(crate) iterator_queue: VecDeque<<Node::OwnedChildren as IntoIterator>::IntoIter>,
-    pub(crate) current_context: TreeContext<Node>,
+    pub(crate) current_context: TreeContext<Node::OwnedValue, Node::OwnedChildren>,
     pub(crate) path_counter: usize,
 }
 
@@ -117,7 +116,7 @@ impl<'a, Node> StreamingIterator for OwnedBFSIteratorWithContext<Node>
 where
     Node: OwnedTreeNode,
 {
-    type Item = TreeContext<Node>;
+    type Item = TreeContext<Node::OwnedValue, Node::OwnedChildren>;
 
     bfs_context_streaming_iterator_impl!(get_value_and_children);
 }
@@ -314,7 +313,7 @@ where
     pub(crate) tree_cache: TreeNodeVecDeque<Node::OwnedValue>,
     pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::OwnedValue>>,
     pub(crate) iterator_queue: VecDeque<IntoIter<Option<Node>, 2>>,
-    pub(crate) current_context: BinaryTreeContext<Node>,
+    pub(crate) current_context: TreeContext<Node::OwnedValue, [Option<Node>; 2]>,
     pub(crate) path_counter: usize,
 }
 
@@ -327,7 +326,7 @@ where
         let tree_cache = TreeNodeVecDeque::default();
 
         let iterator_queue = VecDeque::new();
-        let mut current_context = BinaryTreeContext::new();
+        let mut current_context = TreeContext::new();
         current_context.ancestors.push(value);
         current_context.children = MaybeUninit::new(children);
 
@@ -348,7 +347,7 @@ impl<'a, Node> StreamingIterator for OwnedBinaryBFSIteratorWithContext<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
-    type Item = BinaryTreeContext<Node>;
+    type Item = TreeContext<Node::OwnedValue, [Option<Node>; 2]>;
     bfs_context_binary_streaming_iterator_impl!(get_value_and_children_binary);
 }
 

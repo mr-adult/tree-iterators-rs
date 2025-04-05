@@ -17,8 +17,7 @@ use crate::{
         },
         breadth_first::mut_borrow::{MutBorrowedBinaryLeavesIterator, MutBorrowedLeavesIterator},
     },
-    prelude::{BinaryChildren, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode},
-    tree_context::{BinaryTreeContextMut, TreeContextMut},
+    prelude::{BinaryChildren, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode, TreeContext},
 };
 
 pub struct MutBorrowedBFSIterator<'a, Node>
@@ -82,7 +81,7 @@ where
     pub(crate) tree_cache: TreeNodeVecDeque<Node::MutBorrowedValue>,
     pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::MutBorrowedValue>>,
     pub(crate) iterator_queue: VecDeque<<Node::MutBorrowedChildren as IntoIterator>::IntoIter>,
-    pub(crate) current_context: TreeContextMut<'a, Node>,
+    pub(crate) current_context: TreeContext<Node::MutBorrowedValue, Node::MutBorrowedChildren>,
     pub(crate) path_counter: usize,
 }
 
@@ -94,7 +93,7 @@ where
         let (value, children) = root.get_value_and_children_iter_mut();
         let tree_cache = TreeNodeVecDeque::default();
         let iterator_queue = VecDeque::new();
-        let mut current_context = TreeContextMut::new();
+        let mut current_context = TreeContext::new();
         current_context.ancestors.push(value);
         current_context.children = MaybeUninit::new(children);
 
@@ -115,7 +114,7 @@ impl<'a, Node> StreamingIterator for MutBorrowedBFSIteratorWithContext<'a, Node>
 where
     Node: MutBorrowedTreeNode<'a>,
 {
-    type Item = TreeContextMut<'a, Node>;
+    type Item = TreeContext<Node::MutBorrowedValue, Node::MutBorrowedChildren>;
 
     bfs_context_streaming_iterator_impl!(get_value_and_children_iter_mut);
 }
@@ -312,7 +311,7 @@ where
     pub(crate) tree_cache: TreeNodeVecDeque<Node::MutBorrowedValue>,
     pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::MutBorrowedValue>>,
     pub(crate) iterator_queue: VecDeque<IntoIter<Option<&'a mut Node>, 2>>,
-    pub(crate) current_context: BinaryTreeContextMut<'a, Node>,
+    pub(crate) current_context: TreeContext<Node::MutBorrowedValue, [Option<&'a mut Node>; 2]>,
     pub(crate) path_counter: usize,
 }
 
@@ -325,7 +324,7 @@ where
         let tree_cache = TreeNodeVecDeque::default();
 
         let iterator_queue = VecDeque::new();
-        let mut current_context = BinaryTreeContextMut::new();
+        let mut current_context = TreeContext::new();
         current_context.ancestors.push(value);
         current_context.children = MaybeUninit::new(children);
 
@@ -346,7 +345,7 @@ impl<'a, Node> StreamingIterator for MutBorrowedBinaryBFSIteratorWithContext<'a,
 where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
-    type Item = BinaryTreeContextMut<'a, Node>;
+    type Item = TreeContext<Node::MutBorrowedValue, [Option<&'a mut Node>; 2]>;
     bfs_context_binary_streaming_iterator_impl!(get_value_and_children_binary_iter_mut);
 }
 
