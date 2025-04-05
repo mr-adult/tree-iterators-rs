@@ -106,22 +106,6 @@ where
             current_context: TreeContextMut::new(),
         }
     }
-
-    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(
-        self,
-    ) -> MutBorrowedDFSLeavesPostorderIteratorWithAncestors<
-        'a,
-        Node,
-        <Node::MutBorrowedChildren as IntoIterator>::IntoIter,
-    > {
-        MutBorrowedDFSLeavesPostorderIteratorWithAncestors {
-            root: self.root,
-            item_stack: self.current_context.ancestors,
-            old_traversal_stack: self.traversal_stack.into_iter().collect(),
-            new_traversal_stack: Vec::new(),
-        }
-    }
 }
 
 impl<'a, Node> StreamingIterator for MutBorrowedDFSPostorderIteratorWithContext<'a, Node>
@@ -386,17 +370,6 @@ where
             traversal_stack: Vec::new(),
             into_iterator_stack: Vec::new(),
         }
-    }
-
-    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(
-        self,
-    ) -> MutBorrowedBinaryDFSLeavesPostorderIteratorWithAncestors<
-        'a,
-        Node,
-        BinaryChildren<&'a mut Node>,
-    > {
-        todo!();
     }
 }
 

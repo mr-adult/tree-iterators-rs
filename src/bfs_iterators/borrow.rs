@@ -107,26 +107,6 @@ where
         }
     }
 
-    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(mut self) -> BorrowedBFSLeavesIteratorWithAncestors<'a, Node> {
-        if !self.is_done() {
-            self.iterator_queue
-                .push_back(unsafe { self.current_context.children.assume_init() }.into_iter());
-        }
-
-        BorrowedBFSLeavesIteratorWithAncestors {
-            is_root: self.is_root,
-            item_stack: self.current_context.ancestors,
-            iterator_queue: self
-                .iterator_queue
-                .into_iter()
-                .map(|val| val.peekable())
-                .collect(),
-            traversal_stack: self.traversal_stack,
-            tree_cache: self.tree_cache,
-        }
-    }
-
     bfs_context_advance_iterator!();
 }
 
@@ -335,11 +315,6 @@ where
             tree_cache,
             path_counter: 0,
         }
-    }
-
-    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(self) -> BorrowedBinaryBFSLeavesIteratorWithAncestors<'a, Node> {
-        todo!();
     }
 
     bfs_context_advance_iterator!();

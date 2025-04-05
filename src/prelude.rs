@@ -2137,10 +2137,10 @@ pub(crate) mod tests {
             test_tree: &Tree<T>,
         ) -> impl Iterator<Item = Box<dyn StreamingIterator<Item = [&T]> + '_>> + '_ {
             [
-                Box::new(test_tree.dfs_preorder_iter().attach_context().leaves())
+                Box::new(test_tree.dfs_preorder_iter().attach_ancestors().leaves())
                     as Box<dyn StreamingIterator<Item = [&T]>>,
-                Box::new(test_tree.dfs_postorder_iter().attach_context().leaves()),
-                Box::new(test_tree.bfs_iter().attach_context().leaves()),
+                Box::new(test_tree.dfs_postorder_iter().attach_ancestors().leaves()),
+                Box::new(test_tree.bfs_iter().attach_ancestors().leaves()),
             ]
             .into_iter()
         }
@@ -2157,19 +2157,19 @@ pub(crate) mod tests {
                     Box::new(
                         (*(test_tree as *mut Tree<T>))
                             .dfs_preorder_iter_mut()
-                            .attach_context()
+                            .attach_ancestors()
                             .leaves(),
                     ) as Box<dyn StreamingIterator<Item = [&mut T]>>,
                     Box::new(
                         (*(test_tree as *mut Tree<T>))
                             .dfs_postorder_iter_mut()
-                            .attach_context()
+                            .attach_ancestors()
                             .leaves(),
                     ),
                     Box::new(
                         (*(test_tree as *mut Tree<T>))
                             .bfs_iter_mut()
-                            .attach_context()
+                            .attach_ancestors()
                             .leaves(),
                     ),
                 ]
@@ -2181,10 +2181,16 @@ pub(crate) mod tests {
             test_tree: Tree<T>,
         ) -> [Box<dyn StreamingIterator<Item = [T]>>; 3] {
             [
-                Box::new(test_tree.clone().dfs_preorder().attach_context().leaves())
+                Box::new(test_tree.clone().dfs_preorder().attach_ancestors().leaves())
                     as Box<dyn StreamingIterator<Item = [T]>>,
-                Box::new(test_tree.clone().dfs_postorder().attach_context().leaves()),
-                Box::new(test_tree.clone().bfs().attach_context().leaves()),
+                Box::new(
+                    test_tree
+                        .clone()
+                        .dfs_postorder()
+                        .attach_ancestors()
+                        .leaves(),
+                ),
+                Box::new(test_tree.clone().bfs().attach_ancestors().leaves()),
             ]
         }
 
@@ -2315,10 +2321,10 @@ pub(crate) mod tests {
             for mut test_tree in create_trees_for_testing() {
                 // interrupt traversal at all points.
                 for _ in 0..expected_dfs_preorder.len() {
-                    let mut preorder_iter = test_tree.dfs_preorder_iter().attach_context();
+                    let mut preorder_iter = test_tree.dfs_preorder_iter().attach_ancestors();
                     let mut num_leaves_seen = 0;
                     while let Some(value) = preorder_iter.next() {
-                        if *value.ancestors()[value.ancestors().len() - 1]
+                        if *value[value.len() - 1]
                             == expected_leaves[num_leaves_seen]
                                 [expected_leaves[num_leaves_seen].len() - 1]
                         {
@@ -2334,10 +2340,11 @@ pub(crate) mod tests {
                     }
                     drop(preorder_iter_leaves);
 
-                    let mut preorder_iter_mut = test_tree.dfs_preorder_iter_mut().attach_context();
+                    let mut preorder_iter_mut =
+                        test_tree.dfs_preorder_iter_mut().attach_ancestors();
                     let mut num_leaves_seen = 0;
                     while let Some(value) = preorder_iter_mut.next() {
-                        if *value.ancestors()[value.ancestors().len() - 1]
+                        if *value[value.len() - 1]
                             == expected_leaves[num_leaves_seen]
                                 [expected_leaves[num_leaves_seen].len() - 1]
                         {
@@ -2353,10 +2360,10 @@ pub(crate) mod tests {
                     }
                     drop(preorder_iter_leaves);
 
-                    let mut preorder = test_tree.clone().dfs_preorder().attach_context();
+                    let mut preorder = test_tree.clone().dfs_preorder().attach_ancestors();
                     let mut num_leaves_seen = 0;
                     while let Some(value) = preorder.next() {
-                        if value.ancestors()[value.ancestors().len() - 1]
+                        if value[value.len() - 1]
                             == expected_leaves[num_leaves_seen]
                                 [expected_leaves[num_leaves_seen].len() - 1]
                         {
@@ -2382,14 +2389,14 @@ pub(crate) mod tests {
             for mut test_tree in create_trees_for_testing() {
                 // interrupt traversal at all points.
                 for _ in 0..expected_dfs_postorder.len() {
-                    let mut postorder_iter = test_tree.dfs_postorder_iter().attach_context();
+                    let mut postorder_iter = test_tree.dfs_postorder_iter().attach_ancestors();
                     let mut num_leaves_seen = 0;
                     while let Some(value) = postorder_iter.next() {
                         // dont index outside the array!
                         if num_leaves_seen == expected_leaves.len() {
                             continue;
                         }
-                        if *value.ancestors()[value.ancestors().len() - 1]
+                        if *value[value.len() - 1]
                             == expected_leaves[num_leaves_seen]
                                 [expected_leaves[num_leaves_seen].len() - 1]
                         {
@@ -2406,14 +2413,14 @@ pub(crate) mod tests {
                     drop(postorder_iter_leaves);
 
                     let mut postorder_iter_mut =
-                        test_tree.dfs_postorder_iter_mut().attach_context();
+                        test_tree.dfs_postorder_iter_mut().attach_ancestors();
                     let mut num_leaves_seen = 0;
                     while let Some(value) = postorder_iter_mut.next() {
                         // dont index outside the array!
                         if num_leaves_seen == expected_leaves.len() {
                             continue;
                         }
-                        if *value.ancestors()[value.ancestors().len() - 1]
+                        if *value[value.len() - 1]
                             == expected_leaves[num_leaves_seen]
                                 [expected_leaves[num_leaves_seen].len() - 1]
                         {
@@ -2429,14 +2436,14 @@ pub(crate) mod tests {
                     }
                     drop(postorder_iter_leaves);
 
-                    let mut postorder = test_tree.clone().dfs_postorder().attach_context();
+                    let mut postorder = test_tree.clone().dfs_postorder().attach_ancestors();
                     let mut num_leaves_seen = 0;
                     while let Some(value) = postorder.next() {
                         // dont index outside the array!
                         if num_leaves_seen == expected_leaves.len() {
                             continue;
                         }
-                        if value.ancestors()[value.ancestors().len() - 1]
+                        if value[value.len() - 1]
                             == expected_leaves[num_leaves_seen]
                                 [expected_leaves[num_leaves_seen].len() - 1]
                         {
@@ -2461,10 +2468,10 @@ pub(crate) mod tests {
             for mut test_tree in create_trees_for_testing() {
                 // interrupt traversal at all points.
                 for _ in 0..expected_bfs.len() {
-                    let mut bfs_iter = test_tree.bfs_iter().attach_context();
+                    let mut bfs_iter = test_tree.bfs_iter().attach_ancestors();
                     let mut num_leaves_seen = 0;
                     while let Some(value) = bfs_iter.next() {
-                        if *value.ancestors()[value.ancestors().len() - 1]
+                        if *value[value.len() - 1]
                             == expected_leaves[num_leaves_seen]
                                 [expected_leaves[num_leaves_seen].len() - 1]
                         {
@@ -2480,10 +2487,10 @@ pub(crate) mod tests {
                     }
                     drop(bfs_iter_leaves);
 
-                    let mut bfs_iter_mut = test_tree.bfs_iter_mut().attach_context();
+                    let mut bfs_iter_mut = test_tree.bfs_iter_mut().attach_ancestors();
                     let mut num_leaves_seen = 0;
                     while let Some(value) = bfs_iter_mut.next() {
-                        if *value.ancestors()[value.ancestors().len() - 1]
+                        if *value[value.len() - 1]
                             == expected_leaves[num_leaves_seen]
                                 [expected_leaves[num_leaves_seen].len() - 1]
                         {
@@ -2499,10 +2506,10 @@ pub(crate) mod tests {
                     }
                     drop(bfs_iter_mut_leaves);
 
-                    let mut bfs = test_tree.clone().bfs().attach_context();
+                    let mut bfs = test_tree.clone().bfs().attach_ancestors();
                     let mut num_leaves_seen = 0;
                     while let Some(value) = bfs.next() {
-                        if value.ancestors()[value.ancestors().len() - 1]
+                        if value[value.len() - 1]
                             == expected_leaves[num_leaves_seen]
                                 [expected_leaves[num_leaves_seen].len() - 1]
                         {
