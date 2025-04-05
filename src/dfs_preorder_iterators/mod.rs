@@ -5,7 +5,13 @@ pub mod owned;
 macro_rules! dfs_preorder_next {
     ($get_value_and_children: ident) => {
         fn next(&mut self) -> Option<Self::Item> {
-            let next = self.root.take().or_else(|| loop {
+            if let Some(root) = self.root.take() {
+                let (value, children) = root.$get_value_and_children();
+                self.traversal_stack.push(children.into_iter());
+                return Some(value);
+            }
+
+            let next = loop {
                 if let Some(top) = self.traversal_stack.last_mut() {
                     if let Some(value) = top.next() {
                         break Some(value);
@@ -15,7 +21,7 @@ macro_rules! dfs_preorder_next {
                 } else {
                     break None;
                 }
-            });
+            };
 
             next.map(|node| {
                 let (value, children) = node.$get_value_and_children();
@@ -29,7 +35,14 @@ macro_rules! dfs_preorder_next {
 macro_rules! preorder_ancestors_streaming_iterator_impl {
     ($get_value_and_children: ident) => {
         fn advance(&mut self) {
-            let next = self.root.take().or_else(|| loop {
+            if let Some(root) = self.root.take() {
+                let (value, children) = root.$get_value_and_children();
+                self.traversal_stack.push(children.into_iter());
+                self.item_stack.push(value);
+                return;
+            }
+
+            let next = loop {
                 if let Some(top) = self.traversal_stack.last_mut() {
                     if let Some(value) = top.next() {
                         break Some(value);
@@ -40,7 +53,7 @@ macro_rules! preorder_ancestors_streaming_iterator_impl {
                 } else {
                     break None;
                 }
-            });
+            };
 
             if let Some(next) = next {
                 let (value, children) = next.$get_value_and_children();
@@ -78,6 +91,10 @@ macro_rules! preorder_context_streaming_iterator_impl {
                 let (value, children) = root.$get_value_and_children();
                 self.current_context.ancestors.push(value);
                 self.current_context.children = core::mem::MaybeUninit::new(children);
+                return;
+            }
+
+            if self.current_context.ancestors.is_empty() {
                 return;
             }
 
@@ -131,6 +148,10 @@ macro_rules! preorder_binary_context_streaming_iterator_impl {
                 let (value, children) = root.$get_value_and_children();
                 self.current_context.ancestors.push(value);
                 self.current_context.children = core::mem::MaybeUninit::new(children);
+                return;
+            }
+            
+            if self.current_context.ancestors.is_empty() {
                 return;
             }
 
