@@ -98,26 +98,6 @@ where
             current_context: TreeContext::new(),
         }
     }
-
-    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(
-        mut self,
-    ) -> OwnedDFSLeavesPostorderIteratorWithAncestors<
-        Node,
-        <Node::OwnedChildren as IntoIterator>::IntoIter,
-    > {
-        if self.root.is_none() && !self.is_done() {
-            self.traversal_stack
-                .push(unsafe { self.current_context.children.assume_init() }.into_iter());
-        }
-
-        OwnedDFSLeavesPostorderIteratorWithAncestors {
-            root: self.root,
-            item_stack: self.current_context.ancestors,
-            old_traversal_stack: self.traversal_stack,
-            new_traversal_stack: Vec::new(),
-        }
-    }
 }
 
 impl<Node> StreamingIterator for OwnedDFSPreorderIteratorWithContext<Node>
@@ -313,13 +293,6 @@ where
             traversal_stack: Vec::new(),
             current_context: BinaryTreeContext::new(),
         }
-    }
-
-    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(
-        self,
-    ) -> OwnedBinaryDFSLeavesPostorderIteratorWithAncestors<Node, IntoIter<Node, 2>> {
-        todo!();
     }
 }
 

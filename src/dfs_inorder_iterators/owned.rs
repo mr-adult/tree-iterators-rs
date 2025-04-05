@@ -176,33 +176,6 @@ where
             status_stack: Vec::new(),
         }
     }
-
-    #[doc = include_str!("../../doc_files/ancestors_leaves.md")]
-    pub fn leaves(
-        mut self,
-    ) -> OwnedBinaryDFSLeavesPostorderIteratorWithAncestors<Node, IntoIter<Node>> {
-        let root;
-        let old_traversal_stack;
-
-        if self.right_stack.len() == 1 {
-            root = core::mem::take(self.right_stack.get_mut(0).unwrap());
-            old_traversal_stack = Vec::new();
-        } else {
-            root = None;
-            old_traversal_stack = self
-                .right_stack
-                .into_iter()
-                .map(|opt| opt.into_iter())
-                .collect();
-        }
-
-        OwnedBinaryDFSLeavesPostorderIteratorWithAncestors {
-            root,
-            item_stack: self.current_context.ancestors,
-            old_traversal_stack,
-            new_traversal_stack: Vec::new(),
-        }
-    }
 }
 
 impl<Node> StreamingIterator for OwnedDFSInorderIteratorWithContext<Node>
