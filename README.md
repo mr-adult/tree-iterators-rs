@@ -88,11 +88,19 @@ into other iterators by chaining one of the following methods:
 
 ## Change Log
 
-2.0.0 - This version removes the Option wrapping of children iterators. This
-wrapping is redundant since iterators can represent empty collections in and of
-themselves. Removing it will improve performance going forward. All iterator
-methods (bfs(), dfs_preorder(), dfs_postorder(), etc.) can be used just the same
-as in previous versions.
+- 3.0.0
+  - Renames TreeNode and BinaryTreeNode to Tree and BinaryTree respectively
+  - Adds the attach_context() APIs. This new API allows for more context-aware
+    logic than the previously exposed APIs.
+  - The various iterator structs are now publically exposed so that callers can
+    build against the concrete types.
+
+- 2.0.0
+  - This version removes the Option wrapping of children iterators. This
+    wrapping is redundant since iterators can represent empty collections in and
+    of themselves. Removing it will improve performance going forward. All
+    iterator methods (bfs(), dfs_preorder(), dfs_postorder(), etc.) can be used
+    just the same as in previous versions.
 
 ## Examples
 
