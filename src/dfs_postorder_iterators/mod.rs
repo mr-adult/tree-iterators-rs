@@ -6,32 +6,26 @@ macro_rules! dfs_postorder_next {
     ($get_value_and_children: ident) => {
         fn next(&mut self) -> Option<Self::Item> {
             loop {
-                match core::mem::take(&mut self.root) {
-                    Some(next) => {
-                        let (value, children) = next.$get_value_and_children();
-                        self.traversal_stack.push(children.into_iter());
-                        self.item_stack.push(value);
+                if let Some(root) = self.root.take() {
+                    let (value, children) = root.$get_value_and_children();
+                    self.traversal_stack.push(children.into_iter());
+                    self.item_stack.push(value);
+                    continue;
+                }
+
+                loop {
+                    if let Some(last) = self.traversal_stack.last_mut() {
+                        if let Some(next) = last.next() {
+                            let (value, children) = next.$get_value_and_children();
+                            self.item_stack.push(value);
+                            self.traversal_stack.push(children.into_iter());
+                            continue;
+                        }
+
+                        self.traversal_stack.pop();
                     }
-                    None => loop {
-                        let stack_len = self.traversal_stack.len();
-                        if stack_len < 1 {
-                            return None;
-                        }
-                        match self.traversal_stack.get_mut(stack_len - 1) {
-                            None => return self.item_stack.pop(),
-                            Some(next_iter) => match next_iter.next() {
-                                None => {
-                                    self.traversal_stack.pop();
-                                    return self.item_stack.pop();
-                                }
-                                Some(node) => {
-                                    let (value, children) = node.$get_value_and_children();
-                                    self.item_stack.push(value);
-                                    self.traversal_stack.push(children.into_iter());
-                                }
-                            },
-                        }
-                    },
+
+                    return self.item_stack.pop();
                 }
             }
         }
@@ -53,37 +47,25 @@ macro_rules! get_mut_context {
 macro_rules! postorder_ancestors_streaming_iterator_impl {
     ($get_value_and_children: ident) => {
         fn advance(&mut self) {
-            let mut is_first_iteration = true;
             if let Some(next) = self.root.take() {
                 let (value, children) = next.$get_value_and_children();
                 self.traversal_stack.push(children.into_iter());
                 self.item_stack.push(value);
-                is_first_iteration = false;
+            } else {
+                self.item_stack.pop();
             }
 
-            loop {
-                if let Some(top) = self.traversal_stack.last_mut() {
-                    if let Some(node) = top.next() {
-                        let (value, children) = node.$get_value_and_children();
-                        if is_first_iteration {
-                            self.item_stack.pop();
-                        }
+            while let Some(top) = self.traversal_stack.last_mut() {
+                if let Some(node) = top.next() {
+                    let (value, children) = node.$get_value_and_children();
 
-                        self.traversal_stack.push(children.into_iter());
-                        self.item_stack.push(value);
-                        is_first_iteration = false;
-                        continue;
-                    }
-
-                    if self.item_stack.len() > self.traversal_stack.len() {
-                        self.item_stack.pop();
-                    }
-                    self.traversal_stack.pop();
-                    return;
-                } else {
-                    self.item_stack.pop();
-                    return;
+                    self.traversal_stack.push(children.into_iter());
+                    self.item_stack.push(value);
+                    continue;
                 }
+
+                self.traversal_stack.pop();
+                break;
             }
         }
 

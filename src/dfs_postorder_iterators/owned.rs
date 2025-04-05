@@ -122,47 +122,40 @@ where
 {
     type Item = TreeContextNoChildren<Node>;
     fn advance(&mut self) {
-        let mut is_first_iteration = true;
         if let Some(next) = self.root.take() {
             let (value, children) = next.get_value_and_children();
             self.traversal_stack.push(children.into_iter());
             self.current_context.ancestors.push(value);
             self.current_context.path.push(usize::MAX);
-            is_first_iteration = false;
+        } else {
+            self.current_context.ancestors.pop();
+            if self.current_context.ancestors.is_empty() {
+                return;
+            }
         }
 
         loop {
             if let Some(top) = self.traversal_stack.last_mut() {
                 if let Some(node) = top.next() {
-                    // Path is not populated on the first pass over just the root node.
-                    if let Some(last) = self.current_context.path.last_mut() {
-                        *last = last.wrapping_add(1);
-                    }
+                    let last = self
+                        .current_context
+                        .path
+                        .last_mut()
+                        .expect("There to be a path unless we are on the root element");
+                    *last = last.wrapping_add(1);
 
                     let (value, children) = node.get_value_and_children();
-                    if is_first_iteration {
-                        self.current_context.ancestors.pop();
-                    }
 
                     self.traversal_stack.push(children.into_iter());
                     self.current_context.ancestors.push(value);
                     self.current_context.path.push(usize::MAX);
-                    is_first_iteration = false;
                     continue;
                 }
-
-                if self.current_context.ancestors.len() > self.traversal_stack.len() {
-                    self.current_context.ancestors.pop();
-                }
-
-                self.current_context.path.pop();
-                self.traversal_stack.pop();
-                return;
-            } else {
-                self.current_context.ancestors.pop();
-                self.current_context.path.pop();
-                return;
             }
+
+            self.traversal_stack.pop();
+            self.current_context.path.pop();
+            return;
         }
     }
 
@@ -378,50 +371,44 @@ where
 {
     type Item = BinaryTreeContextNoChildren<Node>;
     fn advance(&mut self) {
-        let mut is_first_iteration = true;
         if let Some(next) = self.root.take() {
             let (value, children) = next.get_value_and_children_binary();
             self.traversal_stack.push(children.into_iter());
             self.current_context.ancestors.push(value);
             self.current_context.path.push(usize::MAX);
-            is_first_iteration = false;
+        } else {
+            self.current_context.ancestors.pop();
+            if self.current_context.ancestors.is_empty() {
+                return;
+            }
         }
 
         'outer: loop {
             if let Some(top) = self.traversal_stack.last_mut() {
                 while let Some(node) = top.next() {
-                    if let Some(last) = self.current_context.path.last_mut() {
-                        *last = last.wrapping_add(1);
-                    }
+                    let last = self
+                        .current_context
+                        .path
+                        .last_mut()
+                        .expect("There to be a path unless we are on the root element");
+                    *last = last.wrapping_add(1);
 
                     if let Some(node) = node {
                         // Path is not populated on the first pass over just the root node.
 
                         let (value, children) = node.get_value_and_children_binary();
-                        if is_first_iteration {
-                            self.current_context.ancestors.pop();
-                        }
 
                         self.traversal_stack.push(children.into_iter());
                         self.current_context.ancestors.push(value);
                         self.current_context.path.push(usize::MAX);
-                        is_first_iteration = false;
                         continue 'outer;
                     }
                 }
-
-                if self.current_context.ancestors.len() > self.traversal_stack.len() {
-                    self.current_context.ancestors.pop();
-                }
-
-                self.current_context.path.pop();
-                self.traversal_stack.pop();
-                return;
-            } else {
-                self.current_context.ancestors.pop();
-                self.current_context.path.pop();
-                return;
             }
+
+            self.traversal_stack.pop();
+            self.current_context.path.pop();
+            return;
         }
     }
 
