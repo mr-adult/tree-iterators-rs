@@ -33,11 +33,10 @@ macro_rules! bfs_next {
                     return has_children;
                 }
 
-                let top_of_traversal_stack = if let Some(last) = self.traversal_stack.last_mut() {
-                    last
-                } else {
-                    &mut self.tree_cache
-                };
+                let top_of_traversal_stack = self
+                    .traversal_stack
+                    .last_mut()
+                    .unwrap_or(&mut self.tree_cache);
 
                 if !top_of_traversal_stack.children.is_empty() {
                     top_of_traversal_stack.children.push_front(None);
@@ -61,11 +60,10 @@ macro_rules! bfs_next {
         fn advance_dfs(&mut self) {
             let starting_depth = self.item_stack.len();
             loop {
-                let tree_node = if let Some(last) = self.traversal_stack.last_mut() {
-                    last
-                } else {
-                    &mut self.tree_cache
-                };
+                let tree_node = self
+                    .traversal_stack
+                    .last_mut()
+                    .unwrap_or(&mut self.tree_cache);
 
                 let child = if let Some(child) = tree_node.children.pop_front() {
                     child
