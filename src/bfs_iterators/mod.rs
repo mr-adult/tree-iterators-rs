@@ -11,19 +11,16 @@ macro_rules! bfs_next {
                 return Some(value);
             }
 
-            loop {
-                if let Some(next_queue) = self.traversal_queue.get_mut(0) {
-                    if let Some(next) = next_queue.next() {
-                        let (value, children) = next.$get_value_and_children();
-                        self.traversal_queue.push_back(children.into_iter());
-                        break Some(value);
-                    }
-
-                    self.traversal_queue.pop_front();
-                } else {
-                    break None;
+            while let Some(next_queue) = self.traversal_queue.get_mut(0) {
+                if let Some(next) = next_queue.next() {
+                    let (value, children) = next.$get_value_and_children();
+                    self.traversal_queue.push_back(children.into_iter());
+                    return Some(value);
                 }
+
+                self.traversal_queue.pop_front();
             }
+            return None;
         }
     };
 }
@@ -36,24 +33,23 @@ macro_rules! bfs_context_streaming_iterator_impl {
                 return;
             }
 
+            if self.current_context.ancestors.is_empty() {
+                return;
+            }
+
             let mut children = core::mem::MaybeUninit::uninit();
             core::mem::swap(&mut children, &mut self.current_context.children);
             self.iterator_queue
                 .push_back(unsafe { children.assume_init() }.into_iter());
 
             loop {
-                let iter = if let Some(iter) = self.iterator_queue.get_mut(0) {
-                    iter
-                } else {
-                    self.current_context.ancestors.clear();
-                    break;
-                };
+                if self.current_context.ancestors.len() == self.traversal_stack.len() + 2 {
+                    self.pop_from_item_stack();
+                }
+
+                let iter = &mut self.iterator_queue[0];
 
                 if let Some(next) = iter.next() {
-                    if self.current_context.ancestors.len() == self.traversal_stack.len() + 2 {
-                        self.pop_from_item_stack();
-                    }
-
                     self.current_context.path.push(self.path_counter);
                     self.path_counter += 1;
 
@@ -64,23 +60,19 @@ macro_rules! bfs_context_streaming_iterator_impl {
                 }
 
                 self.path_counter = 0;
-                if self.current_context.ancestors.len() == self.traversal_stack.len() + 2 {
-                    self.pop_from_item_stack();
-                }
-
-                let top_of_traversal_stack = if self.traversal_stack.is_empty() {
-                    &mut self.tree_cache
-                } else {
-                    self.traversal_stack.last_mut().unwrap()
-                };
+                let top_of_traversal_stack = self
+                    .traversal_stack
+                    .last_mut()
+                    .unwrap_or(&mut self.tree_cache);
 
                 if !top_of_traversal_stack.children.is_empty() {
                     top_of_traversal_stack.children.push_front(None);
                 } else {
-                    // used up all the values, so just pop it
-                    while self.traversal_stack.len() > 0
-                        && (self.traversal_stack.last().unwrap().children.len() <= 1)
-                    {
+                    while let Some(last) = self.traversal_stack.last() {
+                        if last.children.len() > 1 {
+                            break;
+                        }
+
                         self.traversal_stack.pop();
                         self.current_context.ancestors.pop();
                         self.current_context.path.pop();
@@ -89,6 +81,11 @@ macro_rules! bfs_context_streaming_iterator_impl {
 
                 self.advance_dfs();
                 self.iterator_queue.pop_front();
+
+                if self.iterator_queue.is_empty() {
+                    self.current_context.ancestors.clear();
+                    break;
+                }
             }
         }
 
@@ -138,9 +135,12 @@ macro_rules! bfs_context_advance_iterator {
                         .ancestors
                         .push(unsafe { value.value.assume_init() });
                     value.value = core::mem::MaybeUninit::uninit();
+
                     self.current_context.path.push(value.path_segment);
+
                     let has_children = !value.children.is_empty();
                     self.traversal_stack.push(value);
+
                     if !has_children && self.current_context.ancestors.len() >= starting_depth {
                         break;
                     } else {
@@ -164,14 +164,13 @@ macro_rules! bfs_context_advance_iterator {
                     target.path_segment = self.current_context.path.pop().unwrap();
                 }
 
-                if let Some(popped) = self.traversal_stack.pop() {
-                    let parent = if self.traversal_stack.len() < 1 {
-                        &mut self.tree_cache
-                    } else {
-                        self.traversal_stack.last_mut().unwrap()
-                    };
-
-                    parent.children.push_back(Some(popped));
+                let popped = self.traversal_stack.pop();
+                if popped.is_some() {
+                    self.traversal_stack
+                        .last_mut()
+                        .unwrap_or(&mut self.tree_cache)
+                        .children
+                        .push_back(popped);
                 }
             }
         }
@@ -204,25 +203,24 @@ macro_rules! bfs_context_binary_streaming_iterator_impl {
                 return;
             }
 
+            if self.current_context.ancestors.is_empty() {
+                return;
+            }
+
             let mut children = core::mem::MaybeUninit::uninit();
             core::mem::swap(&mut children, &mut self.current_context.children);
             self.iterator_queue
                 .push_back(unsafe { children.assume_init() }.into_iter());
 
             'outer: loop {
-                let iter = if let Some(iter) = self.iterator_queue.get_mut(0) {
-                    iter
-                } else {
-                    self.current_context.ancestors.clear();
-                    break;
-                };
+                if self.current_context.ancestors.len() == self.traversal_stack.len() + 2 {
+                    self.pop_from_item_stack();
+                }
+
+                let iter = &mut self.iterator_queue[0];
 
                 while let Some(next) = iter.next() {
                     if let Some(next) = next {
-                        if self.current_context.ancestors.len() == self.traversal_stack.len() + 2 {
-                            self.pop_from_item_stack();
-                        }
-
                         self.current_context.path.push(self.path_counter);
                         self.path_counter += 1;
 
@@ -236,23 +234,20 @@ macro_rules! bfs_context_binary_streaming_iterator_impl {
                 }
 
                 self.path_counter = 0;
-                if self.current_context.ancestors.len() == self.traversal_stack.len() + 2 {
-                    self.pop_from_item_stack();
-                }
-
-                let top_of_traversal_stack = if self.traversal_stack.is_empty() {
-                    &mut self.tree_cache
-                } else {
-                    self.traversal_stack.last_mut().unwrap()
-                };
+                let top_of_traversal_stack = self
+                    .traversal_stack
+                    .last_mut()
+                    .unwrap_or(&mut self.tree_cache);
 
                 if !top_of_traversal_stack.children.is_empty() {
                     top_of_traversal_stack.children.push_front(None);
                 } else {
                     // used up all the values, so just pop it
-                    while self.traversal_stack.len() > 0
-                        && (self.traversal_stack.last().unwrap().children.len() <= 1)
-                    {
+                    while let Some(last) = self.traversal_stack.last() {
+                        if last.children.len() > 1 {
+                            break;
+                        }
+
                         self.traversal_stack.pop();
                         self.current_context.ancestors.pop();
                         self.current_context.path.pop();
@@ -261,6 +256,10 @@ macro_rules! bfs_context_binary_streaming_iterator_impl {
 
                 self.advance_dfs();
                 self.iterator_queue.pop_front();
+                if self.iterator_queue.is_empty() {
+                    self.current_context.ancestors.clear();
+                    break;
+                }
             }
         }
 
@@ -283,41 +282,33 @@ macro_rules! bfs_ancestors_streaming_iterator_impl {
             }
 
             loop {
-                let iter = if let Some(iter) = self.iterator_queue.get_mut(0) {
-                    iter
-                } else {
-                    self.item_stack.clear();
-                    return;
-                };
+                if self.item_stack.len() == self.traversal_stack.len() + 2 {
+                    self.pop_from_item_stack();
+                }
+
+                let iter = &mut self.iterator_queue[0];
 
                 if let Some(next) = iter.next() {
-                    if self.item_stack.len() == self.traversal_stack.len() + 2 {
-                        self.pop_from_item_stack();
-                    }
-
                     let (value, children) = next.$get_value_and_children();
                     self.item_stack.push(value);
                     self.iterator_queue.push_back(children.into_iter());
                     break;
                 }
 
-                if self.item_stack.len() == self.traversal_stack.len() + 2 {
-                    self.pop_from_item_stack();
-                }
-
-                let top_of_traversal_stack = if self.traversal_stack.is_empty() {
-                    &mut self.tree_cache
-                } else {
-                    self.traversal_stack.last_mut().unwrap()
-                };
+                let top_of_traversal_stack = self
+                    .traversal_stack
+                    .last_mut()
+                    .unwrap_or(&mut self.tree_cache);
 
                 if !top_of_traversal_stack.children.is_empty() {
                     top_of_traversal_stack.children.push_front(None);
                 } else {
                     // used up all the values, so just pop it
-                    while self.traversal_stack.len() > 0
-                        && (self.traversal_stack.last().unwrap().children.len() <= 1)
-                    {
+                    while let Some(last) = self.traversal_stack.last() {
+                        if last.children.len() > 1 {
+                            break;
+                        }
+
                         self.traversal_stack.pop();
                         self.item_stack.pop();
                     }
@@ -325,6 +316,10 @@ macro_rules! bfs_ancestors_streaming_iterator_impl {
 
                 self.advance_dfs();
                 self.iterator_queue.pop_front();
+                if self.iterator_queue.is_empty() {
+                    self.item_stack.clear();
+                    return;
+                }
             }
         }
 
