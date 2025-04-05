@@ -5,79 +5,49 @@ pub mod owned;
 macro_rules! streaming_leaves {
     ($get_value_and_children: ident) => {
         fn advance(&mut self) {
+            if let Some(root) = self.root.take() {
+                let (value, children) = root.$get_value_and_children();
+                self.new_traversal_stack.push(children.into_iter());
+                self.item_stack.push(value);
+            } else {
+                self.item_stack.pop();
+            }
+
+            let mut pushed_another_iterator = false;
             loop {
-                match core::mem::take(&mut self.root) {
-                    Some(next) => {
-                        let (value, children) = next.$get_value_and_children();
+                if let Some(new_stack_last) = self.new_traversal_stack.last_mut() {
+                    if let Some(node) = new_stack_last.next() {
+                        let (value, children) = node.$get_value_and_children();
                         self.new_traversal_stack.push(children.into_iter());
                         self.item_stack.push(value);
+                        pushed_another_iterator = true;
+                        continue;
                     }
-                    None => {
-                        let mut pushed_another_iterator = false;
-                        loop {
-                            let total_stack_len =
-                                self.old_traversal_stack.len() + self.new_traversal_stack.len();
-                            if total_stack_len < 1 {
-                                self.item_stack.pop();
-                                return;
-                            }
-                            let new_stack_len = self.new_traversal_stack.len();
-                            if new_stack_len > 0 {
-                                match self.new_traversal_stack.get_mut(new_stack_len - 1) {
-                                    None => {
-                                        self.item_stack.pop();
-                                    }
-                                    Some(next_iter) => match next_iter.next() {
-                                        None => {
-                                            if self.item_stack.len() > total_stack_len {
-                                                self.item_stack.pop();
-                                            }
-                                            self.new_traversal_stack.pop();
-                                            if pushed_another_iterator {
-                                                return;
-                                            }
-                                        }
-                                        Some(node) => {
-                                            let (value, children) = node.$get_value_and_children();
-                                            if self.item_stack.len() > total_stack_len {
-                                                self.item_stack.pop();
-                                            }
-                                            self.new_traversal_stack.push(children.into_iter());
-                                            self.item_stack.push(value);
-                                            pushed_another_iterator = true;
-                                        }
-                                    },
-                                }
-                                continue;
-                            }
-                            let old_traversal_stack_len = self.old_traversal_stack.len();
-                            match self
-                                .old_traversal_stack
-                                .get_mut(old_traversal_stack_len - 1)
-                            {
-                                None => {
-                                    self.item_stack.pop();
-                                }
-                                Some(next_iter) => match next_iter.next() {
-                                    None => {
-                                        if self.item_stack.len() > total_stack_len {
-                                            self.item_stack.pop();
-                                        }
-                                        self.old_traversal_stack.pop();
-                                    }
-                                    Some(node) => {
-                                        let (value, children) = node.$get_value_and_children();
-                                        if self.item_stack.len() > total_stack_len {
-                                            self.item_stack.pop();
-                                        }
-                                        self.new_traversal_stack.push(children.into_iter());
-                                        self.item_stack.push(value);
-                                        pushed_another_iterator = true;
-                                    }
-                                },
-                            }
-                        }
+                }
+
+                self.new_traversal_stack.pop();
+                if pushed_another_iterator {
+                    return;
+                }
+
+                if let Some(old_stack_last) = self.old_traversal_stack.last_mut() {
+                    if let Some(node) = old_stack_last.next() {
+                        let (value, children) = node.$get_value_and_children();
+                        self.new_traversal_stack.push(children.into_iter());
+                        self.item_stack.push(value);
+                        pushed_another_iterator = true;
+                        continue;
                     }
+                }
+
+                self.old_traversal_stack.pop();
+                if pushed_another_iterator {
+                    return;
+                }
+
+                self.item_stack.pop();
+                if self.item_stack.is_empty() {
+                    break;
                 }
             }
         }

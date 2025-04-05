@@ -3,7 +3,7 @@ This method converts the current iterator into an iterator that will yield only 
 A leaf is defined as: Any tree node that has no children. Given a tree of the following shape, this iterator would always yield values in the following order (regardless of iteration type, but this is not always the case):
 \[0, 1, 3\], \[0, 1, 4\], \[0, 2, 5\], \[0, 2, 6, 7, 8, 9, 10\]
 
-```ignore
+```text
        0
       / \
      1   2

@@ -1,6 +1,8 @@
 use alloc::boxed::Box;
 use alloc::vec::Vec;
-use core::fmt::Debug;
+
+use core::{fmt::Debug, iter::FusedIterator};
+
 use core::iter::FlatMap;
 
 #[cfg(feature = "serde")]
@@ -29,18 +31,20 @@ use super::dfs_postorder_iterators::{
     owned::{OwnedBinaryDFSPostorderIterator, OwnedDFSPostorderIterator},
 };
 
+pub use super::tree_context::TreeContext;
+
 /// A default implemenation of a binary tree node. This struct
 /// provides a series of tree traversal utilities to allow
 /// you to easily work with and modify binary trees.
 #[derive(Clone, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct BinaryTreeNode<T> {
+pub struct BinaryTree<T> {
     /// This node's value
     pub value: T,
     /// The left child of the current node.
-    pub left: Option<Box<BinaryTreeNode<T>>>,
+    pub left: Option<Box<BinaryTree<T>>>,
     /// The right child of the current node.
-    pub right: Option<Box<BinaryTreeNode<T>>>,
+    pub right: Option<Box<BinaryTree<T>>>,
 }
 
 /// A default implemenation of a tree node. This struct
@@ -48,11 +52,11 @@ pub struct BinaryTreeNode<T> {
 /// you to easily work with and modify arbitrary trees.
 #[derive(Clone, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct TreeNode<T> {
+pub struct Tree<T> {
     /// This node's value
     pub value: T,
     /// The children of the current node.
-    pub children: Vec<TreeNode<T>>,
+    pub children: Vec<Tree<T>>,
 }
 
 /// Helper type to define the BinaryTreeNode's
@@ -100,7 +104,7 @@ where
     ///
     /// In this traversal, we scan each level of the tree from left to
     /// right before going down to the next level.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -132,7 +136,7 @@ where
     ///
     /// In this traversal, each node will only be traversed before any
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -165,7 +169,7 @@ where
     ///
     /// In this traversal, each node will be traversed after its left
     /// child and before its right child.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -198,7 +202,7 @@ where
     ///
     /// In this traversal, each node will only be traversed after all
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -252,7 +256,7 @@ where
     ///
     /// In this traversal, we scan each level of the tree from left to
     /// right before going down to the next level.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -284,7 +288,7 @@ where
     ///
     /// In this traversal, each node will only be traversed before any
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -317,7 +321,7 @@ where
     ///
     /// In this traversal, each node will only be traversed after all
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -384,7 +388,7 @@ where
     ///
     /// In this traversal, we scan each level of the tree from left to
     /// right before going down to the next level.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -416,7 +420,7 @@ where
     ///
     /// In this traversal, each node will only be traversed before any
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -449,7 +453,7 @@ where
     ///
     /// In this traversal, each node will be traversed after its left
     /// child and before its right child.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -482,7 +486,7 @@ where
     ///
     /// In this traversal, each node will only be traversed after all
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -516,7 +520,7 @@ where
 
     /// The type of iterator that can be used to iterate over each node's children
     /// collection.
-    type MutBorrowedChildren: IntoIterator<Item = &'a mut Self>;
+    type MutBorrowedChildren: IntoIterator<Item = &'a mut Self, IntoIter: FusedIterator>;
 
     /// This method gets the value and children from this node. The other
     /// methods of this trait assume that the 'Children' list does not contain
@@ -537,7 +541,7 @@ where
     ///
     /// In this traversal, we scan each level of the tree from left to
     /// right before going down to the next level.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -569,7 +573,7 @@ where
     ///
     /// In this traversal, each node will only be traversed before any
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -602,7 +606,7 @@ where
     ///
     /// In this traversal, each node will only be traversed after all
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -666,7 +670,7 @@ where
     ///
     /// In this traversal, we scan each level of the tree from left to
     /// right before going down to the next level.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -698,7 +702,7 @@ where
     ///
     /// In this traversal, each node will only be traversed before any
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -731,7 +735,7 @@ where
     ///
     /// In this traversal, each node will be traversed after its left
     /// child and before its right child.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -764,7 +768,7 @@ where
     ///
     /// In this traversal, each node will only be traversed after all
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -797,7 +801,7 @@ where
     type BorrowedValue: Sized;
     /// The type of iterator that can be used to iterate over each node's children
     /// collection.
-    type BorrowedChildren: IntoIterator<Item = &'a Self>;
+    type BorrowedChildren: IntoIterator<Item = &'a Self, IntoIter: FusedIterator>;
 
     /// This method gets the value and children from this node, consuming it
     /// in the process. The other methods of this trait assume that the 'Children'
@@ -816,7 +820,7 @@ where
     ///
     /// In this traversal, we scan each level of the tree from left to
     /// right before going down to the next level.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -848,7 +852,7 @@ where
     ///
     /// In this traversal, each node will only be traversed before any
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -881,7 +885,7 @@ where
     ///
     /// In this traversal, each node will only be traversed after all
     /// of its children have been traversed.
-    /// ```ignore
+    /// ```text
     ///        0
     ///       / \
     ///      1   2
@@ -905,7 +909,7 @@ where
     }
 }
 
-impl<T> OwnedTreeNode for TreeNode<T> {
+impl<T> OwnedTreeNode for Tree<T> {
     type OwnedValue = T;
     type OwnedChildren = Vec<Self>;
 
@@ -917,7 +921,7 @@ impl<T> OwnedTreeNode for TreeNode<T> {
     }
 }
 
-impl<'a, T> MutBorrowedTreeNode<'a> for TreeNode<T>
+impl<'a, T> MutBorrowedTreeNode<'a> for Tree<T>
 where
     T: 'a,
 {
@@ -934,7 +938,7 @@ where
     }
 }
 
-impl<'a, T> BorrowedTreeNode<'a> for TreeNode<T>
+impl<'a, T> BorrowedTreeNode<'a> for Tree<T>
 where
     T: 'a,
 {
@@ -949,7 +953,7 @@ where
     }
 }
 
-impl<T> OwnedBinaryTreeNode for BinaryTreeNode<T> {
+impl<T> OwnedBinaryTreeNode for BinaryTree<T> {
     type OwnedValue = T;
 
     fn get_value_and_children_binary(self) -> (Self::OwnedValue, [Option<Self>; 2]) {
@@ -969,7 +973,7 @@ impl<T> OwnedBinaryTreeNode for BinaryTreeNode<T> {
     }
 }
 
-impl<'a, T> MutBorrowedBinaryTreeNode<'a> for BinaryTreeNode<T>
+impl<'a, T> MutBorrowedBinaryTreeNode<'a> for BinaryTree<T>
 where
     Self: 'a,
 {
@@ -994,7 +998,7 @@ where
     }
 }
 
-impl<'a, T> BorrowedBinaryTreeNode<'a> for BinaryTreeNode<T>
+impl<'a, T> BorrowedBinaryTreeNode<'a> for BinaryTree<T>
 where
     Self: 'a,
 {
@@ -1032,10 +1036,48 @@ pub(crate) mod tests {
     use alloc::vec;
 
     #[cfg(test)]
+    extern crate std;
+    #[cfg(test)]
+    use std::collections::HashMap;
+    #[cfg(test)]
+    pub(crate) fn get_value_to_path_map() -> HashMap<usize, Vec<usize>> {
+        let mut result = HashMap::new();
+        result.insert(0, vec![]);
+        result.insert(1, vec![0]);
+        result.insert(2, vec![1]);
+        result.insert(3, vec![0, 0]);
+        result.insert(4, vec![0, 1]);
+        result.insert(5, vec![1, 0]);
+        result.insert(6, vec![1, 1]);
+        result.insert(7, vec![1, 1, 0]);
+        result.insert(8, vec![1, 1, 0, 0]);
+        result.insert(9, vec![1, 1, 0, 0, 0]);
+        result.insert(10, vec![1, 1, 0, 0, 0, 0]);
+        result
+    }
+
+    #[cfg(test)]
+    pub(crate) fn get_value_to_path_map_binary() -> HashMap<usize, Vec<usize>> {
+        let mut result = HashMap::new();
+        result.insert(0, vec![]);
+        result.insert(1, vec![0]);
+        result.insert(2, vec![1]);
+        result.insert(3, vec![0, 0]);
+        result.insert(4, vec![0, 1]);
+        result.insert(5, vec![1, 0]);
+        result.insert(6, vec![1, 1]);
+        result.insert(7, vec![1, 1, 0]);
+        result.insert(8, vec![1, 1, 0, 1]);
+        result.insert(9, vec![1, 1, 0, 1, 0]);
+        result.insert(10, vec![1, 1, 0, 1, 0, 1]);
+        result
+    }
+
+    #[cfg(test)]
     mod dfs_preorder_tests {
         use super::{
             assert_len, create_binary_tree_for_testing, create_trees_for_testing,
-            get_expected_metadata_for_value,
+            get_expected_metadata_for_value, get_value_to_path_map, get_value_to_path_map_binary,
         };
         use crate::prelude::*;
         use streaming_iterator::StreamingIterator;
@@ -1133,6 +1175,76 @@ pub(crate) mod tests {
         }
 
         #[test]
+        fn dfs_preorder_attach_context_works() {
+            let expected = get_expected_order_dfs_preorder();
+            let expected_paths = get_value_to_path_map();
+
+            for mut test_tree in create_trees_for_testing() {
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.dfs_preorder_iter().attach_context();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], *value.ancestors()[value.ancestors().len() - 1]);
+                    let expected = get_expected_metadata_for_value(
+                        *value.ancestors()[value.ancestors().len() - 1],
+                    );
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], *value.ancestors[j]);
+                    }
+                    assert_eq!(
+                        *expected_paths
+                            .get(*value.ancestors().last().unwrap())
+                            .unwrap(),
+                        value.path
+                    );
+                    i += 1;
+                }
+                assert_eq!(expected.len(), i);
+                drop(iter_with_metadata);
+
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.dfs_preorder_iter_mut().attach_context();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], *value.ancestors()[value.ancestors().len() - 1]);
+                    let expected = get_expected_metadata_for_value(
+                        *value.ancestors()[value.ancestors().len() - 1],
+                    );
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], *value.ancestors()[j]);
+                    }
+                    assert_eq!(
+                        *expected_paths
+                            .get(*value.ancestors().last().unwrap())
+                            .unwrap(),
+                        value.path
+                    );
+                    i += 1;
+                }
+                assert_eq!(expected.len(), i);
+                drop(iter_with_metadata);
+
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.dfs_preorder().attach_context();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], value.ancestors()[value.ancestors().len() - 1]);
+                    let expected = get_expected_metadata_for_value(
+                        value.ancestors()[value.ancestors().len() - 1],
+                    );
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], value.ancestors()[j]);
+                    }
+                    assert_eq!(
+                        *expected_paths
+                            .get(value.ancestors().last().unwrap())
+                            .unwrap(),
+                        value.path
+                    );
+                    i += 1;
+                }
+                assert_eq!(expected.len(), i);
+            }
+        }
+
+        #[test]
         fn binary_dfs_preorder_attach_ancestors_works() {
             let expected = get_expected_order_dfs_preorder();
 
@@ -1176,12 +1288,80 @@ pub(crate) mod tests {
             }
             assert_eq!(expected.len(), i);
         }
+
+        #[test]
+        fn binary_dfs_preorder_attach_context_works() {
+            let expected = get_expected_order_dfs_preorder();
+            let expected_paths = get_value_to_path_map_binary();
+
+            let mut test_tree = create_binary_tree_for_testing();
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.dfs_preorder_iter().attach_context();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], *value.ancestors()[value.ancestors().len() - 1]);
+                let expected = get_expected_metadata_for_value(
+                    *value.ancestors()[value.ancestors().len() - 1],
+                );
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value.ancestors[j]);
+                }
+                assert_eq!(
+                    *expected_paths
+                        .get(*value.ancestors().last().unwrap())
+                        .unwrap(),
+                    value.path
+                );
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
+            drop(iter_with_metadata);
+
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.dfs_preorder_iter_mut().attach_context();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], *value.ancestors()[value.ancestors().len() - 1]);
+                let expected = get_expected_metadata_for_value(
+                    *value.ancestors()[value.ancestors().len() - 1],
+                );
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value.ancestors()[j]);
+                }
+                assert_eq!(
+                    *expected_paths
+                        .get(*value.ancestors().last().unwrap())
+                        .unwrap(),
+                    value.path
+                );
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
+            drop(iter_with_metadata);
+
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.dfs_preorder().attach_context();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], value.ancestors()[value.ancestors().len() - 1]);
+                let expected =
+                    get_expected_metadata_for_value(value.ancestors()[value.ancestors().len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], value.ancestors()[j]);
+                }
+                assert_eq!(
+                    *expected_paths
+                        .get(value.ancestors().last().unwrap())
+                        .unwrap(),
+                    value.path
+                );
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
+        }
     }
 
     #[cfg(test)]
     mod dfs_inorder_tests {
         use super::{assert_len, create_binary_tree_for_testing, get_expected_metadata_for_value};
-        use crate::prelude::*;
+        use crate::prelude::{tests::get_value_to_path_map_binary, *};
         use streaming_iterator::StreamingIterator;
 
         pub(crate) fn get_expected_order_dfs_inorder() -> [usize; 11] {
@@ -1252,14 +1432,82 @@ pub(crate) mod tests {
             }
             assert_eq!(expected.len(), i);
         }
+
+        #[test]
+        fn binary_dfs_inorder_attach_context_works() {
+            let expected = get_expected_order_dfs_inorder();
+            let expected_paths = get_value_to_path_map_binary();
+
+            let mut test_tree = create_binary_tree_for_testing();
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.dfs_inorder_iter().attach_context();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], *value.ancestors()[value.ancestors().len() - 1]);
+                let expected = get_expected_metadata_for_value(
+                    *value.ancestors()[value.ancestors().len() - 1],
+                );
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value.ancestors()[j]);
+                }
+                assert_eq!(
+                    *expected_paths
+                        .get(value.ancestors().last().unwrap())
+                        .unwrap(),
+                    value.path
+                );
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
+            drop(iter_with_metadata);
+
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.dfs_inorder_iter_mut().attach_context();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], *value.ancestors()[value.ancestors().len() - 1]);
+                let expected = get_expected_metadata_for_value(
+                    *value.ancestors()[value.ancestors().len() - 1],
+                );
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value.ancestors()[j]);
+                }
+                assert_eq!(
+                    *expected_paths
+                        .get(value.ancestors().last().unwrap())
+                        .unwrap(),
+                    value.path
+                );
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
+            drop(iter_with_metadata);
+
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.dfs_inorder().attach_context();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], value.ancestors()[value.ancestors().len() - 1]);
+                let expected =
+                    get_expected_metadata_for_value(value.ancestors()[value.ancestors().len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], value.ancestors()[j]);
+                }
+                assert_eq!(
+                    *expected_paths
+                        .get(value.ancestors().last().unwrap())
+                        .unwrap(),
+                    value.path
+                );
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
+        }
     }
 
     mod dfs_postorder_tests {
         use super::{
             assert_len, create_binary_tree_for_testing, create_trees_for_testing,
-            get_expected_metadata_for_value,
+            get_expected_metadata_for_value, get_value_to_path_map,
         };
-        use crate::prelude::*;
+        use crate::prelude::{tests::get_value_to_path_map_binary, *};
         use streaming_iterator::StreamingIterator;
 
         pub(crate) fn get_expected_order_dfs_postorder() -> [usize; 11] {
@@ -1354,6 +1602,144 @@ pub(crate) mod tests {
         }
 
         #[test]
+        fn binary_dfs_postorder_attach_context_works() {
+            let expected = get_expected_order_dfs_postorder();
+            let expected_paths = get_value_to_path_map_binary();
+
+            let mut test_tree = create_binary_tree_for_testing();
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.dfs_postorder_iter().attach_context();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], *value.ancestors()[value.ancestors().len() - 1]);
+                let expected = get_expected_metadata_for_value(
+                    *value.ancestors()[value.ancestors().len() - 1],
+                );
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value.ancestors()[j]);
+                }
+                assert_eq!(
+                    *expected_paths
+                        .get(value.ancestors().last().unwrap())
+                        .unwrap(),
+                    value.path
+                );
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
+            drop(iter_with_metadata);
+
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.dfs_postorder_iter_mut().attach_context();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], *value.ancestors()[value.ancestors().len() - 1]);
+                let expected = get_expected_metadata_for_value(
+                    *value.ancestors()[value.ancestors().len() - 1],
+                );
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value.ancestors()[j]);
+                }
+                assert_eq!(
+                    *expected_paths
+                        .get(value.ancestors().last().unwrap())
+                        .unwrap(),
+                    value.path
+                );
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
+            drop(iter_with_metadata);
+
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.dfs_postorder().attach_context();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], value.ancestors()[value.ancestors().len() - 1]);
+                let expected =
+                    get_expected_metadata_for_value(value.ancestors()[value.ancestors().len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], value.ancestors()[j]);
+                }
+                assert_eq!(
+                    *expected_paths
+                        .get(value.ancestors().last().unwrap())
+                        .unwrap(),
+                    value.path
+                );
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
+        }
+
+        #[test]
+        fn dfs_postorder_attach_context_works() {
+            let expected = get_expected_order_dfs_postorder();
+            let expected_paths = get_value_to_path_map();
+
+            for mut test_tree in create_trees_for_testing() {
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.dfs_postorder_iter().attach_context();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], *value.ancestors()[value.ancestors().len() - 1]);
+                    let expected = get_expected_metadata_for_value(
+                        *value.ancestors()[value.ancestors().len() - 1],
+                    );
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], *value.ancestors()[j]);
+                    }
+                    assert_eq!(
+                        *expected_paths
+                            .get(*value.ancestors().last().unwrap())
+                            .unwrap(),
+                        value.path
+                    );
+                    i += 1;
+                }
+                assert_eq!(expected.len(), i);
+                drop(iter_with_metadata);
+
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.dfs_postorder_iter_mut().attach_context();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], *value.ancestors()[value.ancestors().len() - 1]);
+                    let expected = get_expected_metadata_for_value(
+                        *value.ancestors()[value.ancestors().len() - 1],
+                    );
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], *value.ancestors()[j]);
+                    }
+                    assert_eq!(
+                        *expected_paths
+                            .get(*value.ancestors().last().unwrap())
+                            .unwrap(),
+                        value.path
+                    );
+                    i += 1;
+                }
+                assert_eq!(expected.len(), i);
+                drop(iter_with_metadata);
+
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.dfs_postorder().attach_context();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], value.ancestors()[value.ancestors().len() - 1]);
+                    let expected = get_expected_metadata_for_value(
+                        value.ancestors()[value.ancestors().len() - 1],
+                    );
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], value.ancestors()[j]);
+                    }
+                    assert_eq!(
+                        *expected_paths
+                            .get(value.ancestors().last().unwrap())
+                            .unwrap(),
+                        value.path
+                    );
+                    i += 1;
+                }
+                assert_eq!(expected.len(), i);
+            }
+        }
+
+        #[test]
         fn binary_dfs_postorder_attach_ancestors_works() {
             let expected = get_expected_order_dfs_postorder();
 
@@ -1402,7 +1788,7 @@ pub(crate) mod tests {
     mod bfs_tests {
         use super::{
             assert_len, create_binary_tree_for_testing, create_trees_for_testing,
-            get_expected_metadata_for_value,
+            get_expected_metadata_for_value, get_value_to_path_map, get_value_to_path_map_binary,
         };
         use crate::prelude::*;
         use streaming_iterator::StreamingIterator;
@@ -1478,6 +1864,76 @@ pub(crate) mod tests {
         }
 
         #[test]
+        fn bfs_attach_context_works() {
+            let expected = get_expected_order_bfs();
+            let expected_paths = get_value_to_path_map();
+
+            for mut test_tree in create_trees_for_testing() {
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.bfs_iter().attach_context();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], *value.ancestors()[value.ancestors().len() - 1]);
+                    let expected = get_expected_metadata_for_value(
+                        *value.ancestors()[value.ancestors().len() - 1],
+                    );
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], *value.ancestors()[j]);
+                    }
+                    assert_eq!(
+                        *expected_paths
+                            .get(value.ancestors().last().unwrap())
+                            .unwrap(),
+                        value.path
+                    );
+                    i += 1;
+                }
+                assert_eq!(expected.len(), i);
+                drop(iter_with_metadata);
+
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.bfs_iter_mut().attach_context();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], *value.ancestors()[value.ancestors().len() - 1]);
+                    let expected = get_expected_metadata_for_value(
+                        *value.ancestors()[value.ancestors().len() - 1],
+                    );
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], *value.ancestors()[j]);
+                    }
+                    assert_eq!(
+                        *expected_paths
+                            .get(value.ancestors().last().unwrap())
+                            .unwrap(),
+                        value.path
+                    );
+                    i += 1;
+                }
+                assert_eq!(expected.len(), i);
+                drop(iter_with_metadata);
+
+                let mut i = 0;
+                let mut iter_with_metadata = test_tree.bfs().attach_context();
+                while let Some(value) = iter_with_metadata.next() {
+                    assert_eq!(expected[i], value.ancestors()[value.ancestors().len() - 1]);
+                    let expected = get_expected_metadata_for_value(
+                        value.ancestors()[value.ancestors().len() - 1],
+                    );
+                    for j in 0..expected.len() {
+                        assert_eq!(expected[j], value.ancestors()[j]);
+                    }
+                    assert_eq!(
+                        *expected_paths
+                            .get(value.ancestors().last().unwrap())
+                            .unwrap(),
+                        value.path
+                    );
+                    i += 1;
+                }
+                assert_eq!(expected.len(), i);
+            }
+        }
+
+        #[test]
         fn binary_bfs_has_correct_order() {
             let expected = get_expected_order_bfs();
             let mut test_tree = create_binary_tree_for_testing();
@@ -1496,6 +1952,74 @@ pub(crate) mod tests {
                 assert_eq!(expected[i], value);
             }
             assert_len!(expected.len(), test_tree.bfs());
+        }
+
+        #[test]
+        fn binary_bfs_attach_context_works() {
+            let expected = get_expected_order_bfs();
+            let expected_paths = get_value_to_path_map_binary();
+
+            let mut test_tree = create_binary_tree_for_testing();
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.bfs_iter().attach_context();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], *value.ancestors()[value.ancestors().len() - 1]);
+                let expected = get_expected_metadata_for_value(
+                    *value.ancestors()[value.ancestors().len() - 1],
+                );
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value.ancestors()[j]);
+                }
+                assert_eq!(
+                    *expected_paths
+                        .get(value.ancestors().last().unwrap())
+                        .unwrap(),
+                    value.path
+                );
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
+            drop(iter_with_metadata);
+
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.bfs_iter_mut().attach_context();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], *value.ancestors()[value.ancestors().len() - 1]);
+                let expected = get_expected_metadata_for_value(
+                    *value.ancestors()[value.ancestors().len() - 1],
+                );
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], *value.ancestors()[j]);
+                }
+                assert_eq!(
+                    *expected_paths
+                        .get(value.ancestors().last().unwrap())
+                        .unwrap(),
+                    value.path
+                );
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
+            drop(iter_with_metadata);
+
+            let mut i = 0;
+            let mut iter_with_metadata = test_tree.bfs().attach_context();
+            while let Some(value) = iter_with_metadata.next() {
+                assert_eq!(expected[i], value.ancestors()[value.ancestors().len() - 1]);
+                let expected =
+                    get_expected_metadata_for_value(value.ancestors()[value.ancestors().len() - 1]);
+                for j in 0..expected.len() {
+                    assert_eq!(expected[j], value.ancestors()[j]);
+                }
+                assert_eq!(
+                    *expected_paths
+                        .get(value.ancestors().last().unwrap())
+                        .unwrap(),
+                    value.path
+                );
+                i += 1;
+            }
+            assert_eq!(expected.len(), i);
         }
 
         #[test]
@@ -1544,9 +2068,7 @@ pub(crate) mod tests {
 
     #[cfg(test)]
     mod ancestors_leaves_tests {
-        extern crate std;
         use alloc::{string::ToString, vec};
-        use std::println;
 
         use super::{assert_len, create_binary_tree_for_testing, create_trees_for_testing};
         use crate::prelude::*;
@@ -1605,13 +2127,11 @@ pub(crate) mod tests {
                 for owned_iter in get_owned_leaves_iters(test_tree) {
                     assert_len!(expected.len(), owned_iter);
                 }
-
-                println!("finished first round");
             }
         }
 
         fn get_borrowed_leaves_iters<T>(
-            test_tree: &TreeNode<T>,
+            test_tree: &Tree<T>,
         ) -> impl Iterator<Item = Box<dyn StreamingIterator<Item = [&T]> + '_>> + '_ {
             [
                 Box::new(test_tree.dfs_preorder_iter().attach_ancestors().leaves())
@@ -1623,7 +2143,7 @@ pub(crate) mod tests {
         }
 
         fn get_mut_borrowed_leaves_iters<T>(
-            test_tree: &mut TreeNode<T>,
+            test_tree: &mut Tree<T>,
         ) -> impl Iterator<Item = Box<dyn StreamingIterator<Item = [&mut T]> + '_>> + '_ {
             // Rust doesn't like this, but we know that only 1 iterator will be accessed at a time
             // and no reallocations will be done as we are doing a readonly test,
@@ -1632,19 +2152,19 @@ pub(crate) mod tests {
             unsafe {
                 [
                     Box::new(
-                        (*(test_tree as *mut TreeNode<T>))
+                        (*(test_tree as *mut Tree<T>))
                             .dfs_preorder_iter_mut()
                             .attach_ancestors()
                             .leaves(),
                     ) as Box<dyn StreamingIterator<Item = [&mut T]>>,
                     Box::new(
-                        (*(test_tree as *mut TreeNode<T>))
+                        (*(test_tree as *mut Tree<T>))
                             .dfs_postorder_iter_mut()
                             .attach_ancestors()
                             .leaves(),
                     ),
                     Box::new(
-                        (*(test_tree as *mut TreeNode<T>))
+                        (*(test_tree as *mut Tree<T>))
                             .bfs_iter_mut()
                             .attach_ancestors()
                             .leaves(),
@@ -1655,7 +2175,7 @@ pub(crate) mod tests {
         }
 
         fn get_owned_leaves_iters<T: Clone + 'static>(
-            test_tree: TreeNode<T>,
+            test_tree: Tree<T>,
         ) -> [Box<dyn StreamingIterator<Item = [T]>>; 3] {
             [
                 Box::new(test_tree.clone().dfs_preorder().attach_ancestors().leaves())
@@ -1690,7 +2210,6 @@ pub(crate) mod tests {
                 borrowed_iter.for_each(|_| count += 1);
                 results.push(count);
             }
-            println!("{:?}", results);
 
             let mut i = 0;
             for borrowed_iter in get_borrowed_leaves_binary_iters(&test_tree) {
@@ -1728,7 +2247,7 @@ pub(crate) mod tests {
         }
 
         fn get_borrowed_leaves_binary_iters<T>(
-            test_tree: &BinaryTreeNode<T>,
+            test_tree: &BinaryTree<T>,
         ) -> [Box<dyn StreamingIterator<Item = [&T]> + '_>; 4] {
             [
                 Box::new(test_tree.dfs_preorder_iter().attach_ancestors().leaves())
@@ -1740,30 +2259,30 @@ pub(crate) mod tests {
         }
 
         fn get_mut_borrowed_leaves_binary_iters<T>(
-            test_tree: &mut BinaryTreeNode<T>,
+            test_tree: &mut BinaryTree<T>,
         ) -> impl Iterator<Item = Box<dyn StreamingIterator<Item = [&mut T]> + '_>> {
             unsafe {
                 [
                     Box::new(
-                        (*(test_tree as *mut BinaryTreeNode<T>))
+                        (*(test_tree as *mut BinaryTree<T>))
                             .dfs_preorder_iter_mut()
                             .attach_ancestors()
                             .leaves(),
                     ) as Box<dyn StreamingIterator<Item = [&mut T]>>,
                     Box::new(
-                        (*(test_tree as *mut BinaryTreeNode<T>))
+                        (*(test_tree as *mut BinaryTree<T>))
                             .dfs_inorder_iter_mut()
                             .attach_ancestors()
                             .leaves(),
                     ),
                     Box::new(
-                        (*(test_tree as *mut BinaryTreeNode<T>))
+                        (*(test_tree as *mut BinaryTree<T>))
                             .dfs_postorder_iter_mut()
                             .attach_ancestors()
                             .leaves(),
                     ),
                     Box::new(
-                        (*(test_tree as *mut BinaryTreeNode<T>))
+                        (*(test_tree as *mut BinaryTree<T>))
                             .bfs_iter_mut()
                             .attach_ancestors()
                             .leaves(),
@@ -1774,7 +2293,7 @@ pub(crate) mod tests {
         }
 
         fn get_owned_leaves_binary_iters<T: Clone + 'static>(
-            test_tree: BinaryTreeNode<T>,
+            test_tree: BinaryTree<T>,
         ) -> [Box<dyn StreamingIterator<Item = [T]>>; 4] {
             [
                 Box::new(test_tree.clone().dfs_preorder().attach_ancestors().leaves())
@@ -2298,9 +2817,6 @@ pub(crate) mod tests {
 
     #[cfg(test)]
     mod leaves_tests {
-        extern crate std;
-        use std::println;
-
         use super::{assert_len, create_binary_tree_for_testing, create_trees_for_testing};
         use crate::prelude::*;
 
@@ -2341,13 +2857,11 @@ pub(crate) mod tests {
                 for owned_iter in get_owned_leaves_iters(test_tree) {
                     assert_len!(expected.len(), owned_iter);
                 }
-
-                println!("finished first round");
             }
         }
 
         fn get_borrowed_leaves_iters<T>(
-            test_tree: &TreeNode<T>,
+            test_tree: &Tree<T>,
         ) -> impl Iterator<Item = Box<dyn Iterator<Item = &T> + '_>> + '_ {
             [
                 Box::new(test_tree.dfs_preorder_iter().leaves()) as Box<dyn Iterator<Item = &T>>,
@@ -2358,7 +2872,7 @@ pub(crate) mod tests {
         }
 
         fn get_mut_borrowed_leaves_iters<T>(
-            test_tree: &mut TreeNode<T>,
+            test_tree: &mut Tree<T>,
         ) -> impl Iterator<Item = Box<dyn Iterator<Item = &mut T> + '_>> + '_ {
             // Rust doesn't like this, but we know that only 1 iterator will be accessed at a time
             // and no reallocations will be done as we are doing a readonly test,
@@ -2367,23 +2881,23 @@ pub(crate) mod tests {
             unsafe {
                 [
                     Box::new(
-                        (*(test_tree as *mut TreeNode<T>))
+                        (*(test_tree as *mut Tree<T>))
                             .dfs_preorder_iter_mut()
                             .leaves(),
                     ) as Box<dyn Iterator<Item = &mut T>>,
                     Box::new(
-                        (*(test_tree as *mut TreeNode<T>))
+                        (*(test_tree as *mut Tree<T>))
                             .dfs_postorder_iter_mut()
                             .leaves(),
                     ),
-                    Box::new((*(test_tree as *mut TreeNode<T>)).bfs_iter_mut().leaves()),
+                    Box::new((*(test_tree as *mut Tree<T>)).bfs_iter_mut().leaves()),
                 ]
                 .into_iter()
             }
         }
 
         fn get_owned_leaves_iters<T: Clone + 'static>(
-            test_tree: TreeNode<T>,
+            test_tree: Tree<T>,
         ) -> [Box<dyn Iterator<Item = T>>; 3] {
             [
                 Box::new(test_tree.clone().dfs_preorder().leaves()) as Box<dyn Iterator<Item = T>>,
@@ -2429,7 +2943,7 @@ pub(crate) mod tests {
         }
 
         fn get_borrowed_leaves_binary_iters<T>(
-            test_tree: &BinaryTreeNode<T>,
+            test_tree: &BinaryTree<T>,
         ) -> [Box<dyn Iterator<Item = &T> + '_>; 4] {
             [
                 Box::new(test_tree.dfs_preorder_iter().leaves()) as Box<dyn Iterator<Item = &T>>,
@@ -2440,37 +2954,33 @@ pub(crate) mod tests {
         }
 
         fn get_mut_borrowed_leaves_binary_iters<T>(
-            test_tree: &mut BinaryTreeNode<T>,
+            test_tree: &mut BinaryTree<T>,
         ) -> impl Iterator<Item = Box<dyn Iterator<Item = &mut T> + '_>> {
             unsafe {
                 [
                     Box::new(
-                        (*(test_tree as *mut BinaryTreeNode<T>))
+                        (*(test_tree as *mut BinaryTree<T>))
                             .dfs_preorder_iter_mut()
                             .leaves(),
                     ) as Box<dyn Iterator<Item = &mut T>>,
                     Box::new(
-                        (*(test_tree as *mut BinaryTreeNode<T>))
+                        (*(test_tree as *mut BinaryTree<T>))
                             .dfs_inorder_iter_mut()
                             .leaves(),
                     ),
                     Box::new(
-                        (*(test_tree as *mut BinaryTreeNode<T>))
+                        (*(test_tree as *mut BinaryTree<T>))
                             .dfs_postorder_iter_mut()
                             .leaves(),
                     ),
-                    Box::new(
-                        (*(test_tree as *mut BinaryTreeNode<T>))
-                            .bfs_iter_mut()
-                            .leaves(),
-                    ),
+                    Box::new((*(test_tree as *mut BinaryTree<T>)).bfs_iter_mut().leaves()),
                 ]
                 .into_iter()
             }
         }
 
         fn get_owned_leaves_binary_iters<T: Clone + 'static>(
-            test_tree: BinaryTreeNode<T>,
+            test_tree: BinaryTree<T>,
         ) -> [Box<dyn Iterator<Item = T>>; 4] {
             [
                 Box::new(test_tree.clone().dfs_preorder().leaves()) as Box<dyn Iterator<Item = T>>,
@@ -2893,45 +3403,43 @@ pub(crate) mod tests {
         }
     }
 
-    fn create_trees_for_testing() -> Vec<TreeNode<usize>> {
+    fn create_trees_for_testing() -> Vec<Tree<usize>> {
         vec![create_tree_for_testing(Vec::new())]
     }
 
-    pub(crate) fn create_tree_for_testing(
-        empty_children_list: Vec<TreeNode<usize>>,
-    ) -> TreeNode<usize> {
-        TreeNode {
+    pub(crate) fn create_tree_for_testing(empty_children_list: Vec<Tree<usize>>) -> Tree<usize> {
+        Tree {
             value: 0,
             children: vec![
-                TreeNode {
+                Tree {
                     value: 1,
                     children: vec![
-                        TreeNode {
+                        Tree {
                             value: 3,
                             children: empty_children_list.clone(),
                         },
-                        TreeNode {
+                        Tree {
                             value: 4,
                             children: empty_children_list.clone(),
                         },
                     ],
                 },
-                TreeNode {
+                Tree {
                     value: 2,
                     children: vec![
-                        TreeNode {
+                        Tree {
                             value: 5,
                             children: empty_children_list.clone(),
                         },
-                        TreeNode {
+                        Tree {
                             value: 6,
-                            children: vec![TreeNode {
+                            children: vec![Tree {
                                 value: 7,
-                                children: vec![TreeNode {
+                                children: vec![Tree {
                                     value: 8,
-                                    children: vec![TreeNode {
+                                    children: vec![Tree {
                                         value: 9,
-                                        children: vec![TreeNode {
+                                        children: vec![Tree {
                                             value: 10,
                                             children: empty_children_list.clone(),
                                         }],
@@ -2945,40 +3453,40 @@ pub(crate) mod tests {
         }
     }
 
-    pub fn create_binary_tree_for_testing() -> BinaryTreeNode<usize> {
-        BinaryTreeNode {
+    pub fn create_binary_tree_for_testing() -> BinaryTree<usize> {
+        BinaryTree {
             value: 0,
-            left: Some(Box::new(BinaryTreeNode {
+            left: Some(Box::new(BinaryTree {
                 value: 1,
-                left: Some(Box::new(BinaryTreeNode {
+                left: Some(Box::new(BinaryTree {
                     value: 3,
                     left: None,
                     right: None,
                 })),
-                right: Some(Box::new(BinaryTreeNode {
+                right: Some(Box::new(BinaryTree {
                     value: 4,
                     left: None,
                     right: None,
                 })),
             })),
-            right: Some(Box::new(BinaryTreeNode {
+            right: Some(Box::new(BinaryTree {
                 value: 2,
-                left: Some(Box::new(BinaryTreeNode {
+                left: Some(Box::new(BinaryTree {
                     value: 5,
                     left: None,
                     right: None,
                 })),
-                right: Some(Box::new(BinaryTreeNode {
+                right: Some(Box::new(BinaryTree {
                     value: 6,
-                    left: Some(Box::new(BinaryTreeNode {
+                    left: Some(Box::new(BinaryTree {
                         value: 7,
                         left: None,
-                        right: Some(Box::new(BinaryTreeNode {
+                        right: Some(Box::new(BinaryTree {
                             value: 8,
-                            left: Some(Box::new(BinaryTreeNode {
+                            left: Some(Box::new(BinaryTree {
                                 value: 9,
                                 left: None,
-                                right: Some(Box::new(BinaryTreeNode {
+                                right: Some(Box::new(BinaryTree {
                                     value: 10,
                                     left: None,
                                     right: None,

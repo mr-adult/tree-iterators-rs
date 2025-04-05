@@ -12,7 +12,8 @@ where
 {
     pub(crate) root: Option<&'a mut Node>,
     pub(crate) old_traversal_queue: VecDeque<<Node::MutBorrowedChildren as IntoIterator>::IntoIter>,
-    pub(crate) new_traversal_queue: VecDeque<Peekable<<Node::MutBorrowedChildren as IntoIterator>::IntoIter>>,
+    pub(crate) new_traversal_queue:
+        VecDeque<Peekable<<Node::MutBorrowedChildren as IntoIterator>::IntoIter>>,
 }
 
 impl<'a, Node> MutBorrowedLeavesIterator<'a, Node>

@@ -5,12 +5,15 @@ use crate::{
         ancestors_depth_first::owned::OwnedBinaryDFSLeavesPostorderIteratorWithAncestors,
         depth_first::owned::OwnedBinaryLeavesIterator,
     },
-    prelude::OwnedBinaryTreeNode,
+    prelude::{OwnedBinaryTreeNode, TreeContext},
 };
 use alloc::vec::Vec;
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
 
-use super::{dfs_inorder_next, dfs_inorder_streaming_iterator_impl, get_mut, TraversalStatus};
+use super::{
+    dfs_inorder_ancestors_streaming_iterator_impl, dfs_inorder_next, get_mut_ancestors,
+    get_mut_context, TraversalStatus,
+};
 
 pub struct OwnedDFSInorderIterator<Node>
 where
@@ -48,6 +51,15 @@ where
             traversal_stack_bottom: traversal_stack_bottom,
             traversal_stack_top: Vec::new(),
             item_stack: Vec::new(),
+        }
+    }
+
+    #[doc = include_str!("../../doc_files/attach_context.md")]
+    pub fn attach_context(mut self) -> OwnedDFSInorderIteratorWithContext<Node> {
+        let root = self.right_stack.pop();
+        match self.moved {
+            true => panic!("Attempted to attach metadata to a DFS in order iterator in the middle of a tree traversal. This is forbidden."),
+            false => OwnedDFSInorderIteratorWithContext::new(root.unwrap().unwrap())
         }
     }
 
@@ -128,12 +140,113 @@ where
 {
     type Item = [Node::OwnedValue];
 
-    dfs_inorder_streaming_iterator_impl!(get_value_and_children_binary);
+    dfs_inorder_ancestors_streaming_iterator_impl!(get_value_and_children_binary);
 }
 
 impl<Node> StreamingIteratorMut for OwnedDFSInorderIteratorWithAncestors<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
-    get_mut!();
+    get_mut_ancestors!();
+}
+
+pub struct OwnedDFSInorderIteratorWithContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    right_stack: Vec<Option<Node>>,
+    current_context: TreeContext<Node::OwnedValue, ()>,
+    status_stack: Vec<TraversalStatus>,
+}
+
+impl<Node> OwnedDFSInorderIteratorWithContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    pub(crate) fn new(root: Node) -> OwnedDFSInorderIteratorWithContext<Node> {
+        let mut right_stack = Vec::new();
+        right_stack.push(Some(root));
+
+        let context = TreeContext::new();
+
+        Self {
+            right_stack,
+            current_context: context,
+            status_stack: Vec::new(),
+        }
+    }
+}
+
+impl<Node> StreamingIterator for OwnedDFSInorderIteratorWithContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    type Item = TreeContext<Node::OwnedValue, ()>;
+
+    fn advance(&mut self) {
+        let mut current = None;
+        while current.is_none() {
+            if let Some(last_status) = self.status_stack.last_mut() {
+                match last_status {
+                    TraversalStatus::WentRight => {
+                        self.current_context.ancestors.pop();
+                        self.current_context.path.pop();
+                        self.status_stack.pop();
+                        continue;
+                    }
+                    TraversalStatus::WentLeft => {
+                        *last_status = TraversalStatus::ReturnedSelf;
+                        return;
+                    }
+                    TraversalStatus::ReturnedSelf => {
+                        *last_status = TraversalStatus::WentRight;
+                    }
+                }
+            }
+
+            if let Some(top_of_right_stack) = self.right_stack.pop() {
+                current = top_of_right_stack;
+                continue;
+            } else {
+                self.current_context.ancestors.clear();
+                return;
+            }
+        }
+
+        while let Some(current_val) = current {
+            let (value, [left, right]) = current_val.get_value_and_children_binary();
+
+            self.current_context.ancestors.push(value);
+            match self.status_stack.last() {
+                None => {}
+                Some(TraversalStatus::WentLeft | TraversalStatus::ReturnedSelf) => {
+                    self.current_context.path.push(0)
+                }
+                Some(TraversalStatus::WentRight) => self.current_context.path.push(1),
+            }
+
+            self.right_stack.push(right);
+
+            self.status_stack.push(TraversalStatus::WentLeft);
+            current = left;
+        }
+
+        let status_stack_len = self.status_stack.len();
+        self.status_stack[status_stack_len - 1] = TraversalStatus::ReturnedSelf;
+    }
+
+    fn get(&self) -> Option<&Self::Item> {
+        if self.current_context.ancestors.is_empty() {
+            None
+        } else {
+            Some(&self.current_context)
+        }
+    }
+}
+
+impl<'a, Node> StreamingIteratorMut for OwnedDFSInorderIteratorWithContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    get_mut_context!();
 }

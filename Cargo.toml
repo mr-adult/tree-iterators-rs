@@ -1,6 +1,6 @@
 [package]
 name = "tree_iterators_rs"
-version = "2.0.0"
+version = "3.0.0"
 edition = "2021"
 description = "tree_iterators_rs is a library built to provide you with the iterators to easily work with tree data structures in Rust."
 license = "MIT"

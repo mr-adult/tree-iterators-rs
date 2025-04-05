@@ -5,109 +5,61 @@ pub mod owned;
 macro_rules! dfs_preorder_next {
     ($get_value_and_children: ident) => {
         fn next(&mut self) -> Option<Self::Item> {
-            match core::mem::take(&mut self.root) {
-                Some(next) => {
-                    let (value, children) = next.$get_value_and_children();
-                    self.traversal_stack.push(children.into_iter());
-                    return Some(value);
-                }
-                None => {
-                    let next;
-                    loop {
-                        let stack_len = self.traversal_stack.len();
-                        if stack_len == 0 {
-                            next = None;
-                            break;
-                        }
-                        match self.traversal_stack.get_mut(stack_len - 1) {
-                            None => {
-                                next = None;
-                                break;
-                            }
-                            Some(top) => match top.next() {
-                                None => {
-                                    self.traversal_stack.pop();
-                                }
-                                Some(value) => {
-                                    next = Some(value);
-                                    break;
-                                }
-                            },
-                        }
-                    }
-                    match next {
-                        None => return None,
-                        Some(node) => {
-                            let (value, children) = node.$get_value_and_children();
-                            self.traversal_stack.push(children.into_iter());
-                            return Some(value);
-                        }
-                    }
-                }
+            if let Some(root) = self.root.take() {
+                let (value, children) = root.$get_value_and_children();
+                self.traversal_stack.push(children.into_iter());
+                return Some(value);
             }
+
+            let next = loop {
+                if let Some(top) = self.traversal_stack.last_mut() {
+                    if let Some(value) = top.next() {
+                        break Some(value);
+                    }
+
+                    self.traversal_stack.pop();
+                } else {
+                    break None;
+                }
+            };
+
+            next.map(|node| {
+                let (value, children) = node.$get_value_and_children();
+                self.traversal_stack.push(children.into_iter());
+                value
+            })
         }
     };
 }
 
-macro_rules! advance_dfs {
+macro_rules! preorder_ancestors_streaming_iterator_impl {
     ($get_value_and_children: ident) => {
-        fn advance_dfs(&mut self) {
-            match core::mem::take(&mut self.root) {
-                Some(next) => {
-                    let (value, children) = next.$get_value_and_children();
-                    self.traversal_stack.push(children.into_iter());
-                    self.item_stack.push(value);
-                    return;
-                }
-                None => {
-                    let next;
-                    loop {
-                        let stack_len = self.traversal_stack.len();
-                        if stack_len == 0 {
-                            next = None;
-                            break;
-                        }
-                        match self.traversal_stack.get_mut(stack_len - 1) {
-                            None => {
-                                next = None;
-                                break;
-                            }
-                            Some(top) => {
-                                if self.item_stack.len() > stack_len {
-                                    self.item_stack.pop();
-                                }
-                                match top.next() {
-                                    None => {
-                                        self.traversal_stack.pop();
-                                        self.item_stack.pop();
-                                    }
-                                    Some(value) => {
-                                        next = Some(value);
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    match next {
-                        None => return,
-                        Some(node) => {
-                            let (value, children) = node.$get_value_and_children();
-                            self.traversal_stack.push(children.into_iter());
-                            self.item_stack.push(value);
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-    };
-}
-
-macro_rules! preorder_streaming_iterator_impl {
-    () => {
         fn advance(&mut self) {
-            self.advance_dfs()
+            if let Some(root) = self.root.take() {
+                let (value, children) = root.$get_value_and_children();
+                self.traversal_stack.push(children.into_iter());
+                self.item_stack.push(value);
+                return;
+            }
+
+            let next = loop {
+                if let Some(top) = self.traversal_stack.last_mut() {
+                    if let Some(value) = top.next() {
+                        break Some(value);
+                    }
+
+                    self.traversal_stack.pop();
+                    self.item_stack.pop();
+                } else {
+                    break None;
+                }
+            };
+
+            if let Some(next) = next {
+                let (value, children) = next.$get_value_and_children();
+                self.traversal_stack.push(children.into_iter());
+                self.item_stack.push(value);
+            }
         }
 
         fn get(&self) -> Option<&Self::Item> {
@@ -120,19 +72,150 @@ macro_rules! preorder_streaming_iterator_impl {
     };
 }
 
-macro_rules! get_mut {
+macro_rules! get_mut_ancestors {
     () => {
         fn get_mut(&mut self) -> Option<&mut Self::Item> {
             if self.item_stack.len() == 0 {
                 None
             } else {
-                Some(&mut self.item_stack[..])
+                Some(&mut self.item_stack)
             }
         }
     };
 }
 
-pub(crate) use advance_dfs;
+macro_rules! preorder_context_streaming_iterator_impl {
+    ($get_value_and_children: ident) => {
+        fn advance(&mut self) {
+            if let Some(root) = self.root.take() {
+                let (value, children) = root.$get_value_and_children();
+                self.current_context.ancestors.push(value);
+                self.current_context.children = core::mem::MaybeUninit::new(children);
+                return;
+            }
+
+            if self.current_context.ancestors.is_empty() {
+                return;
+            }
+
+            let mut children = core::mem::MaybeUninit::uninit();
+            core::mem::swap(&mut self.current_context.children, &mut children);
+            self.traversal_stack
+                .push(unsafe { children.assume_init() }.into_iter());
+            self.current_context.path.push(usize::MAX);
+
+            let next = loop {
+                if let Some(top) = self.traversal_stack.last_mut() {
+                    if let Some(value) = top.next() {
+                        let last = self
+                            .current_context
+                            .path
+                            .last_mut()
+                            .expect("There to always be a value in the path list");
+                        *last = last.wrapping_add(1);
+                        break Some(value);
+                    }
+
+                    self.traversal_stack.pop();
+                    self.current_context.ancestors.pop();
+                    self.current_context.path.pop();
+                } else {
+                    break None;
+                }
+            };
+
+            if let Some(next) = next {
+                let (value, children) = next.$get_value_and_children();
+                self.current_context.ancestors.push(value);
+                self.current_context.children = core::mem::MaybeUninit::new(children);
+            }
+        }
+
+        fn get(&self) -> Option<&Self::Item> {
+            if self.current_context.ancestors().is_empty() {
+                None
+            } else {
+                Some(&self.current_context)
+            }
+        }
+    };
+}
+
+macro_rules! preorder_binary_context_streaming_iterator_impl {
+    ($get_value_and_children: ident) => {
+        fn advance(&mut self) {
+            if let Some(root) = self.root.take() {
+                let (value, children) = root.$get_value_and_children();
+                self.current_context.ancestors.push(value);
+                self.current_context.children = core::mem::MaybeUninit::new(children);
+                return;
+            }
+
+            if self.current_context.ancestors.is_empty() {
+                return;
+            }
+
+            let mut children = core::mem::MaybeUninit::uninit();
+            core::mem::swap(&mut self.current_context.children, &mut children);
+            self.traversal_stack
+                .push(unsafe { children.assume_init() }.into_iter());
+            self.current_context.path.push(usize::MAX);
+
+            let next = 'outer: loop {
+                if let Some(top) = self.traversal_stack.last_mut() {
+                    while let Some(value) = top.next() {
+                        let last = self
+                            .current_context
+                            .path
+                            .last_mut()
+                            .expect("There to always be a value in the path list");
+                        *last = last.wrapping_add(1);
+
+                        if let Some(value) = value {
+                            break 'outer Some(value);
+                        }
+                    }
+
+                    self.traversal_stack.pop();
+                    self.current_context.ancestors.pop();
+                    self.current_context.path.pop();
+                } else {
+                    break None;
+                }
+            };
+
+            if let Some(next) = next {
+                let (value, children) = next.$get_value_and_children();
+                self.current_context.ancestors.push(value);
+                self.current_context.children = core::mem::MaybeUninit::new(children);
+            }
+        }
+
+        fn get(&self) -> Option<&Self::Item> {
+            if self.current_context.ancestors().is_empty() {
+                None
+            } else {
+                Some(&self.current_context)
+            }
+        }
+    };
+}
+
+macro_rules! get_mut_context {
+    () => {
+        fn get_mut(&mut self) -> Option<&mut Self::Item> {
+            if self.current_context.ancestors.is_empty() {
+                None
+            } else {
+                Some(&mut self.current_context)
+            }
+        }
+    };
+}
+
 pub(crate) use dfs_preorder_next;
-pub(crate) use get_mut;
-pub(crate) use preorder_streaming_iterator_impl;
+pub(crate) use get_mut_ancestors;
+pub(crate) use get_mut_context;
+pub(crate) use preorder_ancestors_streaming_iterator_impl;
+pub(crate) use preorder_binary_context_streaming_iterator_impl;
+pub(crate) use preorder_context_streaming_iterator_impl;

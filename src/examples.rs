@@ -1,40 +1,40 @@
 use crate::prelude::*;
 use alloc::{boxed::Box, vec};
 
-pub fn create_example_binary_tree() -> BinaryTreeNode<usize> {
-    BinaryTreeNode {
+pub fn create_example_binary_tree() -> BinaryTree<usize> {
+    BinaryTree {
         value: 0,
-        left: Some(Box::new(BinaryTreeNode {
+        left: Some(Box::new(BinaryTree {
             value: 1,
-            left: Some(Box::new(BinaryTreeNode {
+            left: Some(Box::new(BinaryTree {
                 value: 3,
                 left: None,
                 right: None,
             })),
-            right: Some(Box::new(BinaryTreeNode {
+            right: Some(Box::new(BinaryTree {
                 value: 4,
                 left: None,
                 right: None,
             })),
         })),
-        right: Some(Box::new(BinaryTreeNode {
+        right: Some(Box::new(BinaryTree {
             value: 2,
-            left: Some(Box::new(BinaryTreeNode {
+            left: Some(Box::new(BinaryTree {
                 value: 5,
                 left: None,
                 right: None,
             })),
-            right: Some(Box::new(BinaryTreeNode {
+            right: Some(Box::new(BinaryTree {
                 value: 6,
-                left: Some(Box::new(BinaryTreeNode {
+                left: Some(Box::new(BinaryTree {
                     value: 7,
                     left: None,
-                    right: Some(Box::new(BinaryTreeNode {
+                    right: Some(Box::new(BinaryTree {
                         value: 8,
-                        left: Some(Box::new(BinaryTreeNode {
+                        left: Some(Box::new(BinaryTree {
                             value: 9,
                             left: None,
-                            right: Some(Box::new(BinaryTreeNode {
+                            right: Some(Box::new(BinaryTree {
                                 value: 10,
                                 left: None,
                                 right: None,
@@ -49,41 +49,41 @@ pub fn create_example_binary_tree() -> BinaryTreeNode<usize> {
     }
 }
 
-pub fn create_example_tree() -> TreeNode<usize> {
+pub fn create_example_tree() -> Tree<usize> {
     use alloc::vec::Vec;
 
-    TreeNode {
+    Tree {
         value: 0,
         children: vec![
-            TreeNode {
+            Tree {
                 value: 1,
                 children: vec![
-                    TreeNode {
+                    Tree {
                         value: 3,
                         children: Vec::with_capacity(0),
                     },
-                    TreeNode {
+                    Tree {
                         value: 4,
                         children: Vec::with_capacity(0),
                     },
                 ],
             },
-            TreeNode {
+            Tree {
                 value: 2,
                 children: vec![
-                    TreeNode {
+                    Tree {
                         value: 5,
                         children: Vec::with_capacity(0),
                     },
-                    TreeNode {
+                    Tree {
                         value: 6,
-                        children: vec![TreeNode {
+                        children: vec![Tree {
                             value: 7,
-                            children: vec![TreeNode {
+                            children: vec![Tree {
                                 value: 8,
-                                children: vec![TreeNode {
+                                children: vec![Tree {
                                     value: 9,
-                                    children: vec![TreeNode {
+                                    children: vec![Tree {
                                         value: 10,
                                         children: Vec::with_capacity(0),
                                     }],

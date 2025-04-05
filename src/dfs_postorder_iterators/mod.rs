@@ -6,82 +6,66 @@ macro_rules! dfs_postorder_next {
     ($get_value_and_children: ident) => {
         fn next(&mut self) -> Option<Self::Item> {
             loop {
-                match core::mem::take(&mut self.root) {
-                    Some(next) => {
-                        let (value, children) = next.$get_value_and_children();
-                        self.traversal_stack.push(children.into_iter());
-                        self.item_stack.push(value);
+                if let Some(root) = self.root.take() {
+                    let (value, children) = root.$get_value_and_children();
+                    self.traversal_stack.push(children.into_iter());
+                    self.item_stack.push(value);
+                    continue;
+                }
+
+                loop {
+                    if let Some(last) = self.traversal_stack.last_mut() {
+                        if let Some(next) = last.next() {
+                            let (value, children) = next.$get_value_and_children();
+                            self.item_stack.push(value);
+                            self.traversal_stack.push(children.into_iter());
+                            continue;
+                        }
+
+                        self.traversal_stack.pop();
                     }
-                    None => loop {
-                        let stack_len = self.traversal_stack.len();
-                        if stack_len < 1 {
-                            return None;
-                        }
-                        match self.traversal_stack.get_mut(stack_len - 1) {
-                            None => return self.item_stack.pop(),
-                            Some(next_iter) => match next_iter.next() {
-                                None => {
-                                    self.traversal_stack.pop();
-                                    return self.item_stack.pop();
-                                }
-                                Some(node) => {
-                                    let (value, children) = node.$get_value_and_children();
-                                    self.item_stack.push(value);
-                                    self.traversal_stack.push(children.into_iter());
-                                }
-                            },
-                        }
-                    },
+
+                    return self.item_stack.pop();
                 }
             }
         }
     };
 }
 
-macro_rules! postorder_streaming_iterator_impl {
+macro_rules! get_mut_context {
+    () => {
+        fn get_mut(&mut self) -> Option<&mut Self::Item> {
+            if self.current_context.ancestors.is_empty() {
+                None
+            } else {
+                Some(&mut self.current_context)
+            }
+        }
+    };
+}
+
+macro_rules! postorder_ancestors_streaming_iterator_impl {
     ($get_value_and_children: ident) => {
         fn advance(&mut self) {
-            let mut is_first_iteration = true;
-            loop {
-                match core::mem::take(&mut self.root) {
-                    Some(next) => {
-                        let (value, children) = next.$get_value_and_children();
-                        self.traversal_stack.push(children.into_iter());
-                        self.item_stack.push(value);
-                        is_first_iteration = false;
-                    }
-                    None => loop {
-                        let stack_len = self.traversal_stack.len();
-                        if stack_len < 1 {
-                            self.item_stack.pop();
-                            return;
-                        }
-                        match self.traversal_stack.get_mut(stack_len - 1) {
-                            None => {
-                                self.item_stack.pop();
-                                return;
-                            }
-                            Some(next_iter) => match next_iter.next() {
-                                None => {
-                                    if self.item_stack.len() > self.traversal_stack.len() {
-                                        self.item_stack.pop();
-                                    }
-                                    self.traversal_stack.pop();
-                                    return;
-                                }
-                                Some(node) => {
-                                    let (value, children) = node.$get_value_and_children();
-                                    if is_first_iteration {
-                                        self.item_stack.pop();
-                                    }
-                                    self.traversal_stack.push(children.into_iter());
-                                    self.item_stack.push(value);
-                                }
-                            },
-                        }
-                        is_first_iteration = false;
-                    },
+            if let Some(next) = self.root.take() {
+                let (value, children) = next.$get_value_and_children();
+                self.traversal_stack.push(children.into_iter());
+                self.item_stack.push(value);
+            } else {
+                self.item_stack.pop();
+            }
+
+            while let Some(top) = self.traversal_stack.last_mut() {
+                if let Some(node) = top.next() {
+                    let (value, children) = node.$get_value_and_children();
+
+                    self.traversal_stack.push(children.into_iter());
+                    self.item_stack.push(value);
+                    continue;
                 }
+
+                self.traversal_stack.pop();
+                break;
             }
         }
 
@@ -95,7 +79,7 @@ macro_rules! postorder_streaming_iterator_impl {
     };
 }
 
-macro_rules! get_mut {
+macro_rules! get_mut_ancestors {
     () => {
         fn get_mut(&mut self) -> Option<&mut Self::Item> {
             if self.item_stack.len() == 0 {
@@ -108,5 +92,6 @@ macro_rules! get_mut {
 }
 
 pub(crate) use dfs_postorder_next;
-pub(crate) use get_mut;
-pub(crate) use postorder_streaming_iterator_impl;
+pub(crate) use get_mut_ancestors;
+pub(crate) use get_mut_context;
+pub(crate) use postorder_ancestors_streaming_iterator_impl;

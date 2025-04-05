@@ -7,156 +7,114 @@ macro_rules! bfs_next {
         fn bfs_next(&mut self) -> bool {
             if self.is_root {
                 self.is_root = false;
-                let first_iter = self
-                    .iterator_queue
-                    .get_mut(0)
-                    .expect("root node to have a children collection on the stack");
-                return first_iter.peek().is_some();
+                return true;
             }
 
             loop {
-                match self.iterator_queue.get_mut(0) {
-                    None => {
-                        self.item_stack.clear();
-                        return false;
-                    }
-                    Some(iter) => {
-                        if let Some(next) = iter.next() {
-                            if self.item_stack.len() == self.traversal_stack.len() + 2 {
-                                self.pop_from_item_stack();
-                            }
-                            let (value, children) = next.$get_value_and_children();
-                            self.item_stack.push(value);
-                            let has_children;
-                            let mut peekable_children = children.into_iter().peekable();
-                            has_children = peekable_children.peek().is_some();
+                if self.iterator_queue.is_empty() {
+                    self.item_stack.clear();
+                    return false;
+                }
 
-                            self.iterator_queue.push_back(peekable_children);
-                            return has_children;
+                if self.item_stack.len() == self.traversal_stack.len() + 2 {
+                    self.pop_from_item_stack();
+                }
+
+                let iter = &mut self.iterator_queue[0];
+
+                if let Some(next) = iter.next() {
+                    let (value, children) = next.$get_value_and_children();
+                    self.item_stack.push(value);
+
+                    let mut peekable_children = children.into_iter().peekable();
+                    let has_children = peekable_children.peek().is_some();
+
+                    self.iterator_queue.push_back(peekable_children);
+                    return has_children;
+                }
+
+                let top_of_traversal_stack = self
+                    .traversal_stack
+                    .last_mut()
+                    .unwrap_or(&mut self.tree_cache);
+
+                if !top_of_traversal_stack.children.is_empty() {
+                    top_of_traversal_stack.children.push_front(None);
+                } else {
+                    // used up all the values, so just pop it
+                    while let Some(last) = self.traversal_stack.last() {
+                        if last.children.len() > 1 {
+                            break;
                         }
 
-                        if self.item_stack.len() == self.traversal_stack.len() + 2 {
-                            self.pop_from_item_stack();
-                        }
-
-                        let top_of_traversal_stack = if self.traversal_stack.len() == 0 {
-                            &mut self.tree_cache
-                        } else {
-                            let stack_len = self.traversal_stack.len();
-                            self.traversal_stack.get_mut(stack_len - 1).unwrap()
-                        };
-
-                        match &mut top_of_traversal_stack.children {
-                            Some(children) => children.push_front(None),
-                            // used up all the value, so just pop it
-                            None => {
-                                while self.traversal_stack.len() > 0
-                                    && (self
-                                        .traversal_stack
-                                        .get(self.traversal_stack.len() - 1)
-                                        .unwrap()
-                                        .children
-                                        .is_none()
-                                        || self
-                                            .traversal_stack
-                                            .get(self.traversal_stack.len() - 1)
-                                            .unwrap()
-                                            .children
-                                            .as_ref()
-                                            .unwrap()
-                                            .len()
-                                            == 1)
-                                {
-                                    self.traversal_stack.pop();
-                                    self.item_stack.pop();
-                                }
-                            }
-                        }
-
-                        self.advance_dfs();
-                        self.iterator_queue.pop_front();
+                        self.traversal_stack.pop();
+                        self.item_stack.pop();
                     }
                 }
+
+                self.advance_dfs();
+                self.iterator_queue.pop_front();
             }
         }
 
         fn advance_dfs(&mut self) {
-            let mut stack_len = self.traversal_stack.len();
             let starting_depth = self.item_stack.len();
             loop {
-                let tree_node = if stack_len == 0 {
-                    &mut self.tree_cache
+                let tree_node = self
+                    .traversal_stack
+                    .last_mut()
+                    .unwrap_or(&mut self.tree_cache);
+
+                let child = if let Some(child) = tree_node.children.pop_front() {
+                    child
                 } else {
-                    self.traversal_stack.get_mut(stack_len - 1).unwrap()
+                    // Reclaim that memory
+                    tree_node.children.clear();
+                    tree_node.children.shrink_to_fit();
+                    break;
                 };
 
-                match tree_node.children.as_mut() {
-                    None => break,
-                    Some(children) => {
-                        match children.pop_front() {
-                            None => {
-                                tree_node.children = None;
-                                // just let the value get dropped
-                            }
-                            Some(child) => {
-                                match child {
-                                    None => {
-                                        if children.len() != 0 {
-                                            children.push_back(None);
-                                        } else {
-                                            tree_node.children = None;
-                                            // let the child be dropped from memory
-                                        }
-
-                                        if self.item_stack.len() > 1 {
-                                            let target = self
-                                                .traversal_stack
-                                                .get_mut(stack_len - 1)
-                                                .unwrap();
-                                            target.value = self.item_stack.pop();
-                                        }
-
-                                        if self.traversal_stack.len() == 0 {
-                                            continue;
-                                        }
-                                        let popped = self.traversal_stack.pop().unwrap();
-                                        stack_len -= 1;
-
-                                        let parent = if stack_len < 1 {
-                                            &mut self.tree_cache
-                                        } else {
-                                            self.traversal_stack.get_mut(stack_len - 1).unwrap()
-                                        };
-
-                                        parent.children.as_mut().unwrap().push_back(Some(popped));
-                                    }
-                                    Some(mut value) => {
-                                        self.item_stack
-                                            .push(core::mem::take(&mut value.value).unwrap());
-                                        let has_children = !value.children.is_none();
-                                        self.traversal_stack.push(value);
-                                        stack_len += 1;
-                                        if !has_children && self.item_stack.len() >= starting_depth
-                                        {
-                                            break;
-                                        } else {
-                                            continue;
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                if let Some(mut value) = child {
+                    self.item_stack.push(unsafe { value.value.assume_init() });
+                    value.value = core::mem::MaybeUninit::uninit();
+                    let has_children = !value.children.is_empty();
+                    self.traversal_stack.push(value);
+                    if !has_children && self.item_stack.len() >= starting_depth {
+                        break;
+                    } else {
+                        continue;
                     }
+                }
+
+                if !tree_node.children.is_empty() {
+                    tree_node.children.push_back(None);
+                } else {
+                    // let the child be dropped from memory
+                    tree_node.children.clear();
+                    tree_node.children.shrink_to_fit();
+                }
+
+                if self.item_stack.len() > 1 {
+                    let target = self.traversal_stack.last_mut().unwrap();
+                    target.value = core::mem::MaybeUninit::new(self.item_stack.pop().unwrap());
+                }
+
+                if let Some(popped) = self.traversal_stack.pop() {
+                    let parent = if let Some(last) = self.traversal_stack.last_mut() {
+                        last
+                    } else {
+                        &mut self.tree_cache
+                    };
+
+                    parent.children.push_back(Some(popped));
                 }
             }
         }
 
         fn pop_from_item_stack(&mut self) {
-            if self.item_stack.len() == 1 {
-                return;
-            }
             let tree_node = match self.item_stack.len() {
-                0 | 1 => panic!("item stack len should never be 0 or 1 here!"),
+                0 => panic!("item stack len should never be 0 or 1 here!"),
+                1 => return,
                 2 => &mut self.tree_cache,
                 _ => self
                     .traversal_stack
@@ -164,17 +122,10 @@ macro_rules! bfs_next {
                     .unwrap(),
             };
 
-            let children = match &mut tree_node.children {
-                None => {
-                    tree_node.children = Some(VecDeque::new());
-                    tree_node.children.as_mut().unwrap()
-                }
-                Some(children) => children,
-            };
-
-            children.push_back(Some(TreeNodeVecDeque {
-                value: Some(self.item_stack.pop().unwrap()),
-                children: None,
+            tree_node.children.push_back(Some(TreeNodeVecDeque {
+                value: core::mem::MaybeUninit::new(self.item_stack.pop().unwrap()),
+                path_segment: 0,
+                children: VecDeque::new(),
             }));
         }
     };
