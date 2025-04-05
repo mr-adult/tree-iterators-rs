@@ -8,8 +8,7 @@ use crate::{
         },
         depth_first::borrow::{BorrowedBinaryLeavesIterator, BorrowedLeavesIterator},
     },
-    prelude::{BinaryChildren, BinaryTreeContextRef, BorrowedBinaryTreeNode, BorrowedTreeNode},
-    tree_context::TreeContextRef,
+    prelude::{BinaryChildren, BorrowedBinaryTreeNode, BorrowedTreeNode, TreeContext},
 };
 use alloc::vec::Vec;
 use streaming_iterator::StreamingIterator;
@@ -85,7 +84,7 @@ where
 {
     root: Option<&'a Node>,
     traversal_stack: Vec<<Node::BorrowedChildren as IntoIterator>::IntoIter>,
-    current_context: TreeContextRef<'a, Node>,
+    current_context: TreeContext<Node::BorrowedValue, Node::BorrowedChildren>,
 }
 
 impl<'a, Node> BorrowedDFSPreorderIteratorWithContext<'a, Node>
@@ -96,7 +95,7 @@ where
         Self {
             root: Some(root),
             traversal_stack: Vec::new(),
-            current_context: TreeContextRef::new(),
+            current_context: TreeContext::new(),
         }
     }
 }
@@ -105,7 +104,7 @@ impl<'a, Node> StreamingIterator for BorrowedDFSPreorderIteratorWithContext<'a, 
 where
     Node: BorrowedTreeNode<'a>,
 {
-    type Item = TreeContextRef<'a, Node>;
+    type Item = TreeContext<Node::BorrowedValue, Node::BorrowedChildren>;
     preorder_context_streaming_iterator_impl!(get_value_and_children_iter);
 }
 
@@ -263,7 +262,7 @@ where
 {
     root: Option<&'a Node>,
     traversal_stack: Vec<IntoIter<Option<&'a Node>, 2>>,
-    current_context: BinaryTreeContextRef<'a, Node>,
+    current_context: TreeContext<Node::BorrowedValue, [Option<&'a Node>; 2]>,
 }
 
 impl<'a, Node> BorrowedBinaryDFSPreorderIteratorWithContext<'a, Node>
@@ -274,7 +273,7 @@ where
         Self {
             root: Some(root),
             traversal_stack: Vec::new(),
-            current_context: BinaryTreeContextRef::new(),
+            current_context: TreeContext::new(),
         }
     }
 }
@@ -283,6 +282,6 @@ impl<'a, Node> StreamingIterator for BorrowedBinaryDFSPreorderIteratorWithContex
 where
     Node: BorrowedBinaryTreeNode<'a>,
 {
-    type Item = BinaryTreeContextRef<'a, Node>;
+    type Item = TreeContext<Node::BorrowedValue, [Option<&'a Node>; 2]>;
     preorder_binary_context_streaming_iterator_impl!(get_value_and_children_binary_iter);
 }

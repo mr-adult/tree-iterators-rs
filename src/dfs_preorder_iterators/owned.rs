@@ -11,7 +11,7 @@ use crate::{
         },
         depth_first::owned::{OwnedBinaryLeavesIterator, OwnedLeavesIterator},
     },
-    prelude::{BinaryChildren, BinaryTreeContext, OwnedBinaryTreeNode, OwnedTreeNode, TreeContext},
+    prelude::{BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode, TreeContext},
 };
 
 use super::{
@@ -84,7 +84,7 @@ where
 {
     root: Option<Node>,
     traversal_stack: Vec<<Node::OwnedChildren as IntoIterator>::IntoIter>,
-    current_context: TreeContext<Node>,
+    current_context: TreeContext<Node::OwnedValue, Node::OwnedChildren>,
 }
 
 impl<'a, Node> OwnedDFSPreorderIteratorWithContext<Node>
@@ -104,7 +104,7 @@ impl<Node> StreamingIterator for OwnedDFSPreorderIteratorWithContext<Node>
 where
     Node: OwnedTreeNode,
 {
-    type Item = TreeContext<Node>;
+    type Item = TreeContext<Node::OwnedValue, Node::OwnedChildren>;
     preorder_context_streaming_iterator_impl!(get_value_and_children);
 }
 
@@ -280,7 +280,7 @@ where
 {
     root: Option<Node>,
     traversal_stack: Vec<IntoIter<Option<Node>, 2>>,
-    current_context: BinaryTreeContext<Node>,
+    current_context: TreeContext<Node::OwnedValue, [Option<Node>; 2]>,
 }
 
 impl<Node> OwnedBinaryDFSPreorderIteratorWithContext<Node>
@@ -291,7 +291,7 @@ where
         Self {
             root: Some(root),
             traversal_stack: Vec::new(),
-            current_context: BinaryTreeContext::new(),
+            current_context: TreeContext::new(),
         }
     }
 }
@@ -300,7 +300,7 @@ impl<Node> StreamingIterator for OwnedBinaryDFSPreorderIteratorWithContext<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
-    type Item = BinaryTreeContext<Node>;
+    type Item = TreeContext<Node::OwnedValue, [Option<Node>; 2]>;
     preorder_binary_context_streaming_iterator_impl!(get_value_and_children_binary);
 }
 

@@ -8,8 +8,7 @@ use crate::{
         },
         depth_first::borrow::{BorrowedBinaryLeavesIterator, BorrowedLeavesIterator},
     },
-    prelude::{BinaryChildren, BinaryTreeContextRef, BorrowedBinaryTreeNode, BorrowedTreeNode},
-    tree_context::TreeContextRef,
+    prelude::{BinaryChildren, BorrowedBinaryTreeNode, BorrowedTreeNode, TreeContext},
 };
 use alloc::vec::Vec;
 use streaming_iterator::StreamingIterator;
@@ -85,7 +84,7 @@ where
     root: Option<&'a Node>,
     traversal_stack: Vec<<Node::BorrowedChildren as IntoIterator>::IntoIter>,
     into_iterator_stack: Vec<Node::BorrowedChildren>,
-    current_context: TreeContextRef<'a, Node>,
+    current_context: TreeContext<Node::BorrowedValue, Node::BorrowedChildren>,
 }
 
 impl<'a, Node> BorrowedDFSPostorderIteratorWithContext<'a, Node>
@@ -97,7 +96,7 @@ where
             root: Some(root),
             traversal_stack: Vec::new(),
             into_iterator_stack: Vec::new(),
-            current_context: TreeContextRef::new(),
+            current_context: TreeContext::new(),
         }
     }
 }
@@ -107,7 +106,7 @@ where
     Node: BorrowedTreeNode<'a>,
     Node::BorrowedChildren: Clone,
 {
-    type Item = TreeContextRef<'a, Node>;
+    type Item = TreeContext<Node::BorrowedValue, Node::BorrowedChildren>;
     fn advance(&mut self) {
         if let Some(next) = self.root.take() {
             let (value, children) = next.get_value_and_children_iter();
@@ -326,7 +325,7 @@ where
 {
     root: Option<&'a Node>,
     traversal_stack: Vec<IntoIter<Option<&'a Node>, 2>>,
-    current_context: BinaryTreeContextRef<'a, Node>,
+    current_context: TreeContext<Node::BorrowedValue, [Option<&'a Node>; 2]>,
     into_iterator_stack: Vec<[Option<&'a Node>; 2]>,
 }
 
@@ -337,7 +336,7 @@ where
     fn new(root: &'a Node) -> BorrowedBinaryDFSPostorderIteratorWithContext<'_, Node> {
         Self {
             root: Some(root),
-            current_context: BinaryTreeContextRef::new(),
+            current_context: TreeContext::new(),
             traversal_stack: Vec::new(),
             into_iterator_stack: Vec::new(),
         }
@@ -348,7 +347,7 @@ impl<'a, Node> StreamingIterator for BorrowedBinaryDFSPostorderIteratorWithConte
 where
     Node: BorrowedBinaryTreeNode<'a>,
 {
-    type Item = BinaryTreeContextRef<'a, Node>;
+    type Item = TreeContext<Node::BorrowedValue, [Option<&'a Node>; 2]>;
     fn advance(&mut self) {
         if let Some(next) = self.root.take() {
             let (value, children) = next.get_value_and_children_binary_iter();
