@@ -125,7 +125,6 @@ where
 {
     type Item = TreeContextRef<'a, Node>;
     fn advance(&mut self) {
-        let mut is_first_iteration = true;
         if let Some(next) = self.root.take() {
             let (value, children) = next.get_value_and_children_iter();
             // ASSUMPTION: self.into_iterator_stack will always outlive self.traversal_stack.
@@ -136,25 +135,24 @@ where
             self.current_context.ancestors.push(value);
             self.current_context.path.push(usize::MAX);
             self.into_iterator_stack.push(children);
-            is_first_iteration = false;
-        }
-
-        if self.traversal_stack.len() > self.into_iterator_stack.len() {
-            self.traversal_stack.pop();
+        } else {
+            self.current_context.ancestors.pop();
+            if self.current_context.ancestors.is_empty() {
+                return;
+            }
         }
 
         loop {
             if let Some(top) = self.traversal_stack.last_mut() {
                 if let Some(node) = top.next() {
-                    // Path is not populated on the first pass over just the root node.
-                    if let Some(last) = self.current_context.path.last_mut() {
-                        *last = last.wrapping_add(1);
-                    }
+                    let last = self
+                        .current_context
+                        .path
+                        .last_mut()
+                        .expect("There to be a path unless we are on the root element");
+                    *last = last.wrapping_add(1);
 
                     let (value, children) = node.get_value_and_children_iter();
-                    if is_first_iteration {
-                        self.current_context.ancestors.pop();
-                    }
 
                     // ASSUMPTION: self.into_iterator_stack will always outlive self.traversal_stack.
                     // If that assumption is not true, this code will cause Undefined Behavior.
@@ -165,27 +163,18 @@ where
                     self.current_context.ancestors.push(value);
                     self.current_context.path.push(usize::MAX);
                     self.into_iterator_stack.push(children);
-                    is_first_iteration = false;
                     continue;
                 }
-
-                if self.current_context.ancestors.len() > self.traversal_stack.len() {
-                    self.current_context.ancestors.pop();
-                }
-
-                if let Some(top) = self.into_iterator_stack.pop() {
-                    self.current_context.children = MaybeUninit::new(top);
-                }
-                self.current_context.path.pop();
-                return;
-            } else {
-                if let Some(top) = self.into_iterator_stack.pop() {
-                    self.current_context.children = MaybeUninit::new(top);
-                }
-                self.current_context.ancestors.pop();
-                self.current_context.path.pop();
-                return;
             }
+
+            self.current_context.children = MaybeUninit::new(
+                self.into_iterator_stack
+                    .pop()
+                    .expect("There to be a childe IntoIterator"),
+            );
+            self.traversal_stack.pop();
+            self.current_context.path.pop();
+            break;
         }
     }
 
@@ -385,7 +374,6 @@ where
 {
     type Item = BinaryTreeContextRef<'a, Node>;
     fn advance(&mut self) {
-        let mut is_first_iteration = true;
         if let Some(next) = self.root.take() {
             let (value, children) = next.get_value_and_children_binary_iter();
             // ASSUMPTION: self.into_iterator_stack will always outlive self.traversal_stack.
@@ -396,26 +384,25 @@ where
             self.current_context.ancestors.push(value);
             self.current_context.path.push(usize::MAX);
             self.into_iterator_stack.push(children);
-            is_first_iteration = false;
-        }
-
-        if self.traversal_stack.len() > self.into_iterator_stack.len() {
-            self.traversal_stack.pop();
+        } else {
+            self.current_context.ancestors.pop();
+            if self.current_context.ancestors.is_empty() {
+                return;
+            }
         }
 
         'outer: loop {
             if let Some(top) = self.traversal_stack.last_mut() {
                 while let Some(node) = top.next() {
-                    // Path is not populated on the first pass over just the root node.
-                    if let Some(last) = self.current_context.path.last_mut() {
-                        *last = last.wrapping_add(1);
-                    }
+                    let last = self
+                        .current_context
+                        .path
+                        .last_mut()
+                        .expect("There to be a path unless we are on the root element");
+                    *last = last.wrapping_add(1);
 
                     if let Some(node) = node {
                         let (value, children) = node.get_value_and_children_binary_iter();
-                        if is_first_iteration {
-                            self.current_context.ancestors.pop();
-                        }
 
                         // ASSUMPTION: self.into_iterator_stack will always outlive self.traversal_stack.
                         // If that assumption is not true, this code will cause Undefined Behavior.
@@ -426,28 +413,19 @@ where
                         self.current_context.ancestors.push(value);
                         self.current_context.path.push(usize::MAX);
                         self.into_iterator_stack.push(children);
-                        is_first_iteration = false;
                         continue 'outer;
                     }
                 }
-
-                if self.current_context.ancestors.len() > self.traversal_stack.len() {
-                    self.current_context.ancestors.pop();
-                }
-
-                if let Some(top) = self.into_iterator_stack.pop() {
-                    self.current_context.children = MaybeUninit::new(top);
-                }
-                self.current_context.path.pop();
-                return;
-            } else {
-                if let Some(top) = self.into_iterator_stack.pop() {
-                    self.current_context.children = MaybeUninit::new(top);
-                }
-                self.current_context.ancestors.pop();
-                self.current_context.path.pop();
-                return;
             }
+
+            self.current_context.children = MaybeUninit::new(
+                self.into_iterator_stack
+                    .pop()
+                    .expect("There to be a children IntoIterator"),
+            );
+            self.current_context.path.pop();
+            self.traversal_stack.pop();
+            return;
         }
     }
 
