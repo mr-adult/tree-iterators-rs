@@ -150,7 +150,7 @@ macro_rules! preorder_binary_context_streaming_iterator_impl {
                 self.current_context.children = core::mem::MaybeUninit::new(children);
                 return;
             }
-            
+
             if self.current_context.ancestors.is_empty() {
                 return;
             }
