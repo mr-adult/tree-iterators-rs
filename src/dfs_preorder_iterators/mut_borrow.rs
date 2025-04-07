@@ -11,11 +11,15 @@ use crate::{
         },
         depth_first::mut_borrow::{MutBorrowedBinaryLeavesIterator, MutBorrowedLeavesIterator},
     },
-    prelude::{BinaryChildren, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode, TreeContext},
+    prelude::{
+        BinaryChildren, BinaryTreeIterator, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode,
+        TreeContext, TreeIterator, TreeIteratorBase,
+    },
 };
 
 use super::{
-    dfs_preorder_next, get_mut_ancestors, get_mut_context,
+    dfs_preorder_binary_next_with_path_tracking, dfs_preorder_next,
+    dfs_preorder_next_with_path_tracking, get_mut_ancestors, get_mut_context,
     preorder_ancestors_streaming_iterator_impl, preorder_binary_context_streaming_iterator_impl,
     preorder_context_streaming_iterator_impl,
 };
@@ -79,6 +83,64 @@ where
 {
     type Item = Node::MutBorrowedValue;
     dfs_preorder_next!(get_value_and_children_iter_mut);
+}
+
+pub(crate) struct MutBorrowedDFSPreorderIteratorWithPathTracking<'a, Node>
+where
+    Node: MutBorrowedTreeNode<'a>,
+{
+    root: Option<&'a mut Node>,
+    path: Vec<usize>,
+    on_deck_into_iterator: Option<Node::MutBorrowedChildren>,
+    traversal_stack: Vec<<Node::MutBorrowedChildren as IntoIterator>::IntoIter>,
+}
+
+impl<'a, Node> MutBorrowedDFSPreorderIteratorWithPathTracking<'a, Node>
+where
+    Node: MutBorrowedTreeNode<'a>,
+{
+    pub(crate) fn new(root: &'a mut Node) -> Self {
+        Self {
+            root: Some(root),
+            path: Vec::new(),
+            on_deck_into_iterator: None,
+            traversal_stack: Vec::new(),
+        }
+    }
+}
+
+impl<'a, Node> Iterator for MutBorrowedDFSPreorderIteratorWithPathTracking<'a, Node>
+where
+    Node: MutBorrowedTreeNode<'a>,
+{
+    type Item = Node::MutBorrowedValue;
+    dfs_preorder_next_with_path_tracking!(get_value_and_children_iter_mut);
+}
+
+impl<'a, Node> crate::Sealed for MutBorrowedDFSPreorderIteratorWithPathTracking<'a, Node> where
+    Node: MutBorrowedTreeNode<'a>
+{
+}
+
+impl<'a, Node> TreeIteratorBase<Node::MutBorrowedValue, Node::MutBorrowedChildren>
+    for MutBorrowedDFSPreorderIteratorWithPathTracking<'a, Node>
+where
+    Node: MutBorrowedTreeNode<'a>,
+{
+    fn current_path(&self) -> &[usize] {
+        &self.path
+    }
+
+    fn prune_current_subtree(&mut self) {
+        self.on_deck_into_iterator.take();
+    }
+}
+
+impl<'a, Node> TreeIterator<Node::MutBorrowedValue, Node::MutBorrowedChildren>
+    for MutBorrowedDFSPreorderIteratorWithPathTracking<'a, Node>
+where
+    Node: MutBorrowedTreeNode<'a>,
+{
 }
 
 pub struct MutBorrowedDFSPreorderIteratorWithContext<'a, Node>
@@ -227,6 +289,64 @@ where
 {
     type Item = Node::MutBorrowedValue;
     dfs_preorder_next!(get_value_and_children_iter_mut);
+}
+
+pub(crate) struct MutBorrowedBinaryDFSPreorderIteratorWithPathTracking<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    root: Option<&'a mut Node>,
+    traversal_stack: Vec<IntoIter<Option<&'a mut Node>, 2>>,
+    path: Vec<usize>,
+    on_deck_into_iterator: Option<[Option<&'a mut Node>; 2]>,
+}
+
+impl<'a, Node> MutBorrowedBinaryDFSPreorderIteratorWithPathTracking<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    pub(crate) fn new(root: &'a mut Node) -> Self {
+        Self {
+            root: Some(root),
+            traversal_stack: Vec::new(),
+            path: Vec::new(),
+            on_deck_into_iterator: None,
+        }
+    }
+}
+
+impl<'a, Node> Iterator for MutBorrowedBinaryDFSPreorderIteratorWithPathTracking<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    type Item = Node::MutBorrowedValue;
+    dfs_preorder_binary_next_with_path_tracking!(get_value_and_children_binary_iter_mut);
+}
+
+impl<'a, Node> crate::Sealed for MutBorrowedBinaryDFSPreorderIteratorWithPathTracking<'a, Node> where
+    Node: MutBorrowedBinaryTreeNode<'a>
+{
+}
+
+impl<'a, Node> TreeIteratorBase<Node::MutBorrowedValue, [Option<&'a mut Node>; 2]>
+    for MutBorrowedBinaryDFSPreorderIteratorWithPathTracking<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    fn current_path(&self) -> &[usize] {
+        &self.path
+    }
+
+    fn prune_current_subtree(&mut self) {
+        self.on_deck_into_iterator.take();
+    }
+}
+
+impl<'a, Node> BinaryTreeIterator<Node::MutBorrowedValue, [Option<&'a mut Node>; 2]>
+    for MutBorrowedBinaryDFSPreorderIteratorWithPathTracking<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
 }
 
 pub struct MutBorrowedBinaryDFSPreorderIteratorWithAncestors<'a, Node>
