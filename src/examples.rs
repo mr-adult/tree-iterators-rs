@@ -1,5 +1,5 @@
-use crate::prelude::*;
-use alloc::{boxed::Box, vec};
+use crate::prelude::{Tree, BinaryTree};
+use alloc::boxed::Box;
 
 pub fn create_example_binary_tree() -> BinaryTree<usize> {
     BinaryTree {
@@ -50,6 +50,7 @@ pub fn create_example_binary_tree() -> BinaryTree<usize> {
 }
 
 pub fn create_example_tree() -> Tree<usize> {
+    use alloc::vec;
     use alloc::vec::Vec;
 
     Tree {

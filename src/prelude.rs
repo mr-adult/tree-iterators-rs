@@ -8,6 +8,17 @@ use core::iter::FlatMap;
 #[cfg(feature = "serde")]
 use serde_derive::{Deserialize, Serialize};
 
+use crate::dfs_preorder_iterators::borrow::{
+    BorrowedBinaryDFSPreorderIteratorWithPathTracking, BorrowedDFSPreorderIteratorWithPathTracking,
+};
+use crate::dfs_preorder_iterators::mut_borrow::{
+    MutBorrowedBinaryDFSPreorderIteratorWithPathTracking,
+    MutBorrowedDFSPreorderIteratorWithPathTracking,
+};
+use crate::dfs_preorder_iterators::owned::{
+    OwnedBinaryDFSPreorderIteratorWithPathTracking, OwnedDFSPreorderIteratorWithPathTracking,
+};
+
 use super::bfs_iterators::{
     borrow::{BorrowedBFSIterator, BorrowedBinaryBFSIterator},
     mut_borrow::{MutBorrowedBFSIterator, MutBorrowedBinaryBFSIterator},
@@ -32,11 +43,15 @@ use super::dfs_postorder_iterators::{
 };
 
 pub use super::tree_context::TreeContext;
+pub use super::tree_iterators::{
+    BinaryPrune, BinaryPrunePath, BinaryTreeIterator, Map, Prune, PruneDepth, PrunePath,
+    TreeIterator, TreeIteratorBase,
+};
 
 /// A default implemenation of a binary tree node. This struct
 /// provides a series of tree traversal utilities to allow
 /// you to easily work with and modify binary trees.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BinaryTree<T> {
     /// This node's value
@@ -50,7 +65,7 @@ pub struct BinaryTree<T> {
 /// A default implemenation of a tree node. This struct
 /// provides a series of tree traversal utilities to allow
 /// you to easily work with and modify arbitrary trees.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Tree<T> {
     /// This node's value
@@ -224,6 +239,386 @@ where
     fn dfs_postorder(self) -> OwnedBinaryDFSPostorderIterator<Self> {
         OwnedBinaryDFSPostorderIterator::new(self)
     }
+
+    /// This method converts the current BinaryTreeNode into a BinaryTreeIterator.
+    ///
+    /// BinaryTreeIterators have 2 purposes:
+    /// 1. they serve as the internal piping of tree_iterators_rs
+    /// 2. they can efficiently chain the prune, map, and fold operations on a tree.
+    ///
+    /// If you are only applying a single prune, map, or fold operation, just call the
+    /// associated method.
+    /// - [`prune`](crate::prelude::OwnedBinaryTreeNode::prune)
+    /// - [`map`](crate::prelude::OwnedBinaryTreeNode::map)
+    /// - [`fold`](crate::prelude::OwnedBinaryTreeNode::fold)
+    ///
+    /// If you are chaining many operations together, use into_pipeline. This will
+    /// be much more efficient in memory since it only maintains a single ancestor stack
+    /// of the tree at a time.
+    ///
+    /// ### Example Usage:
+    /// ```rust
+    /// use tree_iterators_rs::{
+    ///     examples::create_example_binary_tree,
+    ///     prelude::{BinaryTree, OwnedBinaryTreeNode, TreeIteratorBase, BinaryTreeIterator}
+    /// };
+    ///
+    /// let tree = create_example_binary_tree();
+    /// let result = tree.into_pipeline()
+    ///     .prune_depth(2)
+    ///     .map_tree(|value| value + 200)
+    ///     .collect_tree()
+    ///     .expect("all non-prune methods to collect into a Some()");
+    ///
+    /// assert_eq!(
+    ///     BinaryTree {
+    ///         value: 200,
+    ///         left: Some(Box::new(BinaryTree {
+    ///             value: 201,
+    ///             left: Some(Box::new(BinaryTree {
+    ///                 value: 203,
+    ///                 left: None,
+    ///                 right: None,
+    ///             })),
+    ///             right: Some(Box::new(BinaryTree {
+    ///                 value: 204,
+    ///                 left: None,
+    ///                 right: None,
+    ///             })),
+    ///         })),
+    ///         right: Some(Box::new(BinaryTree {
+    ///             value: 202,
+    ///             left: Some(Box::new(BinaryTree {
+    ///                 value: 205,
+    ///                 left: None,
+    ///                 right: None,
+    ///             })),
+    ///             right: Some(Box::new(BinaryTree {
+    ///                 value: 206,
+    ///                 left: None,
+    ///                 right: None,
+    ///             })),
+    ///         })),
+    ///     },
+    ///     result
+    /// );
+    /// ```
+    fn into_pipeline(self) -> impl BinaryTreeIterator<Self::OwnedValue, [Option<Self>; 2]> {
+        OwnedBinaryDFSPreorderIteratorWithPathTracking::new(self)
+    }
+
+    /// Prune is a tree-based analog to [`filter`](core::iter::Iterator::filter).
+    ///
+    /// Uses the given closure to determine if each subtree in this tree should be pruned.
+    ///
+    /// Given an element the closure must return true or false. Any nodes in the tree for
+    /// which this evaluates to true will be pruned out of the resulting tree. If the root node is pruned,
+    /// `prune` will return [`None`].
+    ///
+    /// The closure is called on the nodes in a depth first preorder traversal order (see
+    /// [`dfs_preorder`](crate::prelude::OwnedBinaryTreeNode::dfs_preorder) for more details). If a
+    /// node is determined to be pruned, its entire subtree will be pruned without calling the
+    /// closure on its descendent nodes.
+    ///
+    /// ### Basic usage:
+    ///
+    /// ```rust
+    /// use tree_iterators_rs::prelude::{BinaryTree, OwnedBinaryTreeNode};
+    ///
+    /// let tree = BinaryTree {
+    ///     value: 0,
+    ///     left: Some(Box::new(BinaryTree {
+    ///         value: 1,
+    ///         left: Some(Box::new(BinaryTree {
+    ///             value: 3,
+    ///             left: None,
+    ///             right: None,
+    ///         })),
+    ///         right: None,
+    ///     })),
+    ///     right: Some(Box::new(BinaryTree {
+    ///         value: 2,
+    ///         left: None,
+    ///         right: None,
+    ///     })),
+    /// };
+    ///
+    /// let result = tree.prune(|value| {
+    ///     /// The output for this code would be the following. A couple notes about
+    ///     /// this output:
+    ///     /// 1. the node with a value of '1' has been removed
+    ///     /// 2. the closure is never called on the node with a value of '3' since
+    ///     ///    it is already determined to be pruned once '1' has been evaluated.
+    ///     /// ```
+    ///     /// 0
+    ///     /// 1
+    ///     /// 2
+    ///     /// ```
+    ///     println!("{value:?}");
+    ///     *value == 1
+    /// });
+    ///
+    /// assert_eq!(
+    ///     Some(BinaryTree {
+    ///         value: 0,
+    ///         left: None,
+    ///         right: Some(
+    ///             Box::new(BinaryTree {
+    ///                 value: 2,
+    ///                 left: None,
+    ///                 right: None,
+    ///             }),
+    ///         ),
+    ///     }),
+    ///     result
+    /// );
+    ///
+    /// ```
+    fn prune<F>(self, f: F) -> Option<BinaryTree<Self::OwnedValue>>
+    where
+        F: FnMut(&Self::OwnedValue) -> bool,
+    {
+        self.into_pipeline().prune(f).collect_tree()
+    }
+
+    /// Prune is a tree-based analog to [`filter`](core::iter::Iterator::filter).
+    ///
+    /// Uses the depth of each subtree to determine if the subtree should be pruned.
+    /// Any node with a depth that is strictly greater than the max_depth parameter
+    /// will be pruned from the tree.
+    ///
+    /// Depth is zero-based, so the root node is considered to be at depth zero.
+    ///
+    /// Ex. given a tree like the following, the depths would be as labeled.
+    ///
+    /// ```text
+    ///        0       <- depth: 0
+    ///       / \
+    ///      1   2     <- depth: 1
+    ///     / \ / \
+    ///    3  4 5  6   <- depth: 2
+    ///           /
+    ///          7     <- depth: 3
+    ///           \
+    ///            8   <- depth: 4
+    ///           /
+    ///          9     <- depth: 5
+    ///           \
+    ///           10   <- depth: 6
+    /// ```
+    ///
+    /// ### Basic usage:
+    ///
+    /// ```rust
+    /// use tree_iterators_rs::prelude::{BinaryTree, OwnedBinaryTreeNode};
+    ///
+    /// let tree = BinaryTree {
+    ///     value: 0,
+    ///     left: Some(Box::new(BinaryTree {
+    ///         value: 1,
+    ///         left: Some(Box::new(BinaryTree {
+    ///             value: 3,
+    ///             left: None,
+    ///             right: None,
+    ///         })),
+    ///         right: None,
+    ///     })),
+    ///     right: Some(Box::new(BinaryTree {
+    ///         value: 2,
+    ///         left: None,
+    ///         right: None,
+    ///     }))
+    /// };
+    ///
+    /// assert_eq!(
+    ///     BinaryTree {
+    ///         value: 0,
+    ///         left: None,
+    ///         right: None,
+    ///     },
+    ///     tree.prune_depth(0)
+    /// );
+    /// ```
+    fn prune_depth(self, max_depth: usize) -> BinaryTree<Self::OwnedValue> {
+        self.into_pipeline()
+            .prune_depth(max_depth)
+            .collect_tree()
+            .expect("this should never prune the root of the tree")
+    }
+
+    /// Prune is a tree-based analog to [`filter`](core::iter::Iterator::filter).
+    ///
+    /// Uses the given closure to determine if each subtree in this tree should be pruned.
+    ///
+    /// Given an element and its context in the tree, the closure must return true or false.
+    /// Any nodes in the tree for which this evaluates to true will be pruned out of the resulting
+    /// tree. If the root node is pruned, `prune` will return [`None`].
+    ///
+    /// The closure is called on the nodes in a depth first preorder traversal order (see
+    /// [`dfs_preorder`](crate::prelude::OwnedTreeNode::dfs_preorder) for more details). If a
+    /// node is determined to be pruned, its entire subtree will be pruned without calling the
+    /// closure on its descendent nodes.
+    ///
+    /// ### Basic usage:
+    /// ```rust
+    /// use tree_iterators_rs::prelude::{BinaryTree, OwnedBinaryTreeNode};
+    ///
+    /// let tree = BinaryTree {
+    ///     value: 0,
+    ///     left: Some(Box::new(BinaryTree {
+    ///         value: 1,
+    ///         left: Some(Box::new(BinaryTree {
+    ///             value: 3,
+    ///             left: None,
+    ///             right: None,
+    ///         })),
+    ///         right: None,
+    ///     })),
+    ///     right: Some(Box::new(BinaryTree {
+    ///         value: 2,
+    ///         left: None,
+    ///         right: None,
+    ///     }))
+    /// };
+    ///
+    /// let result = tree.prune_path(|path, value| {
+    ///     /// The output for this code would be the following. A couple notes about
+    ///     /// this output:
+    ///     /// 1. the node with a value of '1' has been removed
+    ///     /// 2. the closure is never called on the node with a value of '3' since
+    ///     /// it is already determined to be pruned once '1' has been evaluated.
+    ///     /// ```
+    ///     /// [0]; 0
+    ///     /// [0, 0]; 1
+    ///     /// [0, 1]; 2
+    ///     /// ```
+    ///     println!("{:?}; {:?}", path, value);
+    ///     *value == 1
+    /// });
+    ///
+    /// assert_eq!(
+    ///     Some(BinaryTree {
+    ///         value: 0,
+    ///         left: None,
+    ///         right: Some(Box::new(BinaryTree {
+    ///             value: 2,
+    ///             left: None,
+    ///             right: None,
+    ///         }))
+    ///     }),
+    ///     result
+    /// );
+    /// ```
+    fn prune_path<F>(self, f: F) -> Option<BinaryTree<Self::OwnedValue>>
+    where
+        F: FnMut(&[usize], &Self::OwnedValue) -> bool,
+    {
+        self.into_pipeline().prune_path(f).collect_tree()
+    }
+
+    /// map is a tree-based analog to [map](core::iter::Iterator::map).
+    ///
+    /// Takes a closure and applies that closure to each node's value in the tree.
+    ///
+    /// map() transforms one tree into another, by means of its argument: something that
+    /// implements FnMut. It produces a new tree which calls this closure on each node of
+    /// the original tree.
+    ///
+    /// If you are good at thinking in types, you can think of map() like this: If you
+    /// have a tree that has elements of some type A, and you want a tree of some other
+    /// type B, you can use map(), passing a closure that takes an A and returns a B.
+    ///
+    /// ### Example Usage
+    ///
+    /// ```rust
+    /// use tree_iterators_rs::{
+    ///     examples::create_example_binary_tree,
+    ///     prelude::{BinaryTree, OwnedBinaryTreeNode}
+    /// };
+    ///
+    /// let tree = BinaryTree {
+    ///     value: "0-0",
+    ///     left: Some(Box::new(BinaryTree {
+    ///         value: "1-1",
+    ///         left: None,
+    ///         right: None,
+    ///     })),
+    ///     right: Some(Box::new(BinaryTree {
+    ///         value: "2-2",
+    ///         left: None,
+    ///         right: None,
+    ///     })),
+    /// };
+    ///
+    /// let result = tree.map(|value: &'static str| {
+    ///     value.split("-").nth(1).unwrap().to_string()
+    /// });
+    ///
+    /// assert_eq!(
+    ///     BinaryTree {
+    ///         value: "0".to_string(),
+    ///         left: Some(Box::new(BinaryTree {
+    ///             value: "1".to_string(),
+    ///             left: None,
+    ///             right: None,
+    ///         })),
+    ///         right: Some(Box::new(BinaryTree {
+    ///             value: "2".to_string(),
+    ///             left: None,
+    ///             right: None,
+    ///         })),
+    ///     },
+    ///     result);
+    /// ```
+    fn map<U, F>(self, f: F) -> BinaryTree<U>
+    where
+        F: FnMut(Self::OwnedValue) -> U,
+    {
+        self.into_pipeline().map_tree(f).collect_tree().unwrap()
+    }
+
+    /// fold is a tree-based analog to [fold](core::iter::Iterator::fold).
+    ///
+    /// Folds every element into an accumulation by applying an operation, returning the
+    /// final result.
+    ///
+    /// fold() takes one argument: a closure with two arguments: the result of accumulating
+    /// all children of the current tree node, and an element. The closure returns the value
+    /// that the accumulator should have for the parent node's accumulation.
+    ///
+    /// After applying this closure to every node of the tree, fold() returns the accumulation.
+    ///
+    /// This operation is sometimes called ‘reduce’ or ‘inject’.
+    ///
+    /// Folding is useful whenever you have a tree of something, and want to produce a single
+    /// value from it.
+    ///
+    /// ### Example Usage
+    /// ```rust
+    /// use tree_iterators_rs::{
+    ///     examples::create_example_binary_tree,
+    ///     prelude::OwnedBinaryTreeNode
+    /// };
+    ///
+    /// let tree = create_example_binary_tree();
+    /// let accumulation = tree.fold(|child_accumulations: [Option<usize>; 2], value| {
+    ///     child_accumulations
+    ///         .into_iter()
+    ///         .map(|opt| opt.unwrap_or_default())
+    ///         .sum::<usize>()
+    ///     + value
+    /// });
+    ///
+    /// assert_eq!(55, accumulation);
+    /// ```
+    fn fold<U, F>(self, f: F) -> U
+    where
+        F: FnMut([Option<U>; 2], Self::OwnedValue) -> U,
+    {
+        self.into_pipeline()
+            .fold_tree(f)
+            .expect("there to always be at least the root to fold")
+    }
 }
 
 /// A tree node where getting its children consumes its value.
@@ -342,6 +737,308 @@ where
     ///
     fn dfs_postorder(self) -> OwnedDFSPostorderIterator<Self> {
         OwnedDFSPostorderIterator::new(self)
+    }
+
+    /// This method converts the current TreeNode into a TreeIterator.
+    ///
+    /// TreeIterators have 2 purposes:
+    /// 1. they serve as the internal piping of tree_iterators_rs
+    /// 2. they can efficiently chain the prune, map, and fold operations on a tree.
+    ///
+    /// If you are only applying a single prune, map, or fold operation, just call the
+    /// associated method.
+    /// - [`prune`](crate::prelude::OwnedTreeNode::prune)
+    /// - [`map`](crate::prelude::OwnedTreeNode::map)
+    /// - [`fold`](crate::prelude::OwnedTreeNode::fold)
+    ///
+    /// If you are chaining many operations together, use into_pipeline. This will
+    /// be much more efficient in memory since it only maintains a single ancestor stack
+    /// of the tree at a time.
+    ///
+    /// ### Example Usage:
+    /// ```rust
+    /// use tree_iterators_rs::{
+    ///     examples::create_example_tree,
+    ///     prelude::{Tree, OwnedTreeNode, TreeIteratorBase, TreeIterator}
+    /// };
+    ///
+    /// let tree = create_example_tree();
+    /// let result = tree.into_pipeline()
+    ///     .prune_depth(2)
+    ///     .map_tree(|value| value + 200)
+    ///     .collect_tree()
+    ///     .expect("all non-prune methods to collect into a Some()");
+    ///
+    /// assert_eq!(
+    ///     Tree {
+    ///        value: 200,
+    ///        children: vec![
+    ///            Tree {
+    ///                value: 201,
+    ///                children: vec![
+    ///                    Tree {
+    ///                        value: 203,
+    ///                        children: vec![],
+    ///                    },
+    ///                    Tree {
+    ///                        value: 204,
+    ///                        children: vec![],
+    ///                    },
+    ///                ],
+    ///            },
+    ///            Tree {
+    ///                value: 202,
+    ///                children: vec![
+    ///                    Tree {
+    ///                        value: 205,
+    ///                        children: vec![],
+    ///                    },
+    ///                    Tree {
+    ///                        value: 206,
+    ///                        children: vec![],
+    ///                    },
+    ///                ],
+    ///            },
+    ///        ],
+    ///     },
+    ///     result);
+    /// ```
+    fn into_pipeline(self) -> impl TreeIterator<Self::OwnedValue, Self::OwnedChildren> {
+        OwnedDFSPreorderIteratorWithPathTracking::new(self)
+    }
+
+    /// Prune is a tree-based analog to [`filter`](core::iter::Iterator::filter).
+    ///
+    /// Uses the given closure to determine if each subtree in this tree should be pruned.
+    ///
+    /// Given an element the closure must return true or false. Any nodes in the tree for
+    /// which this evaluates to true will be pruned out of the resulting tree. If the root
+    /// node is pruned, this will return [`None`].
+    ///
+    /// The closure is called on the nodes in a depth first preorder traversal order (see
+    /// [`dfs_preorder`](crate::prelude::OwnedTreeNode::dfs_preorder) for more details). If a
+    /// node is determined to be pruned, its entire subtree will be pruned without calling the
+    /// closure on its descendent nodes.
+    ///
+    /// ### Basic usage:
+    ///
+    /// ```rust
+    /// use tree_iterators_rs::prelude::{OwnedTreeNode, Tree};
+    ///
+    /// let tree = Tree {
+    ///     value: 0,
+    ///     children: vec![
+    ///         Tree {
+    ///             value: 1,
+    ///             children: vec![Tree {
+    ///                 value: 3,
+    ///                 children: Vec::new(),
+    ///             }],
+    ///         },
+    ///         Tree {
+    ///             value: 2,
+    ///             children: Vec::new()
+    ///         },
+    ///     ],
+    /// };
+    ///
+    /// assert_eq!(
+    ///     Some(
+    ///         Tree {
+    ///             value: 0,
+    ///             children: vec![
+    ///                 Tree {
+    ///                     value: 2,
+    ///                     children: Vec::new(),
+    ///                 }
+    ///             ],
+    ///         },
+    ///     ),
+    ///     tree.prune(|value| {
+    ///         /// The output for this code would be the following. A couple notes about
+    ///         /// this output:
+    ///         /// 1. the node with a value of '1' has been removed
+    ///         /// 2. the closure is never called on the node with a value of '3' since
+    ///         ///    it is already determined to be pruned once '1' has been evaluated.
+    ///         /// ```
+    ///         /// 0
+    ///         /// 1
+    ///         /// 2
+    ///         /// ```
+    ///         println!("{value:?}");
+    ///         *value == 1
+    ///     })
+    /// );
+    /// ```
+    fn prune<F>(self, f: F) -> Option<Tree<Self::OwnedValue>>
+    where
+        F: FnMut(&Self::OwnedValue) -> bool,
+    {
+        self.into_pipeline().prune(f).collect_tree()
+    }
+
+    /// Prune is a tree-based analog to [`filter`](core::iter::Iterator::filter).
+    ///
+    /// Uses the depth of each subtree to determine if the subtree should be pruned.
+    /// Any node with a depth that is strictly greater than the max_depth parameter
+    /// will be pruned from the tree.
+    ///
+    /// Depth is zero-based, so the root node is considered to be at depth zero.
+    ///
+    /// Ex. given a tree like the following, the depths would be as labeled.
+    ///
+    /// ```text
+    ///        0       <- depth: 0
+    ///       / \
+    ///      1   2     <- depth: 1
+    ///     / \ / \
+    ///    3  4 5  6   <- depth: 2
+    ///           /
+    ///          7     <- depth: 3
+    ///           \
+    ///            8   <- depth: 4
+    ///           /
+    ///          9     <- depth: 5
+    ///           \
+    ///           10   <- depth: 6
+    /// ```
+    ///
+    /// ### Basic usage:
+    ///
+    /// ```rust
+    /// use tree_iterators_rs::prelude::{Tree, OwnedTreeNode};
+    ///
+    /// let tree = Tree {
+    ///     value: 0,
+    ///     children: vec![
+    ///         Tree {
+    ///             value: 1,
+    ///             children: vec![Tree {
+    ///                 value: 3,
+    ///                 children: vec![],
+    ///             }],
+    ///         },
+    ///         Tree {
+    ///             value: 2,
+    ///             children: vec![],
+    ///         },
+    ///     ],
+    /// };
+    ///
+    /// assert_eq!(
+    ///     Tree {
+    ///         value: 0,
+    ///         children: vec![],
+    ///     },
+    ///     tree.prune_depth(0)
+    /// );
+    /// ```
+    fn prune_depth(self, max_depth: usize) -> Tree<Self::OwnedValue> {
+        self.into_pipeline()
+            .prune_depth(max_depth)
+            .collect_tree()
+            .unwrap()
+    }
+
+    /// map is a tree-based analog to [map](core::iter::Iterator::map).
+    ///
+    /// Takes a closure and applies that closure to each node's value in the tree.
+    ///
+    /// map() transforms one tree into another, by means of its argument: something that
+    /// implements FnMut. It produces a new tree which calls this closure on each node of
+    /// the original tree.
+    ///
+    /// If you are good at thinking in types, you can think of map() like this: If you
+    /// have a tree that has elements of some type A, and you want a tree of some other
+    /// type B, you can use map(), passing a closure that takes an A and returns a B.
+    ///
+    /// ### Example Usage
+    ///
+    /// ```rust
+    /// use tree_iterators_rs::{
+    ///     examples::create_example_binary_tree,
+    ///     prelude::{Tree, OwnedTreeNode}
+    /// };
+    ///
+    /// let tree = Tree {
+    ///     value: "0-0",
+    ///     children: vec![
+    ///         Tree {
+    ///             value: "1-1",
+    ///             children: vec![],
+    ///         },
+    ///         Tree {
+    ///             value: "2-2",
+    ///             children: vec![],
+    ///         }
+    ///     ],
+    /// };
+    ///
+    /// let result = tree.map(|value: &'static str| {
+    ///     value.split("-").nth(1).unwrap().to_string()
+    /// });
+    ///
+    /// assert_eq!(
+    ///     Tree {
+    ///         value: "0".to_string(),
+    ///         children: vec![
+    ///             Tree {
+    ///                 value: "1".to_string(),
+    ///                 children: vec![],
+    ///             },
+    ///             Tree {
+    ///                 value: "2".to_string(),
+    ///                 children: vec![],
+    ///             },
+    ///         ],
+    ///     },
+    ///     result);
+    /// ```
+    fn map<U, F>(self, f: F) -> Tree<U>
+    where
+        F: FnMut(Self::OwnedValue) -> U,
+    {
+        self.into_pipeline().map_tree(f).collect_tree().unwrap()
+    }
+
+    /// fold is a tree-based analog to [fold](core::iter::Iterator::fold).
+    ///
+    /// Folds every element into an accumulation by applying an operation, returning the
+    /// final result.
+    ///
+    /// fold() takes one argument: a closure with two arguments: the result of accumulating
+    /// all children of the current tree node, and an element. The closure returns the value
+    /// that the accumulator should have for the parent node's accumulation.
+    ///
+    /// After applying this closure to every node of the tree, fold() returns the accumulation.
+    ///
+    /// This operation is sometimes called ‘reduce’ or ‘inject’.
+    ///
+    /// Folding is useful whenever you have a tree of something, and want to produce a single
+    /// value from it.
+    ///
+    /// ### Example Usage
+    /// ```rust
+    /// use tree_iterators_rs::{
+    ///     examples::create_example_tree,
+    ///     prelude::OwnedTreeNode
+    /// };
+    ///
+    /// let tree = create_example_tree();
+    /// let accumulation = tree.fold(|child_accumulations: Vec<usize>, value| {
+    ///     child_accumulations
+    ///         .into_iter()
+    ///         .sum::<usize>()
+    ///     + value
+    /// });
+    ///
+    /// assert_eq!(55, accumulation);
+    /// ```
+    fn fold<U, F>(self, f: F) -> U
+    where
+        F: FnMut(Vec<U>, Self::OwnedValue) -> U,
+    {
+        self.into_pipeline().fold_tree(f).unwrap()
     }
 }
 
@@ -508,6 +1205,316 @@ where
     fn dfs_postorder_iter_mut(&'a mut self) -> MutBorrowedBinaryDFSPostorderIterator<'_, Self> {
         MutBorrowedBinaryDFSPostorderIterator::new(self)
     }
+
+    /// This method converts the current BinaryTreeNode into a BinaryTreeIterator.
+    ///
+    /// BinaryTreeIterators have 2 purposes:
+    /// 1. they serve as the internal piping of tree_iterators_rs
+    /// 2. they can efficiently chain the prune, map, and fold operations on a tree.
+    ///
+    /// If you are only applying a single prune, map, or fold operation, just call the
+    /// associated method.
+    /// - [`prune_mut`](crate::prelude::MutBorrowedBinaryTreeNode::prune_mut)
+    /// - [`map_mut`](crate::prelude::MutBorrowedBinaryTreeNode::map_mut)
+    /// - [`fold_mut`](crate::prelude::MutBorrowedBinaryTreeNode::fold_mut)
+    ///
+    /// If you are chaining many operations together, use into_pipeline. This will
+    /// be much more efficient in memory since it only maintains a single ancestor stack
+    /// of the tree at a time.
+    ///
+    /// ### Example Usage:
+    /// ```rust
+    /// use tree_iterators_rs::{
+    ///     examples::create_example_binary_tree,
+    ///     prelude::{BinaryTree, MutBorrowedBinaryTreeNode, TreeIteratorBase, BinaryTreeIterator}
+    /// };
+    ///
+    /// let mut tree = create_example_binary_tree();
+    /// let result = tree.into_pipeline_mut()
+    ///     .prune_depth(2)
+    ///     .map_tree(|value| *value + 200)
+    ///     .collect_tree()
+    ///     .expect("all non-prune methods to collect into a Some()");
+    ///
+    /// assert_eq!(
+    ///     BinaryTree {
+    ///         value: 200,
+    ///         left: Some(Box::new(BinaryTree {
+    ///             value: 201,
+    ///             left: Some(Box::new(BinaryTree {
+    ///                 value: 203,
+    ///                 left: None,
+    ///                 right: None,
+    ///             })),
+    ///             right: Some(Box::new(BinaryTree {
+    ///                 value: 204,
+    ///                 left: None,
+    ///                 right: None,
+    ///             })),
+    ///         })),
+    ///         right: Some(Box::new(BinaryTree {
+    ///             value: 202,
+    ///             left: Some(Box::new(BinaryTree {
+    ///                 value: 205,
+    ///                 left: None,
+    ///                 right: None,
+    ///             })),
+    ///             right: Some(Box::new(BinaryTree {
+    ///                 value: 206,
+    ///                 left: None,
+    ///                 right: None,
+    ///             })),
+    ///         })),
+    ///     },
+    ///     result
+    /// );
+    /// ```
+    fn into_pipeline_mut(
+        &'a mut self,
+    ) -> impl BinaryTreeIterator<Self::MutBorrowedValue, [Option<&'a mut Self>; 2]> {
+        MutBorrowedBinaryDFSPreorderIteratorWithPathTracking::new(self)
+    }
+
+    /// Prune is a tree-based analog to [`filter`](core::iter::Iterator::filter).
+    ///
+    /// Uses the given closure to determine if each subtree in this tree should be pruned.
+    ///
+    /// Given an element the closure must return true or false. Any nodes in the tree for
+    /// which this evaluates to true will be pruned out of the resulting tree. If the root node is pruned,
+    /// `prune` will return [`None`].
+    ///
+    /// The closure is called on the nodes in a depth first preorder traversal order (see
+    /// [`dfs_preorder`](crate::prelude::OwnedBinaryTreeNode::dfs_preorder) for more details). If a
+    /// node is determined to be pruned, its entire subtree will be pruned without calling the
+    /// closure on its descendent nodes.
+    ///
+    /// ### Basic usage:
+    ///
+    /// ```rust
+    /// use tree_iterators_rs::prelude::{BinaryTree, MutBorrowedBinaryTreeNode};
+    ///
+    /// let mut tree = BinaryTree {
+    ///     value: 0,
+    ///     left: Some(Box::new(BinaryTree {
+    ///         value: 1,
+    ///         left: Some(Box::new(BinaryTree {
+    ///             value: 3,
+    ///             left: None,
+    ///             right: None,
+    ///         })),
+    ///         right: None,
+    ///     })),
+    ///     right: Some(Box::new(BinaryTree {
+    ///         value: 2,
+    ///         left: None,
+    ///         right: None,
+    ///     })),
+    /// };
+    ///
+    /// let result = tree.prune_mut(|value| {
+    ///     /// The output for this code would be the following. A couple notes about
+    ///     /// this output:
+    ///     /// 1. the node with a value of '1' has been removed
+    ///     /// 2. the closure is never called on the node with a value of '3' since
+    ///     ///    it is already determined to be pruned once '1' has been evaluated.
+    ///     /// ```
+    ///     /// 0
+    ///     /// 1
+    ///     /// 2
+    ///     /// ```
+    ///     println!("{value:?}");
+    ///     **value == 1
+    /// });
+    ///
+    /// assert_eq!(
+    ///     Some(BinaryTree {
+    ///         value: &mut 0,
+    ///         left: None,
+    ///         right: Some(
+    ///             Box::new(BinaryTree {
+    ///                 value: &mut 2,
+    ///                 left: None,
+    ///                 right: None,
+    ///             }),
+    ///         ),
+    ///     }),
+    ///     result
+    /// );
+    ///
+    /// ```
+    fn prune_mut<F>(&'a mut self, f: F) -> Option<BinaryTree<Self::MutBorrowedValue>>
+    where
+        F: FnMut(&Self::MutBorrowedValue) -> bool,
+    {
+        self.into_pipeline_mut().prune(f).collect_tree()
+    }
+
+    /// Prune is a tree-based analog to [`filter`](core::iter::Iterator::filter).
+    ///
+    /// Uses the depth of each subtree to determine if the subtree should be pruned.
+    /// Any node with a depth that is strictly greater than the max_depth parameter
+    /// will be pruned from the tree.
+    ///
+    /// Depth is zero-based, so the root node is considered to be at depth zero.
+    ///
+    /// Ex. given a tree like the following, the depths would be as labeled.
+    ///
+    /// ```text
+    ///        0       <- depth: 0
+    ///       / \
+    ///      1   2     <- depth: 1
+    ///     / \ / \
+    ///    3  4 5  6   <- depth: 2
+    ///           /
+    ///          7     <- depth: 3
+    ///           \
+    ///            8   <- depth: 4
+    ///           /
+    ///          9     <- depth: 5
+    ///           \
+    ///           10   <- depth: 6
+    /// ```
+    ///
+    /// ### Basic usage:
+    ///
+    /// ```rust
+    /// use tree_iterators_rs::prelude::{BinaryTree, MutBorrowedBinaryTreeNode};
+    ///
+    /// let mut tree = BinaryTree {
+    ///     value: 0,
+    ///     left: Some(Box::new(BinaryTree {
+    ///         value: 1,
+    ///         left: Some(Box::new(BinaryTree {
+    ///             value: 3,
+    ///             left: None,
+    ///             right: None,
+    ///         })),
+    ///         right: None,
+    ///     })),
+    ///     right: Some(Box::new(BinaryTree {
+    ///         value: 2,
+    ///         left: None,
+    ///         right: None,
+    ///     }))
+    /// };
+    ///
+    /// assert_eq!(
+    ///     BinaryTree {
+    ///         value: &mut 0,
+    ///         left: None,
+    ///         right: None,
+    ///     },
+    ///     tree.prune_depth_mut(0)
+    /// );
+    /// ```
+    fn prune_depth_mut(&'a mut self, max_depth: usize) -> BinaryTree<Self::MutBorrowedValue> {
+        self.into_pipeline_mut()
+            .prune_depth(max_depth)
+            .collect_tree()
+            .unwrap()
+    }
+
+    /// map is a tree-based analog to [map](core::iter::Iterator::map).
+    ///
+    /// Takes a closure and applies that closure to each node's value in the tree.
+    ///
+    /// map() transforms one tree into another, by means of its argument: something that
+    /// implements FnMut. It produces a new tree which calls this closure on each node of
+    /// the original tree.
+    ///
+    /// If you are good at thinking in types, you can think of map() like this: If you
+    /// have a tree that has elements of some type A, and you want a tree of some other
+    /// type B, you can use map(), passing a closure that takes an A and returns a B.
+    ///
+    /// ### Example Usage
+    ///
+    /// ```rust
+    /// use tree_iterators_rs::{
+    ///     examples::create_example_binary_tree,
+    ///     prelude::{BinaryTree, MutBorrowedBinaryTreeNode}
+    /// };
+    ///
+    /// let mut tree = BinaryTree {
+    ///     value: "0-0",
+    ///     left: Some(Box::new(BinaryTree {
+    ///         value: "1-1",
+    ///         left: None,
+    ///         right: None,
+    ///     })),
+    ///     right: Some(Box::new(BinaryTree {
+    ///         value: "2-2",
+    ///         left: None,
+    ///         right: None,
+    ///     })),
+    /// };
+    ///
+    /// let result = tree.map_mut(|value: &mut &'static str| {
+    ///     value.split("-").nth(1).unwrap().to_string()
+    /// });
+    ///
+    /// assert_eq!(
+    ///     BinaryTree {
+    ///         value: "0".to_string(),
+    ///         left: Some(Box::new(BinaryTree {
+    ///             value: "1".to_string(),
+    ///             left: None,
+    ///             right: None,
+    ///         })),
+    ///         right: Some(Box::new(BinaryTree {
+    ///             value: "2".to_string(),
+    ///             left: None,
+    ///             right: None,
+    ///         })),
+    ///     },
+    ///     result);
+    /// ```
+    fn map_mut<U, F>(&'a mut self, f: F) -> BinaryTree<U>
+    where
+        F: FnMut(Self::MutBorrowedValue) -> U,
+    {
+        self.into_pipeline_mut().map_tree(f).collect_tree().unwrap()
+    }
+
+    /// fold is a tree-based analog to [fold](core::iter::Iterator::fold).
+    ///
+    /// Folds every element into an accumulation by applying an operation, returning the
+    /// final result.
+    ///
+    /// fold() takes one argument: a closure with two arguments: the result of accumulating
+    /// all children of the current tree node, and an element. The closure returns the value
+    /// that the accumulator should have for the parent node's accumulation.
+    ///
+    /// After applying this closure to every node of the tree, fold() returns the accumulation.
+    ///
+    /// This operation is sometimes called ‘reduce’ or ‘inject’.
+    ///
+    /// Folding is useful whenever you have a tree of something, and want to produce a single
+    /// value from it.
+    ///
+    /// ### Example Usage
+    /// ```rust
+    /// use tree_iterators_rs::{
+    ///     examples::create_example_binary_tree,
+    ///     prelude::MutBorrowedBinaryTreeNode
+    /// };
+    ///
+    /// let mut tree = create_example_binary_tree();
+    /// let accumulation = tree.fold_mut(|child_accumulations: [Option<usize>; 2], value| {
+    ///     child_accumulations
+    ///         .into_iter()
+    ///         .map(|opt| opt.unwrap_or_default())
+    ///         .sum::<usize>()
+    ///     + *value
+    /// });
+    ///
+    /// assert_eq!(55, accumulation);
+    /// ```
+    fn fold_mut<U, F>(&'a mut self, f: F) -> U
+    where
+        F: FnMut([Option<U>; 2], Self::MutBorrowedValue) -> U,
+    {
+        self.into_pipeline_mut().fold_tree(f).unwrap()
+    }
 }
 
 /// A tree node where getting its children mutably borrows its value.
@@ -627,6 +1634,310 @@ where
     ///
     fn dfs_postorder_iter_mut(&'a mut self) -> MutBorrowedDFSPostorderIterator<'_, Self> {
         MutBorrowedDFSPostorderIterator::new(self)
+    }
+
+    /// This method converts the current TreeNode into a TreeIterator.
+    ///
+    /// TreeIterators have 2 purposes:
+    /// 1. they serve as the internal piping of tree_iterators_rs
+    /// 2. they can efficiently chain the prune, map, and fold operations on a tree.
+    ///
+    /// If you are only applying a single prune, map, or fold operation, just call the
+    /// associated method.
+    /// - [`prune_mut`](crate::prelude::MutBorrowedTreeNode::prune_mut)
+    /// - [`map_mut`](crate::prelude::MutBorrowedTreeNode::map_mut)
+    /// - [`fold_mut`](crate::prelude::MutBorrowedTreeNode::fold_mut)
+    ///
+    /// If you are chaining many operations together, use into_pipeline. This will
+    /// be much more efficient in memory since it only maintains a single ancestor stack
+    /// of the tree at a time.
+    ///
+    /// ### Example Usage:
+    /// ```rust
+    /// use tree_iterators_rs::{
+    ///     examples::create_example_tree,
+    ///     prelude::{Tree, MutBorrowedTreeNode, TreeIteratorBase, TreeIterator}
+    /// };
+    ///
+    /// let mut tree = create_example_tree();
+    /// let result = tree.into_pipeline_mut()
+    ///     .prune_depth(2)
+    ///     .map_tree(|value| *value + 200)
+    ///     .collect_tree()
+    ///     .expect("all non-prune methods to collect into a Some()");
+    ///
+    /// assert_eq!(
+    ///     Tree {
+    ///        value: 200,
+    ///        children: vec![
+    ///            Tree {
+    ///                value: 201,
+    ///                children: vec![
+    ///                    Tree {
+    ///                        value: 203,
+    ///                        children: vec![],
+    ///                    },
+    ///                    Tree {
+    ///                        value: 204,
+    ///                        children: vec![],
+    ///                    },
+    ///                ],
+    ///            },
+    ///            Tree {
+    ///                value: 202,
+    ///                children: vec![
+    ///                    Tree {
+    ///                        value: 205,
+    ///                        children: vec![],
+    ///                    },
+    ///                    Tree {
+    ///                        value: 206,
+    ///                        children: vec![],
+    ///                    },
+    ///                ],
+    ///            },
+    ///        ],
+    ///     },
+    ///     result);
+    /// ```
+    fn into_pipeline_mut(
+        &'a mut self,
+    ) -> impl TreeIterator<Self::MutBorrowedValue, Self::MutBorrowedChildren> {
+        MutBorrowedDFSPreorderIteratorWithPathTracking::new(self)
+    }
+
+    /// Prune is a tree-based analog to [`filter`](core::iter::Iterator::filter).
+    ///
+    /// Uses the given closure to determine if each subtree in this tree should be pruned.
+    ///
+    /// Given an element the closure must return true or false. Any nodes in the tree for
+    /// which this evaluates to true will be pruned out of the resulting tree. If the root
+    /// node is pruned, this will return [`None`].
+    ///
+    /// The closure is called on the nodes in a depth first preorder traversal order (see
+    /// [`dfs_preorder`](crate::prelude::OwnedTreeNode::dfs_preorder) for more details). If a
+    /// node is determined to be pruned, its entire subtree will be pruned without calling the
+    /// closure on its descendent nodes.
+    ///
+    /// ### Basic usage:
+    ///
+    /// ```rust
+    /// use tree_iterators_rs::prelude::{MutBorrowedTreeNode, Tree};
+    ///
+    /// let mut tree = Tree {
+    ///     value: 0,
+    ///     children: vec![
+    ///         Tree {
+    ///             value: 1,
+    ///             children: vec![Tree {
+    ///                 value: 3,
+    ///                 children: Vec::new(),
+    ///             }],
+    ///         },
+    ///         Tree {
+    ///             value: 2,
+    ///             children: Vec::new()
+    ///         },
+    ///     ],
+    /// };
+    ///
+    /// assert_eq!(
+    ///     Some(
+    ///         Tree {
+    ///             value: &mut 0,
+    ///             children: vec![
+    ///                 Tree {
+    ///                     value: &mut 2,
+    ///                     children: Vec::new(),
+    ///                 }
+    ///             ],
+    ///         },
+    ///     ),
+    ///     tree.prune_mut(|value| {
+    ///         /// The output for this code would be the following. A couple notes about
+    ///         /// this output:
+    ///         /// 1. the node with a value of '1' has been removed
+    ///         /// 2. the closure is never called on the node with a value of '3' since
+    ///         ///    it is already determined to be pruned once '1' has been evaluated.
+    ///         /// ```
+    ///         /// 0
+    ///         /// 1
+    ///         /// 2
+    ///         /// ```
+    ///         println!("{value:?}");
+    ///         **value == 1
+    ///     })
+    /// );
+    /// ```
+    fn prune_mut<F>(&'a mut self, f: F) -> Option<Tree<Self::MutBorrowedValue>>
+    where
+        F: FnMut(&Self::MutBorrowedValue) -> bool,
+    {
+        self.into_pipeline_mut().prune(f).collect_tree()
+    }
+
+    /// Prune is a tree-based analog to [`filter`](core::iter::Iterator::filter).
+    ///
+    /// Uses the depth of each subtree to determine if the subtree should be pruned.
+    /// Any node with a depth that is strictly greater than the max_depth parameter
+    /// will be pruned from the tree.
+    ///
+    /// Depth is zero-based, so the root node is considered to be at depth zero.
+    ///
+    /// Ex. given a tree like the following, the depths would be as labeled.
+    ///
+    /// ```text
+    ///        0       <- depth: 0
+    ///       / \
+    ///      1   2     <- depth: 1
+    ///     / \ / \
+    ///    3  4 5  6   <- depth: 2
+    ///           /
+    ///          7     <- depth: 3
+    ///           \
+    ///            8   <- depth: 4
+    ///           /
+    ///          9     <- depth: 5
+    ///           \
+    ///           10   <- depth: 6
+    /// ```
+    ///
+    /// ### Basic usage:
+    ///
+    /// ```rust
+    /// use tree_iterators_rs::prelude::{Tree, MutBorrowedTreeNode};
+    ///
+    /// let mut tree = Tree {
+    ///     value: 0,
+    ///     children: vec![
+    ///         Tree {
+    ///             value: 1,
+    ///             children: vec![Tree {
+    ///                 value: 3,
+    ///                 children: vec![],
+    ///             }],
+    ///         },
+    ///         Tree {
+    ///             value: 2,
+    ///             children: vec![],
+    ///         },
+    ///     ],
+    /// };
+    ///
+    /// assert_eq!(
+    ///     Tree {
+    ///         value: &mut 0,
+    ///         children: vec![],
+    ///     },
+    ///     tree.prune_depth_mut(0)
+    /// );
+    /// ```
+    fn prune_depth_mut(&'a mut self, max_depth: usize) -> Tree<Self::MutBorrowedValue> {
+        self.into_pipeline_mut()
+            .prune_depth(max_depth)
+            .collect_tree()
+            .unwrap()
+    }
+
+    /// map is a tree-based analog to [map](core::iter::Iterator::map).
+    ///
+    /// Takes a closure and applies that closure to each node's value in the tree.
+    ///
+    /// map() transforms one tree into another, by means of its argument: something that
+    /// implements FnMut. It produces a new tree which calls this closure on each node of
+    /// the original tree.
+    ///
+    /// If you are good at thinking in types, you can think of map() like this: If you
+    /// have a tree that has elements of some type A, and you want a tree of some other
+    /// type B, you can use map(), passing a closure that takes an A and returns a B.
+    ///
+    /// ### Example Usage
+    ///
+    /// ```rust
+    /// use tree_iterators_rs::{
+    ///     examples::create_example_binary_tree,
+    ///     prelude::{Tree, MutBorrowedTreeNode}
+    /// };
+    ///
+    /// let mut tree = Tree {
+    ///     value: "0-0",
+    ///     children: vec![
+    ///         Tree {
+    ///             value: "1-1",
+    ///             children: vec![],
+    ///         },
+    ///         Tree {
+    ///             value: "2-2",
+    ///             children: vec![],
+    ///         }
+    ///     ],
+    /// };
+    ///
+    /// let result = tree.map_mut(|value: &mut &'static str| {
+    ///     value.split("-").nth(1).unwrap().to_string()
+    /// });
+    ///
+    /// assert_eq!(
+    ///     Tree {
+    ///         value: "0".to_string(),
+    ///         children: vec![
+    ///             Tree {
+    ///                 value: "1".to_string(),
+    ///                 children: vec![],
+    ///             },
+    ///             Tree {
+    ///                 value: "2".to_string(),
+    ///                 children: vec![],
+    ///             },
+    ///         ],
+    ///     },
+    ///     result);
+    /// ```
+    fn map_mut<U, F>(&'a mut self, f: F) -> Tree<U>
+    where
+        F: FnMut(Self::MutBorrowedValue) -> U,
+    {
+        self.into_pipeline_mut().map_tree(f).collect_tree().unwrap()
+    }
+
+    /// fold is a tree-based analog to [fold](core::iter::Iterator::fold).
+    ///
+    /// Folds every element into an accumulation by applying an operation, returning the
+    /// final result.
+    ///
+    /// fold() takes one argument: a closure with two arguments: the result of accumulating
+    /// all children of the current tree node, and an element. The closure returns the value
+    /// that the accumulator should have for the parent node's accumulation.
+    ///
+    /// After applying this closure to every node of the tree, fold() returns the accumulation.
+    ///
+    /// This operation is sometimes called ‘reduce’ or ‘inject’.
+    ///
+    /// Folding is useful whenever you have a tree of something, and want to produce a single
+    /// value from it.
+    ///
+    /// ### Example Usage
+    /// ```rust
+    /// use tree_iterators_rs::{
+    ///     examples::create_example_tree,
+    ///     prelude::MutBorrowedTreeNode
+    /// };
+    ///
+    /// let mut tree = create_example_tree();
+    /// let accumulation = tree.fold_mut(|child_accumulations: Vec<usize>, value| {
+    ///     child_accumulations
+    ///         .into_iter()
+    ///         .sum::<usize>()
+    ///     + *value
+    /// });
+    ///
+    /// assert_eq!(55, accumulation);
+    /// ```
+    fn fold_mut<U, F>(&'a mut self, f: F) -> U
+    where
+        F: FnMut(Vec<U>, Self::MutBorrowedValue) -> U,
+    {
+        self.into_pipeline_mut().fold_tree(f).unwrap()
     }
 }
 
@@ -790,6 +2101,316 @@ where
     fn dfs_postorder_iter(&'a self) -> BorrowedBinaryDFSPostorderIterator<'_, Self> {
         BorrowedBinaryDFSPostorderIterator::new(self)
     }
+
+    /// This method converts the current BinaryTreeNode into a BinaryTreeIterator.
+    ///
+    /// BinaryTreeIterators have 2 purposes:
+    /// 1. they serve as the internal piping of tree_iterators_rs
+    /// 2. they can efficiently chain the prune, map, and fold operations on a tree.
+    ///
+    /// If you are only applying a single prune, map, or fold operation, just call the
+    /// associated method.
+    /// - [`prune_ref`](crate::prelude::BorrowedBinaryTreeNode::prune_ref)
+    /// - [`map_mut`](crate::prelude::BorrowedBinaryTreeNode::map_ref)
+    /// - [`fold_mut`](crate::prelude::BorrowedBinaryTreeNode::fold_ref)
+    ///
+    /// If you are chaining many operations together, use into_pipeline. This will
+    /// be much more efficient in memory since it only maintains a single ancestor stack
+    /// of the tree at a time.
+    ///
+    /// ### Example Usage:
+    /// ```rust
+    /// use tree_iterators_rs::{
+    ///     examples::create_example_binary_tree,
+    ///     prelude::{BinaryTree, BorrowedBinaryTreeNode, TreeIteratorBase, BinaryTreeIterator}
+    /// };
+    ///
+    /// let tree = create_example_binary_tree();
+    /// let result = tree.into_pipeline_ref()
+    ///     .prune_depth(2)
+    ///     .map_tree(|value| *value + 200)
+    ///     .collect_tree()
+    ///     .expect("all non-prune methods to collect into a Some()");
+    ///
+    /// assert_eq!(
+    ///     BinaryTree {
+    ///         value: 200,
+    ///         left: Some(Box::new(BinaryTree {
+    ///             value: 201,
+    ///             left: Some(Box::new(BinaryTree {
+    ///                 value: 203,
+    ///                 left: None,
+    ///                 right: None,
+    ///             })),
+    ///             right: Some(Box::new(BinaryTree {
+    ///                 value: 204,
+    ///                 left: None,
+    ///                 right: None,
+    ///             })),
+    ///         })),
+    ///         right: Some(Box::new(BinaryTree {
+    ///             value: 202,
+    ///             left: Some(Box::new(BinaryTree {
+    ///                 value: 205,
+    ///                 left: None,
+    ///                 right: None,
+    ///             })),
+    ///             right: Some(Box::new(BinaryTree {
+    ///                 value: 206,
+    ///                 left: None,
+    ///                 right: None,
+    ///             })),
+    ///         })),
+    ///     },
+    ///     result
+    /// );
+    /// ```
+    fn into_pipeline_ref(
+        &'a self,
+    ) -> impl BinaryTreeIterator<Self::BorrowedValue, [Option<&'a Self>; 2]> {
+        BorrowedBinaryDFSPreorderIteratorWithPathTracking::new(self)
+    }
+
+    /// Prune is a tree-based analog to [`filter`](core::iter::Iterator::filter).
+    ///
+    /// Uses the given closure to determine if each subtree in this tree should be pruned.
+    ///
+    /// Given an element the closure must return true or false. Any nodes in the tree for
+    /// which this evaluates to true will be pruned out of the resulting tree. If the root node is pruned,
+    /// `prune` will return [`None`].
+    ///
+    /// The closure is called on the nodes in a depth first preorder traversal order (see
+    /// [`dfs_preorder`](crate::prelude::OwnedBinaryTreeNode::dfs_preorder) for more details). If a
+    /// node is determined to be pruned, its entire subtree will be pruned without calling the
+    /// closure on its descendent nodes.
+    ///
+    /// ### Basic usage:
+    ///
+    /// ```rust
+    /// use tree_iterators_rs::prelude::{BinaryTree, BorrowedBinaryTreeNode};
+    ///
+    /// let tree = BinaryTree {
+    ///     value: 0,
+    ///     left: Some(Box::new(BinaryTree {
+    ///         value: 1,
+    ///         left: Some(Box::new(BinaryTree {
+    ///             value: 3,
+    ///             left: None,
+    ///             right: None,
+    ///         })),
+    ///         right: None,
+    ///     })),
+    ///     right: Some(Box::new(BinaryTree {
+    ///         value: 2,
+    ///         left: None,
+    ///         right: None,
+    ///     })),
+    /// };
+    ///
+    /// let result = tree.prune_ref(|value| {
+    ///     /// The output for this code would be the following. A couple notes about
+    ///     /// this output:
+    ///     /// 1. the node with a value of '1' has been removed
+    ///     /// 2. the closure is never called on the node with a value of '3' since
+    ///     ///    it is already determined to be pruned once '1' has been evaluated.
+    ///     /// ```
+    ///     /// 0
+    ///     /// 1
+    ///     /// 2
+    ///     /// ```
+    ///     println!("{value:?}");
+    ///     **value == 1
+    /// });
+    ///
+    /// assert_eq!(
+    ///     Some(BinaryTree {
+    ///         value: &0,
+    ///         left: None,
+    ///         right: Some(
+    ///             Box::new(BinaryTree {
+    ///                 value: &2,
+    ///                 left: None,
+    ///                 right: None,
+    ///             }),
+    ///         ),
+    ///     }),
+    ///     result
+    /// );
+    ///
+    /// ```
+    fn prune_ref<F>(&'a self, f: F) -> Option<BinaryTree<Self::BorrowedValue>>
+    where
+        F: FnMut(&Self::BorrowedValue) -> bool,
+    {
+        self.into_pipeline_ref().prune(f).collect_tree()
+    }
+
+    /// Prune is a tree-based analog to [`filter`](core::iter::Iterator::filter).
+    ///
+    /// Uses the depth of each subtree to determine if the subtree should be pruned.
+    /// Any node with a depth that is strictly greater than the max_depth parameter
+    /// will be pruned from the tree.
+    ///
+    /// Depth is zero-based, so the root node is considered to be at depth zero.
+    ///
+    /// Ex. given a tree like the following, the depths would be as labeled.
+    ///
+    /// ```text
+    ///        0       <- depth: 0
+    ///       / \
+    ///      1   2     <- depth: 1
+    ///     / \ / \
+    ///    3  4 5  6   <- depth: 2
+    ///           /
+    ///          7     <- depth: 3
+    ///           \
+    ///            8   <- depth: 4
+    ///           /
+    ///          9     <- depth: 5
+    ///           \
+    ///           10   <- depth: 6
+    /// ```
+    ///
+    /// ### Basic usage:
+    ///
+    /// ```rust
+    /// use tree_iterators_rs::prelude::{BinaryTree, BorrowedBinaryTreeNode};
+    ///
+    /// let tree = BinaryTree {
+    ///     value: 0,
+    ///     left: Some(Box::new(BinaryTree {
+    ///         value: 1,
+    ///         left: Some(Box::new(BinaryTree {
+    ///             value: 3,
+    ///             left: None,
+    ///             right: None,
+    ///         })),
+    ///         right: None,
+    ///     })),
+    ///     right: Some(Box::new(BinaryTree {
+    ///         value: 2,
+    ///         left: None,
+    ///         right: None,
+    ///     }))
+    /// };
+    ///
+    /// assert_eq!(
+    ///     BinaryTree {
+    ///         value: &0,
+    ///         left: None,
+    ///         right: None,
+    ///     },
+    ///     tree.prune_depth_ref(0)
+    /// );
+    /// ```
+    fn prune_depth_ref(&'a self, max_depth: usize) -> BinaryTree<Self::BorrowedValue> {
+        self.into_pipeline_ref()
+            .prune_depth(max_depth)
+            .collect_tree()
+            .unwrap()
+    }
+
+    /// map is a tree-based analog to [map](core::iter::Iterator::map).
+    ///
+    /// Takes a closure and applies that closure to each node's value in the tree.
+    ///
+    /// map() transforms one tree into another, by means of its argument: something that
+    /// implements FnMut. It produces a new tree which calls this closure on each node of
+    /// the original tree.
+    ///
+    /// If you are good at thinking in types, you can think of map() like this: If you
+    /// have a tree that has elements of some type A, and you want a tree of some other
+    /// type B, you can use map(), passing a closure that takes an A and returns a B.
+    ///
+    /// ### Example Usage
+    ///
+    /// ```rust
+    /// use tree_iterators_rs::{
+    ///     examples::create_example_binary_tree,
+    ///     prelude::{BinaryTree, BorrowedBinaryTreeNode}
+    /// };
+    ///
+    /// let tree = BinaryTree {
+    ///     value: "0-0",
+    ///     left: Some(Box::new(BinaryTree {
+    ///         value: "1-1",
+    ///         left: None,
+    ///         right: None,
+    ///     })),
+    ///     right: Some(Box::new(BinaryTree {
+    ///         value: "2-2",
+    ///         left: None,
+    ///         right: None,
+    ///     })),
+    /// };
+    ///
+    /// let result = tree.map_ref(|value: &&'static str| {
+    ///     value.split("-").nth(1).unwrap().to_string()
+    /// });
+    ///
+    /// assert_eq!(
+    ///     BinaryTree {
+    ///         value: "0".to_string(),
+    ///         left: Some(Box::new(BinaryTree {
+    ///             value: "1".to_string(),
+    ///             left: None,
+    ///             right: None,
+    ///         })),
+    ///         right: Some(Box::new(BinaryTree {
+    ///             value: "2".to_string(),
+    ///             left: None,
+    ///             right: None,
+    ///         })),
+    ///     },
+    ///     result);
+    /// ```
+    fn map_ref<U, F>(&'a self, f: F) -> BinaryTree<U>
+    where
+        F: FnMut(Self::BorrowedValue) -> U,
+    {
+        self.into_pipeline_ref().map_tree(f).collect_tree().unwrap()
+    }
+
+    /// fold is a tree-based analog to [fold](core::iter::Iterator::fold).
+    ///
+    /// Folds every element into an accumulation by applying an operation, returning the
+    /// final result.
+    ///
+    /// fold() takes one argument: a closure with two arguments: the result of accumulating
+    /// all children of the current tree node, and an element. The closure returns the value
+    /// that the accumulator should have for the parent node's accumulation.
+    ///
+    /// After applying this closure to every node of the tree, fold() returns the accumulation.
+    ///
+    /// This operation is sometimes called ‘reduce’ or ‘inject’.
+    ///
+    /// Folding is useful whenever you have a tree of something, and want to produce a single
+    /// value from it.
+    ///
+    /// ### Example Usage
+    /// ```rust
+    /// use tree_iterators_rs::{
+    ///     examples::create_example_binary_tree,
+    ///     prelude::BorrowedBinaryTreeNode
+    /// };
+    ///
+    /// let tree = create_example_binary_tree();
+    /// let accumulation = tree.fold_ref(|child_accumulations: [Option<usize>; 2], value| {
+    ///     child_accumulations
+    ///         .into_iter()
+    ///         .map(|opt| opt.unwrap_or_default())
+    ///         .sum::<usize>()
+    ///     + *value
+    /// });
+    ///
+    /// assert_eq!(55, accumulation);
+    /// ```
+    fn fold_ref<U, F>(&'a self, f: F) -> U
+    where
+        F: FnMut([Option<U>; 2], Self::BorrowedValue) -> U,
+    {
+        self.into_pipeline_ref().fold_tree(f).unwrap()
+    }
 }
 
 /// A tree node where getting its children borrows its value.
@@ -906,6 +2527,310 @@ where
     ///
     fn dfs_postorder_iter(&'a self) -> BorrowedDFSPostorderIterator<'_, Self> {
         BorrowedDFSPostorderIterator::new(self)
+    }
+
+    /// This method converts the current TreeNode into a TreeIterator.
+    ///
+    /// TreeIterators have 2 purposes:
+    /// 1. they serve as the internal piping of tree_iterators_rs
+    /// 2. they can efficiently chain the prune, map, and fold operations on a tree.
+    ///
+    /// If you are only applying a single prune, map, or fold operation, just call the
+    /// associated method.
+    /// - [`prune_ref`](crate::prelude::BorrowedTreeNode::prune_ref)
+    /// - [`map_ref`](crate::prelude::BorrowedTreeNode::map_ref)
+    /// - [`fold_ref`](crate::prelude::BorrowedTreeNode::fold_ref)
+    ///
+    /// If you are chaining many operations together, use into_pipeline. This will
+    /// be much more efficient in memory since it only maintains a single ancestor stack
+    /// of the tree at a time.
+    ///
+    /// ### Example Usage:
+    /// ```rust
+    /// use tree_iterators_rs::{
+    ///     examples::create_example_tree,
+    ///     prelude::{Tree, BorrowedTreeNode, TreeIteratorBase, TreeIterator}
+    /// };
+    ///
+    /// let tree = create_example_tree();
+    /// let result = tree.into_pipeline_ref()
+    ///     .prune_depth(2)
+    ///     .map_tree(|value| *value + 200)
+    ///     .collect_tree()
+    ///     .expect("all non-prune methods to collect into a Some()");
+    ///
+    /// assert_eq!(
+    ///     Tree {
+    ///        value: 200,
+    ///        children: vec![
+    ///            Tree {
+    ///                value: 201,
+    ///                children: vec![
+    ///                    Tree {
+    ///                        value: 203,
+    ///                        children: vec![],
+    ///                    },
+    ///                    Tree {
+    ///                        value: 204,
+    ///                        children: vec![],
+    ///                    },
+    ///                ],
+    ///            },
+    ///            Tree {
+    ///                value: 202,
+    ///                children: vec![
+    ///                    Tree {
+    ///                        value: 205,
+    ///                        children: vec![],
+    ///                    },
+    ///                    Tree {
+    ///                        value: 206,
+    ///                        children: vec![],
+    ///                    },
+    ///                ],
+    ///            },
+    ///        ],
+    ///     },
+    ///     result);
+    /// ```
+    fn into_pipeline_ref(
+        &'a self,
+    ) -> impl TreeIterator<Self::BorrowedValue, Self::BorrowedChildren> {
+        BorrowedDFSPreorderIteratorWithPathTracking::new(self)
+    }
+
+    /// Prune is a tree-based analog to [`filter`](core::iter::Iterator::filter).
+    ///
+    /// Uses the given closure to determine if each subtree in this tree should be pruned.
+    ///
+    /// Given an element the closure must return true or false. Any nodes in the tree for
+    /// which this evaluates to true will be pruned out of the resulting tree. If the root
+    /// node is pruned, this will return [`None`].
+    ///
+    /// The closure is called on the nodes in a depth first preorder traversal order (see
+    /// [`dfs_preorder`](crate::prelude::OwnedTreeNode::dfs_preorder) for more details). If a
+    /// node is determined to be pruned, its entire subtree will be pruned without calling the
+    /// closure on its descendent nodes.
+    ///
+    /// ### Basic usage:
+    ///
+    /// ```rust
+    /// use tree_iterators_rs::prelude::{BorrowedTreeNode, Tree};
+    ///
+    /// let tree = Tree {
+    ///     value: 0,
+    ///     children: vec![
+    ///         Tree {
+    ///             value: 1,
+    ///             children: vec![Tree {
+    ///                 value: 3,
+    ///                 children: Vec::new(),
+    ///             }],
+    ///         },
+    ///         Tree {
+    ///             value: 2,
+    ///             children: Vec::new()
+    ///         },
+    ///     ],
+    /// };
+    ///
+    /// assert_eq!(
+    ///     Some(
+    ///         Tree {
+    ///             value: &0,
+    ///             children: vec![
+    ///                 Tree {
+    ///                     value: &2,
+    ///                     children: Vec::new(),
+    ///                 }
+    ///             ],
+    ///         },
+    ///     ),
+    ///     tree.prune_ref(|value| {
+    ///         /// The output for this code would be the following. A couple notes about
+    ///         /// this output:
+    ///         /// 1. the node with a value of '1' has been removed
+    ///         /// 2. the closure is never called on the node with a value of '3' since
+    ///         ///    it is already determined to be pruned once '1' has been evaluated.
+    ///         /// ```
+    ///         /// 0
+    ///         /// 1
+    ///         /// 2
+    ///         /// ```
+    ///         println!("{value:?}");
+    ///         **value == 1
+    ///     })
+    /// );
+    /// ```
+    fn prune_ref<F>(&'a self, f: F) -> Option<Tree<Self::BorrowedValue>>
+    where
+        F: FnMut(&Self::BorrowedValue) -> bool,
+    {
+        self.into_pipeline_ref().prune(f).collect_tree()
+    }
+
+    /// Prune is a tree-based analog to [`filter`](core::iter::Iterator::filter).
+    ///
+    /// Uses the depth of each subtree to determine if the subtree should be pruned.
+    /// Any node with a depth that is strictly greater than the max_depth parameter
+    /// will be pruned from the tree.
+    ///
+    /// Depth is zero-based, so the root node is considered to be at depth zero.
+    ///
+    /// Ex. given a tree like the following, the depths would be as labeled.
+    ///
+    /// ```text
+    ///        0       <- depth: 0
+    ///       / \
+    ///      1   2     <- depth: 1
+    ///     / \ / \
+    ///    3  4 5  6   <- depth: 2
+    ///           /
+    ///          7     <- depth: 3
+    ///           \
+    ///            8   <- depth: 4
+    ///           /
+    ///          9     <- depth: 5
+    ///           \
+    ///           10   <- depth: 6
+    /// ```
+    ///
+    /// ### Basic usage:
+    ///
+    /// ```rust
+    /// use tree_iterators_rs::prelude::{Tree, BorrowedTreeNode};
+    ///
+    /// let mut tree = Tree {
+    ///     value: 0,
+    ///     children: vec![
+    ///         Tree {
+    ///             value: 1,
+    ///             children: vec![Tree {
+    ///                 value: 3,
+    ///                 children: vec![],
+    ///             }],
+    ///         },
+    ///         Tree {
+    ///             value: 2,
+    ///             children: vec![],
+    ///         },
+    ///     ],
+    /// };
+    ///
+    /// assert_eq!(
+    ///     Tree {
+    ///         value: &0,
+    ///         children: vec![],
+    ///     },
+    ///     tree.prune_depth_ref(0)
+    /// );
+    /// ```
+    fn prune_depth_ref(&'a self, max_depth: usize) -> Tree<Self::BorrowedValue> {
+        self.into_pipeline_ref()
+            .prune_depth(max_depth)
+            .collect_tree()
+            .unwrap()
+    }
+
+    /// map is a tree-based analog to [map](core::iter::Iterator::map).
+    ///
+    /// Takes a closure and applies that closure to each node's value in the tree.
+    ///
+    /// map() transforms one tree into another, by means of its argument: something that
+    /// implements FnMut. It produces a new tree which calls this closure on each node of
+    /// the original tree.
+    ///
+    /// If you are good at thinking in types, you can think of map() like this: If you
+    /// have a tree that has elements of some type A, and you want a tree of some other
+    /// type B, you can use map(), passing a closure that takes an A and returns a B.
+    ///
+    /// ### Example Usage
+    ///
+    /// ```rust
+    /// use tree_iterators_rs::{
+    ///     examples::create_example_binary_tree,
+    ///     prelude::{Tree, BorrowedTreeNode}
+    /// };
+    ///
+    /// let mut tree = Tree {
+    ///     value: "0-0",
+    ///     children: vec![
+    ///         Tree {
+    ///             value: "1-1",
+    ///             children: vec![],
+    ///         },
+    ///         Tree {
+    ///             value: "2-2",
+    ///             children: vec![],
+    ///         }
+    ///     ],
+    /// };
+    ///
+    /// let result = tree.map_ref(|value: &&'static str| {
+    ///     value.split("-").nth(1).unwrap().to_string()
+    /// });
+    ///
+    /// assert_eq!(
+    ///     Tree {
+    ///         value: "0".to_string(),
+    ///         children: vec![
+    ///             Tree {
+    ///                 value: "1".to_string(),
+    ///                 children: vec![],
+    ///             },
+    ///             Tree {
+    ///                 value: "2".to_string(),
+    ///                 children: vec![],
+    ///             },
+    ///         ],
+    ///     },
+    ///     result);
+    /// ```
+    fn map_ref<U, F>(&'a self, f: F) -> Tree<U>
+    where
+        F: FnMut(Self::BorrowedValue) -> U,
+    {
+        self.into_pipeline_ref().map_tree(f).collect_tree().unwrap()
+    }
+
+    /// fold is a tree-based analog to [fold](core::iter::Iterator::fold).
+    ///
+    /// Folds every element into an accumulation by applying an operation, returning the
+    /// final result.
+    ///
+    /// fold() takes one argument: a closure with two arguments: the result of accumulating
+    /// all children of the current tree node, and an element. The closure returns the value
+    /// that the accumulator should have for the parent node's accumulation.
+    ///
+    /// After applying this closure to every node of the tree, fold() returns the accumulation.
+    ///
+    /// This operation is sometimes called ‘reduce’ or ‘inject’.
+    ///
+    /// Folding is useful whenever you have a tree of something, and want to produce a single
+    /// value from it.
+    ///
+    /// ### Example Usage
+    /// ```rust
+    /// use tree_iterators_rs::{
+    ///     examples::create_example_tree,
+    ///     prelude::BorrowedTreeNode
+    /// };
+    ///
+    /// let mut tree = create_example_tree();
+    /// let accumulation = tree.fold_ref(|child_accumulations: Vec<usize>, value| {
+    ///     child_accumulations
+    ///         .into_iter()
+    ///         .sum::<usize>()
+    ///     + *value
+    /// });
+    ///
+    /// assert_eq!(55, accumulation);
+    /// ```
+    fn fold_ref<U, F>(&'a self, f: F) -> U
+    where
+        F: FnMut(Vec<U>, Self::BorrowedValue) -> U,
+    {
+        self.into_pipeline_ref().fold_tree(f).unwrap()
     }
 }
 
