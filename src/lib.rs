@@ -4,6 +4,7 @@ extern crate alloc;
 extern crate core;
 
 pub mod bfs_iterators;
+pub(crate) mod context_iterators;
 pub mod dfs_inorder_iterators;
 pub mod dfs_postorder_iterators;
 pub mod dfs_preorder_iterators;
@@ -11,3 +12,5 @@ pub mod examples;
 pub mod leaves_iterators;
 pub mod prelude;
 mod tree_context;
+
+pub(crate) trait Sealed {}

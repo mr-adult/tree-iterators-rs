@@ -11,7 +11,9 @@ use crate::{
         },
         depth_first::mut_borrow::{MutBorrowedBinaryLeavesIterator, MutBorrowedLeavesIterator},
     },
-    prelude::{BinaryChildren, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode, TreeContext},
+    prelude::{
+        BinaryChildren, BinaryTreeContextIterator, MutBorrowedBinaryTreeNode, MutBorrowedTreeNode, TreeContext, TreeContextIterator, TreeContextIteratorBase
+    },
 };
 
 use super::{
@@ -116,6 +118,28 @@ where
     Node: MutBorrowedTreeNode<'a>,
 {
     get_mut_context!();
+}
+
+impl<'a, Node> crate::Sealed for MutBorrowedDFSPreorderIteratorWithContext<'a, Node> where
+    Node: MutBorrowedTreeNode<'a>
+{
+}
+
+impl<'a, Node> TreeContextIteratorBase<Node::MutBorrowedValue, Node::MutBorrowedChildren>
+    for MutBorrowedDFSPreorderIteratorWithContext<'a, Node>
+where
+    Node: MutBorrowedTreeNode<'a>,
+{
+    fn prune_current_subtree(&mut self) {
+        self.current_context.children.take();
+    }
+}
+
+impl<'a, Node> TreeContextIterator<Node::MutBorrowedValue, Node::MutBorrowedChildren>
+    for MutBorrowedDFSPreorderIteratorWithContext<'a, Node>
+where
+    Node: MutBorrowedTreeNode<'a>,
+{
 }
 
 pub struct MutBorrowedDFSPreorderIteratorWithAncestors<'a, Node>
@@ -319,4 +343,26 @@ where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
     get_mut_context!();
+}
+
+impl<'a, Node> crate::Sealed for MutBorrowedBinaryDFSPreorderIteratorWithContext<'a, Node> where
+    Node: MutBorrowedBinaryTreeNode<'a>
+{
+}
+
+impl<'a, Node> TreeContextIteratorBase<Node::MutBorrowedValue, [Option<&'a mut Node>; 2]>
+    for MutBorrowedBinaryDFSPreorderIteratorWithContext<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    fn prune_current_subtree(&mut self) {
+        self.current_context.children.take();
+    }
+}
+
+impl<'a, Node> BinaryTreeContextIterator<Node::MutBorrowedValue, [Option<&'a mut Node>; 2]>
+    for MutBorrowedBinaryDFSPreorderIteratorWithContext<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
 }

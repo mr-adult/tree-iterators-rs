@@ -31,6 +31,10 @@ use super::dfs_postorder_iterators::{
     owned::{OwnedBinaryDFSPostorderIterator, OwnedDFSPostorderIterator},
 };
 
+pub use super::context_iterators::{
+    BinaryTreeContextIterator, Prune, PruneContext, PruneDepth, TreeContextIterator,
+    TreeContextIteratorBase,
+};
 pub use super::tree_context::TreeContext;
 
 /// A default implemenation of a binary tree node. This struct
@@ -224,6 +228,280 @@ where
     fn dfs_postorder(self) -> OwnedBinaryDFSPostorderIterator<Self> {
         OwnedBinaryDFSPostorderIterator::new(self)
     }
+
+    /// Converts this OwnedBinaryTreeNode into a tree processing pipeline along which many prune, map,
+    /// and reduce functions can be done in series. These prune, map, and reduce operations can then be
+    /// collected on the other side as a BinaryTree.
+    ///
+    /// ### Example Usage
+    /// ```rust
+    /// use tree_iterators_rs::prelude::*;
+    ///
+    /// let tree = BinaryTree {
+    ///     value: 0,
+    ///     left: Some(Box::new(BinaryTree {
+    ///         value: 1,
+    ///         left: None,
+    ///         right: None,
+    ///     })),
+    ///     right: Some(Box::new(BinaryTree {
+    ///         value: 2,
+    ///         left: None,
+    ///         right: None,
+    ///     })),
+    /// };
+    ///
+    /// let result = tree.into_pipeline()
+    ///     .prune_depth(3)
+    ///     .prune_depth(2)
+    ///     .prune_depth(1)
+    ///     .prune_depth(0)
+    ///     .collect_tree()
+    ///     .expect("the root tree should still be in place");
+    /// println!("{:#?}", result);
+    /// ```
+    fn into_pipeline(self) -> impl BinaryTreeContextIterator<Self::OwnedValue, [Option<Self>; 2]> {
+        self.dfs_preorder().attach_context()
+    }
+
+    /// Prune is a tree-based analog to [`filter`](core::iter::Iterator::filter).
+    /// Uses the given closure to determine if each subtree in this tree should be pruned.
+    ///
+    /// Given an element the closure must return true or false. Any nodes in the tree for
+    /// which this evaluates to true will be pruned out of the resulting tree. If the root node is pruned,
+    /// this will return [`None`].
+    ///
+    /// The callback is called on the nodes in a depth first preorder traversal order (see
+    /// [`dfs_preorder`](crate::prelude::OwnedTreeNode::dfs_preorder) for more details). If a
+    /// node is determined to be pruned, its entire subtree will be pruned without calling the
+    /// callback on its descendent nodes.
+    ///
+    /// ### Basic usage:
+    /// ```rust
+    /// use tree_iterators_rs::prelude::{BinaryTree, OwnedBinaryTreeNode};
+    ///
+    /// let tree = BinaryTree {
+    ///     value: 0,
+    ///     left: Some(Box::new(BinaryTree {
+    ///         value: 1,
+    ///         left: Some(Box::new(BinaryTree {
+    ///             value: 3,
+    ///             left: None,
+    ///             right: None,
+    ///         })),
+    ///         right: None,
+    ///     })),
+    ///     right: Some(Box::new(BinaryTree {
+    ///         value: 2,
+    ///         left: None,
+    ///         right: None,
+    ///     }))
+    /// };
+    ///
+    /// println!("{:#?}", tree.prune(|value| {
+    ///     println!("{value:?}");
+    ///     *value == 1
+    /// }));
+    ///
+    /// ```
+    /// The output for this code would be the following. A couple notes about this output:
+    /// 1. the node with a value of '1' has been removed
+    /// 2. the callback is never called on the node with a value of '3' since it is already
+    ///    determined to be pruned once '1' has been evaluated.
+    ///
+    /// ```text
+    /// 0
+    /// 1
+    /// 2
+    /// Some(
+    ///     BinaryTree {
+    ///         value: 0,
+    ///         left: None,
+    ///         right: Some(
+    ///             BinaryTree {
+    ///                 value: 2,
+    ///                 left: None,
+    ///                 right: None,
+    ///             },
+    ///         ),
+    ///     },
+    /// )
+    /// ```
+    fn prune<F>(self, f: F) -> Option<BinaryTree<Self::OwnedValue>>
+    where
+        F: FnMut(&Self::OwnedValue) -> bool,
+    {
+        self.into_pipeline().prune(f).collect_tree()
+    }
+
+    /// Prune is a tree-based analog to [`filter`](core::iter::Iterator::filter).
+    ///
+    /// Uses the depth of each subtree to determine if the subtree should be pruned.
+    /// Any node with a depth that is strictly greater than the max_depth parameter
+    /// will be pruned from the tree.
+    ///
+    /// Depth is zero-based, so the root node is at depth zero.
+    ///
+    /// Ex. given a tree like the following, the depths would be as labeled.
+    /// ```text
+    ///        0       <- depth: 0
+    ///       / \
+    ///      1   2     <- depth: 1
+    ///     / \ / \
+    ///    3  4 5  6   <- depth: 2
+    ///           /
+    ///          7     <- depth: 3
+    ///           \
+    ///            8   <- depth: 4
+    ///           /
+    ///          9     <- depth: 5
+    ///           \
+    ///           10   <- depth: 6
+    /// ```
+    ///
+    /// ### Basic usage:
+    ///
+    /// ```rust
+    /// use tree_iterators_rs::prelude::{BinaryTree, OwnedBinaryTreeNode};
+    ///
+    /// let tree = BinaryTree {
+    ///     value: 0,
+    ///     left: Some(Box::new(BinaryTree {
+    ///         value: 1,
+    ///         left: Some(Box::new(BinaryTree {
+    ///             value: 3,
+    ///             left: None,
+    ///             right: None,
+    ///         })),
+    ///         right: None,
+    ///     })),
+    ///     right: Some(Box::new(BinaryTree {
+    ///         value: 2,
+    ///         left: None,
+    ///         right: None,
+    ///     }))
+    /// };
+    ///
+    /// println!("{:#?}", tree.prune_depth(0));
+    ///
+    /// ```
+    /// The output for this code would be the following.
+    ///
+    /// ```text
+    /// BinaryTree {
+    ///     value: 0,
+    ///     left: None,
+    ///     right: None,
+    /// },
+    /// ```
+//     fn prune_depth(self, max_depth: usize) -> BinaryTree<Self::OwnedValue> {
+//         self.into_pipeline()
+//             .prune_depth(max_depth)
+//             .collect_tree()
+//             .expect("this should never prune the root of the tree")
+//     }
+
+    /// Prune is a tree-based analog to [`filter`](core::iter::Iterator::filter).
+    /// Uses the given closure to determine if each subtree in this tree should be pruned.
+    ///
+    /// Given an element and its context in the tree, the closure must return true or false.
+    /// Any nodes in the tree for which this evaluates to true will be pruned out of the resulting
+    /// tree. If the root node is pruned,
+    /// this will return [`None`].
+    ///
+    /// The callback is called on the nodes in a depth first preorder traversal order (see
+    /// [`dfs_preorder`](crate::prelude::OwnedTreeNode::dfs_preorder) for more details). If a
+    /// node is determined to be pruned, its entire subtree will be pruned without calling the
+    /// callback on its descendent nodes.
+    ///
+    /// ### Basic usage:
+    /// ```rust
+    /// use tree_iterators_rs::prelude::{BinaryTree, OwnedBinaryTreeNode};
+    ///
+    /// let tree = BinaryTree {
+    ///     value: 0,
+    ///     left: Some(Box::new(BinaryTree {
+    ///         value: 1,
+    ///         left: Some(Box::new(BinaryTree {
+    ///             value: 3,
+    ///             left: None,
+    ///             right: None,
+    ///         })),
+    ///         right: None,
+    ///     })),
+    ///     right: Some(Box::new(BinaryTree {
+    ///         value: 2,
+    ///         left: None,
+    ///         right: None,
+    ///     }))
+    /// };
+    ///
+    /// println!("{:#?}", tree.prune_context(|value| {
+    ///     println!("{:?}", value.ancestors());
+    ///     *value.ancestors()
+    ///         .last()
+    ///         .unwrap() == 1
+    /// }));
+    /// ```
+    ///
+    /// The output for this code would be the following. A couple notes about this output:
+    /// 1. the node with a value of '1' has been removed
+    /// 2. the callback is never called on the node with a value of '3' since it is already
+    ///    determined to be pruned once '1' has been evaluated.
+    ///
+    /// ```text
+    /// [0]
+    /// [0, 1]
+    /// [0, 2]
+    /// Some(
+    ///     BinaryTree {
+    ///         value: 0,
+    ///         left: None,
+    ///         right: Some(
+    ///             BinaryTree {
+    ///                 value: 2,
+    ///                 left: None,
+    ///                 right: None,
+    ///             },
+    ///         ),
+    ///     },
+    /// )
+    /// ```
+    fn prune_context<F>(self, f: F) -> Option<BinaryTree<Self::OwnedValue>>
+    where
+        F: FnMut(&TreeContext<Self::OwnedValue, [Option<Self>; 2]>) -> bool,
+    {
+        self.dfs_preorder()
+            .attach_context()
+            .prune_context(f)
+            .collect_tree()
+    }
+
+    fn map<U, F>(self, f: &mut F) -> BinaryTree<U>
+    where
+        F: FnMut(&Self::OwnedValue) -> U,
+    {
+        self.into_pipeline().map_tree(f).collect_tree().unwrap()
+    }
+
+    fn map_context<U, F>(self, f: F) -> BinaryTree<U>
+    where
+        F: FnMut(&TreeContext<Self::OwnedValue, [Option<Self>; 2]>) -> U,
+    {
+        self.into_pipeline()
+            .map_tree_context(f)
+            .collect_tree()
+            .unwrap()
+    }
+
+    fn fold<U, F>(self, f: &mut F) -> U
+    where
+        F: FnMut([Option<U>; 2], Self::OwnedValue) -> U,
+    {
+        self.into_pipeline()
+            .fold_tree(f)
+            .expect("there to always be at least the root to fold")
+    }
 }
 
 /// A tree node where getting its children consumes its value.
@@ -342,6 +620,55 @@ where
     ///
     fn dfs_postorder(self) -> OwnedDFSPostorderIterator<Self> {
         OwnedDFSPostorderIterator::new(self)
+    }
+
+    fn into_pipeline(self) -> impl TreeContextIterator<Self::OwnedValue, Self::OwnedChildren> {
+        self.dfs_preorder().attach_context()
+    }
+
+    fn prune<F>(self, f: F) -> Option<Tree<Self::OwnedValue>>
+    where
+        F: FnMut(&Self::OwnedValue) -> bool,
+    {
+        self.into_pipeline().prune(f).collect_tree()
+    }
+
+//    fn prune_depth(self, max_depth: usize) -> Tree<Self::OwnedValue> {
+//        self.into_pipeline()
+//            .prune_depth(max_depth)
+//            .collect_tree()
+//            .unwrap()
+//    }
+
+    fn prune_context<F>(self, f: F) -> Option<Tree<Self::OwnedValue>>
+    where
+        F: FnMut(&TreeContext<Self::OwnedValue, Self::OwnedChildren>) -> bool,
+    {
+        self.into_pipeline().prune_context(f).collect_tree()
+    }
+
+    fn map<U, F>(self, f: F) -> Tree<U>
+    where
+        F: FnMut(&Self::OwnedValue) -> U,
+    {
+        self.into_pipeline().map_tree(f).collect_tree().unwrap()
+    }
+
+    fn map_context<U, F>(self, f: F) -> Tree<U>
+    where
+        F: FnMut(&TreeContext<Self::OwnedValue, Self::OwnedChildren>) -> U,
+    {
+        self.into_pipeline()
+            .map_tree_context(f)
+            .collect_tree()
+            .unwrap()
+    }
+
+    fn fold<U, F>(self, f: F) -> U
+    where F: FnMut(Vec<U>, Self::OwnedValue) -> U {
+        self.into_pipeline()
+            .fold_tree(f)
+            .unwrap()
     }
 }
 

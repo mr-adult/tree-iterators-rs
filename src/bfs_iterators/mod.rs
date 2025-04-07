@@ -37,10 +37,8 @@ macro_rules! bfs_context_streaming_iterator_impl {
                 return;
             }
 
-            let mut children = core::mem::MaybeUninit::uninit();
-            core::mem::swap(&mut children, &mut self.current_context.children);
-            self.iterator_queue
-                .push_back(unsafe { children.assume_init() }.into_iter());
+            let children = self.current_context.children.take();
+            self.iterator_queue.push_back(children.unwrap().into_iter());
 
             loop {
                 if self.current_context.ancestors.len() == self.traversal_stack.len() + 2 {
@@ -55,7 +53,7 @@ macro_rules! bfs_context_streaming_iterator_impl {
 
                     let (value, children) = next.$get_value_and_children();
                     self.current_context.ancestors.push(value);
-                    self.current_context.children = core::mem::MaybeUninit::new(children);
+                    self.current_context.children = Some(children);
                     break;
                 }
 
@@ -207,10 +205,8 @@ macro_rules! bfs_context_binary_streaming_iterator_impl {
                 return;
             }
 
-            let mut children = core::mem::MaybeUninit::uninit();
-            core::mem::swap(&mut children, &mut self.current_context.children);
-            self.iterator_queue
-                .push_back(unsafe { children.assume_init() }.into_iter());
+            let children = self.current_context.children.take();
+            self.iterator_queue.push_back(children.unwrap().into_iter());
 
             'outer: loop {
                 if self.current_context.ancestors.len() == self.traversal_stack.len() + 2 {
@@ -226,7 +222,7 @@ macro_rules! bfs_context_binary_streaming_iterator_impl {
 
                         let (value, children) = next.$get_value_and_children_binary();
                         self.current_context.ancestors.push(value);
-                        self.current_context.children = core::mem::MaybeUninit::new(children);
+                        self.current_context.children = Some(children);
                         break 'outer;
                     } else {
                         self.path_counter += 1;

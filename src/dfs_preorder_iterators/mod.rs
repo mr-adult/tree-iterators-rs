@@ -90,7 +90,7 @@ macro_rules! preorder_context_streaming_iterator_impl {
             if let Some(root) = self.root.take() {
                 let (value, children) = root.$get_value_and_children();
                 self.current_context.ancestors.push(value);
-                self.current_context.children = core::mem::MaybeUninit::new(children);
+                self.current_context.children = Some(children);
                 return;
             }
 
@@ -98,11 +98,15 @@ macro_rules! preorder_context_streaming_iterator_impl {
                 return;
             }
 
-            let mut children = core::mem::MaybeUninit::uninit();
-            core::mem::swap(&mut self.current_context.children, &mut children);
-            self.traversal_stack
-                .push(unsafe { children.assume_init() }.into_iter());
-            self.current_context.path.push(usize::MAX);
+            if let Some(children) = self.current_context.children.take() {
+                self.traversal_stack.push(children.into_iter());
+                self.current_context.path.push(usize::MAX);
+            } else {
+                self.current_context.ancestors.pop();
+                if let Some(&usize::MAX) = self.current_context.path.last() {
+                    self.current_context.path.pop();
+                }
+            }
 
             let next = loop {
                 if let Some(top) = self.traversal_stack.last_mut() {
@@ -127,7 +131,9 @@ macro_rules! preorder_context_streaming_iterator_impl {
             if let Some(next) = next {
                 let (value, children) = next.$get_value_and_children();
                 self.current_context.ancestors.push(value);
-                self.current_context.children = core::mem::MaybeUninit::new(children);
+                self.current_context.children = Some(children);
+            } else {
+                self.current_context.ancestors.clear();
             }
         }
 
@@ -147,7 +153,7 @@ macro_rules! preorder_binary_context_streaming_iterator_impl {
             if let Some(root) = self.root.take() {
                 let (value, children) = root.$get_value_and_children();
                 self.current_context.ancestors.push(value);
-                self.current_context.children = core::mem::MaybeUninit::new(children);
+                self.current_context.children = Some(children);
                 return;
             }
 
@@ -155,11 +161,15 @@ macro_rules! preorder_binary_context_streaming_iterator_impl {
                 return;
             }
 
-            let mut children = core::mem::MaybeUninit::uninit();
-            core::mem::swap(&mut self.current_context.children, &mut children);
-            self.traversal_stack
-                .push(unsafe { children.assume_init() }.into_iter());
-            self.current_context.path.push(usize::MAX);
+            if let Some(children) = self.current_context.children.take() {
+                self.traversal_stack.push(children.into_iter());
+                self.current_context.path.push(usize::MAX);
+            } else {
+                self.current_context.ancestors.pop();
+                if let Some(&usize::MAX) = self.current_context.path.last() {
+                    self.current_context.path.pop();
+                }
+            }
 
             let next = 'outer: loop {
                 if let Some(top) = self.traversal_stack.last_mut() {
@@ -187,7 +197,9 @@ macro_rules! preorder_binary_context_streaming_iterator_impl {
             if let Some(next) = next {
                 let (value, children) = next.$get_value_and_children();
                 self.current_context.ancestors.push(value);
-                self.current_context.children = core::mem::MaybeUninit::new(children);
+                self.current_context.children = Some(children);
+            } else {
+                self.current_context.ancestors.clear();
             }
         }
 

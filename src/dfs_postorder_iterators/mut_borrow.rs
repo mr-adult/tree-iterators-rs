@@ -1,4 +1,4 @@
-use core::{array::IntoIter, mem::MaybeUninit};
+use core::array::IntoIter;
 
 use crate::{
     leaves_iterators::{
@@ -154,7 +154,7 @@ where
                 }
             }
 
-            self.current_context.children = MaybeUninit::new(
+            self.current_context.children = Some(
                 self.into_iterator_stack
                     .pop()
                     .expect("There to be a children IntoIterator"),
@@ -423,7 +423,7 @@ where
                 }
             }
 
-            self.current_context.children = MaybeUninit::new(
+            self.current_context.children = Some(
                 self.into_iterator_stack
                     .pop()
                     .expect("There to be a children IntoIterator"),

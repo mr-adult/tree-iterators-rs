@@ -1,4 +1,4 @@
-use core::{mem::MaybeUninit, option::IntoIter};
+use core::option::IntoIter;
 
 use alloc::vec::Vec;
 use streaming_iterator::StreamingIterator;
@@ -189,7 +189,7 @@ where
                     TraversalStatus::WentLeft => {
                         *last_status = TraversalStatus::ReturnedSelf;
                         self.current_context.children =
-                            MaybeUninit::new(self.into_iterator_stack.pop().unwrap());
+                            Some(self.into_iterator_stack.pop().unwrap());
                         return;
                     }
                     TraversalStatus::ReturnedSelf => *last_status = TraversalStatus::WentRight,
@@ -228,7 +228,7 @@ where
         let status_stack_len = self.status_stack.len();
         self.status_stack[status_stack_len - 1] = TraversalStatus::ReturnedSelf;
 
-        self.current_context.children = MaybeUninit::new(
+        self.current_context.children = Some(
             self.into_iterator_stack
                 .pop()
                 .expect("There to be a children IntoIterator"),

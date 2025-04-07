@@ -8,7 +8,10 @@ use crate::{
         },
         depth_first::borrow::{BorrowedBinaryLeavesIterator, BorrowedLeavesIterator},
     },
-    prelude::{BinaryChildren, BorrowedBinaryTreeNode, BorrowedTreeNode, TreeContext},
+    prelude::{
+        BinaryChildren, BorrowedBinaryTreeNode, BorrowedTreeNode, TreeContext, TreeContextIterator,
+        TreeContextIteratorBase,
+    },
 };
 use alloc::vec::Vec;
 use streaming_iterator::StreamingIterator;
@@ -106,6 +109,28 @@ where
 {
     type Item = TreeContext<Node::BorrowedValue, Node::BorrowedChildren>;
     preorder_context_streaming_iterator_impl!(get_value_and_children_iter);
+}
+
+impl<'a, Node> crate::Sealed for BorrowedDFSPreorderIteratorWithContext<'a, Node> where
+    Node: BorrowedTreeNode<'a>
+{
+}
+
+impl<'a, Node> TreeContextIteratorBase<Node::BorrowedValue, Node::BorrowedChildren>
+    for BorrowedDFSPreorderIteratorWithContext<'a, Node>
+where
+    Node: BorrowedTreeNode<'a>,
+{
+    fn prune_current_subtree(&mut self) {
+        self.current_context.children.take();
+    }
+}
+
+impl<'a, Node> TreeContextIterator<Node::BorrowedValue, Node::BorrowedChildren>
+    for BorrowedDFSPreorderIteratorWithContext<'a, Node>
+where
+    Node: BorrowedTreeNode<'a>,
+{
 }
 
 pub struct BorrowedDFSPreorderIteratorWithAncestors<'a, Node>

@@ -4,6 +4,7 @@ use alloc::vec::Vec;
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
 
 use crate::{
+    context_iterators::{TreeContextIterator, TreeContextIteratorBase},
     leaves_iterators::{
         ancestors_depth_first::owned::{
             OwnedBinaryDFSLeavesPostorderIteratorWithAncestors,
@@ -11,7 +12,9 @@ use crate::{
         },
         depth_first::owned::{OwnedBinaryLeavesIterator, OwnedLeavesIterator},
     },
-    prelude::{BinaryChildren, OwnedBinaryTreeNode, OwnedTreeNode, TreeContext},
+    prelude::{
+        BinaryChildren, BinaryTreeContextIterator, OwnedBinaryTreeNode, OwnedTreeNode, TreeContext,
+    },
 };
 
 use super::{
@@ -115,6 +118,25 @@ where
     get_mut_context!();
 }
 
+impl<Node> crate::Sealed for OwnedDFSPreorderIteratorWithContext<Node> where Node: OwnedTreeNode {}
+
+impl<Node> TreeContextIteratorBase<Node::OwnedValue, Node::OwnedChildren>
+    for OwnedDFSPreorderIteratorWithContext<Node>
+where
+    Node: OwnedTreeNode,
+{
+    fn prune_current_subtree(&mut self) {
+        self.current_context.children.take();
+    }
+}
+
+impl<Node> TreeContextIterator<Node::OwnedValue, Node::OwnedChildren>
+    for OwnedDFSPreorderIteratorWithContext<Node>
+where
+    Node: OwnedTreeNode,
+{
+}
+
 pub struct OwnedDFSPreorderIteratorWithAncestors<Node>
 where
     Node: OwnedTreeNode,
@@ -172,7 +194,7 @@ where
     Node: OwnedBinaryTreeNode,
 {
     root: Option<Node>,
-    traversal_stack: Vec<BinaryChildren<Node>>,
+    pub(crate) traversal_stack: Vec<BinaryChildren<Node>>,
 }
 
 impl<Node> OwnedBinaryDFSPreorderIterator<Node>
@@ -309,4 +331,26 @@ where
     Node: OwnedBinaryTreeNode,
 {
     get_mut_context!();
+}
+
+impl<Node> crate::Sealed for OwnedBinaryDFSPreorderIteratorWithContext<Node> where
+    Node: OwnedBinaryTreeNode
+{
+}
+
+impl<Node> TreeContextIteratorBase<Node::OwnedValue, [Option<Node>; 2]>
+    for OwnedBinaryDFSPreorderIteratorWithContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    fn prune_current_subtree(&mut self) {
+        self.current_context.children.take();
+    }
+}
+
+impl<Node> BinaryTreeContextIterator<Node::OwnedValue, [Option<Node>; 2]>
+    for OwnedBinaryDFSPreorderIteratorWithContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
 }
