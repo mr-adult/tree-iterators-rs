@@ -88,6 +88,10 @@ into other iterators by chaining one of the following methods:
 
 ## Change Log
 
+- 3.1.0
+  - Adds the [prune](crate::prelude::OwnedTreeNode::prune), [map](crate::prelude::OwnedTreeNode::map), and [fold](crate::prelude::OwnedTreeNode::fold) methods to all Tree traits.
+  > **_NOTE_**: These are named `_mut` or `_ref` for the borrowed traits
+
 - 3.0.0
   - Renames TreeNode and BinaryTreeNode to Tree and BinaryTree respectively
   - Adds the attach_context() APIs. This new API allows for more context-aware
