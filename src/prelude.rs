@@ -3260,6 +3260,8 @@ where
 
 impl<T> OwnedIntoIteratorOfTrees<T> for Vec<T> where T: OwnedTreeNode {}
 impl<T> OwnedIntoIteratorOfBinaryTrees<T> for Vec<T> where T: OwnedBinaryTreeNode {}
+impl<const LEN: usize, T> OwnedIntoIteratorOfTrees<T> for [T; LEN] where T: OwnedTreeNode {}
+impl<const LEN: usize, T> OwnedIntoIteratorOfBinaryTrees<T> for [T; LEN] where T: OwnedBinaryTreeNode {}
 
 impl<'a, T> MutBorrowedIntoIteratorOfTrees<'a, T> for &'a mut Vec<T> where T: MutBorrowedTreeNode<'a>
 {}
