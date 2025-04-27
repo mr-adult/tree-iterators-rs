@@ -13,6 +13,31 @@ use crate::{
 
 use super::{dfs_inorder_ancestors_streaming_iterator_impl, dfs_inorder_next, TraversalStatus};
 
+crate::collection_iterators::borrowed_collection_iterator_impl!(
+    BorrowedDFSInorderCollectionIterator,
+    BorrowedDFSInorderIterator,
+    BorrowedBinaryTreeNode
+);
+
+impl<'a, IntoIter, Node> BorrowedDFSInorderCollectionIterator<'a, IntoIter, Node>
+where
+    IntoIter: IntoIterator<Item = &'a Node>,
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+    #[doc = include_str!("../../doc_files/collection_attach_context.md")]
+    pub fn attach_context(
+        self,
+    ) -> BorrowedDFSInorderCollectionIteratorWithContext<'a, IntoIter, Node> {
+        BorrowedDFSInorderCollectionIteratorWithContext::new(self)
+    }
+}
+
+crate::collection_iterators::borrowed_binary_collection_context_iterator_impl!(
+    BorrowedDFSInorderCollectionIteratorWithContext,
+    BorrowedDFSInorderIteratorWithContext,
+    BorrowedDFSInorderCollectionIterator
+);
+
 pub struct BorrowedDFSInorderIterator<'a, Node>
 where
     Node: BorrowedBinaryTreeNode<'a>,
@@ -57,7 +82,7 @@ where
         let root = self.right_stack.pop();
         match self.moved {
             true => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
-            false => BorrowedDFSInorderIteratorWithContext::new(root.unwrap().unwrap())
+            false => BorrowedDFSInorderIteratorWithContext::new(root.unwrap().unwrap(), Vec::new())
         }
     }
 
@@ -154,11 +179,18 @@ impl<'a, Node> BorrowedDFSInorderIteratorWithContext<'a, Node>
 where
     Node: BorrowedBinaryTreeNode<'a>,
 {
-    pub(crate) fn new(root: &'a Node) -> BorrowedDFSInorderIteratorWithContext<Node> {
+    pub(crate) fn new(
+        root: &'a Node,
+        path: Vec<usize>,
+    ) -> BorrowedDFSInorderIteratorWithContext<Node> {
         let mut right_stack = Vec::new();
         right_stack.push(Some(root));
 
-        let context = TreeContext::new();
+        let context = TreeContext {
+            path,
+            ancestors: Vec::new(),
+            children: None,
+        };
 
         Self {
             right_stack,

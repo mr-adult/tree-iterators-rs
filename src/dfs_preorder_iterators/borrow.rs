@@ -22,6 +22,50 @@ use super::{
     preorder_binary_context_streaming_iterator_impl, preorder_context_streaming_iterator_impl,
 };
 
+crate::collection_iterators::borrowed_collection_iterator_impl!(
+    BorrowedDFSPreorderCollectionIterator,
+    BorrowedDFSPreorderIterator,
+    BorrowedTreeNode
+);
+
+impl<'a, IntoIter, Node> BorrowedDFSPreorderCollectionIterator<'a, IntoIter, Node>
+where
+    IntoIter: IntoIterator<Item = &'a Node>,
+    Node: BorrowedTreeNode<'a>,
+{
+    #[doc = include_str!("../../doc_files/collection_attach_context.md")]
+    pub fn attach_context(
+        self,
+    ) -> BorrowedDFSPreorderCollectionIteratorWithContext<'a, IntoIter, Node> {
+        BorrowedDFSPreorderCollectionIteratorWithContext::new(self)
+    }
+}
+
+crate::collection_iterators::borrowed_collection_context_iterator_impl!(
+    BorrowedDFSPreorderCollectionIteratorWithContext,
+    BorrowedDFSPreorderIteratorWithContext,
+    BorrowedDFSPreorderCollectionIterator
+);
+
+impl<'a, IntoIter, Node> BorrowedBinaryDFSPreorderCollectionIterator<'a, IntoIter, Node>
+where
+    IntoIter: IntoIterator<Item = &'a Node>,
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+    #[doc = include_str!("../../doc_files/collection_attach_context.md")]
+    pub fn attach_context(
+        self,
+    ) -> BorrowedBinaryDFSPreorderCollectionIteratorWithContext<'a, IntoIter, Node> {
+        BorrowedBinaryDFSPreorderCollectionIteratorWithContext::new(self)
+    }
+}
+
+crate::collection_iterators::borrowed_binary_collection_context_iterator_impl!(
+    BorrowedBinaryDFSPreorderCollectionIteratorWithContext,
+    BorrowedBinaryDFSPreorderIteratorWithContext,
+    BorrowedBinaryDFSPreorderCollectionIterator
+);
+
 pub struct BorrowedDFSPreorderIterator<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
@@ -58,7 +102,7 @@ where
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS preorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
-                BorrowedDFSPreorderIteratorWithContext::new(root)
+                BorrowedDFSPreorderIteratorWithContext::new(root, Vec::new())
             }
         }
     }
@@ -153,11 +197,15 @@ impl<'a, Node> BorrowedDFSPreorderIteratorWithContext<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
 {
-    pub(crate) fn new(root: &'a Node) -> Self {
+    pub(crate) fn new(root: &'a Node, path: Vec<usize>) -> Self {
         Self {
             root: Some(root),
             traversal_stack: Vec::new(),
-            current_context: TreeContext::new(),
+            current_context: TreeContext {
+                path,
+                ancestors: Vec::new(),
+                children: None,
+            },
         }
     }
 }
@@ -217,6 +265,12 @@ where
     preorder_ancestors_streaming_iterator_impl!(get_value_and_children_iter);
 }
 
+crate::collection_iterators::borrowed_collection_iterator_impl!(
+    BorrowedBinaryDFSPreorderCollectionIterator,
+    BorrowedBinaryDFSPreorderIterator,
+    BorrowedBinaryTreeNode
+);
+
 pub struct BorrowedBinaryDFSPreorderIterator<'a, Node>
 where
     Node: BorrowedBinaryTreeNode<'a>,
@@ -251,7 +305,7 @@ where
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS preorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
-                BorrowedBinaryDFSPreorderIteratorWithContext::new(root)
+                BorrowedBinaryDFSPreorderIteratorWithContext::new(root, Vec::new())
             }
         }
     }
@@ -389,11 +443,15 @@ impl<'a, Node> BorrowedBinaryDFSPreorderIteratorWithContext<'a, Node>
 where
     Node: BorrowedBinaryTreeNode<'a>,
 {
-    pub(crate) fn new(root: &'a Node) -> Self {
+    pub(crate) fn new(root: &'a Node, path: Vec<usize>) -> Self {
         Self {
             root: Some(root),
             traversal_stack: Vec::new(),
-            current_context: TreeContext::new(),
+            current_context: TreeContext {
+                path,
+                ancestors: Vec::new(),
+                children: None,
+            },
         }
     }
 }

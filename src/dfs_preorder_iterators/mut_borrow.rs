@@ -24,6 +24,31 @@ use super::{
     preorder_context_streaming_iterator_impl,
 };
 
+crate::collection_iterators::mut_borrowed_collection_iterator_impl!(
+    MutBorrowedDFSPreorderCollectionIterator,
+    MutBorrowedDFSPreorderIterator,
+    MutBorrowedTreeNode
+);
+
+impl<'a, IntoIter, Node> MutBorrowedDFSPreorderCollectionIterator<'a, IntoIter, Node>
+where
+    IntoIter: IntoIterator<Item = &'a mut Node>,
+    Node: MutBorrowedTreeNode<'a>,
+{
+    #[doc = include_str!("../../doc_files/collection_attach_context.md")]
+    pub fn attach_context(
+        self,
+    ) -> MutBorrowedDFSPreorderCollectionIteratorWithContext<'a, IntoIter, Node> {
+        MutBorrowedDFSPreorderCollectionIteratorWithContext::new(self)
+    }
+}
+
+crate::collection_iterators::mut_borrowed_collection_context_iterator_impl!(
+    MutBorrowedDFSPreorderCollectionIteratorWithContext,
+    MutBorrowedDFSPreorderIteratorWithContext,
+    MutBorrowedDFSPreorderCollectionIterator
+);
+
 pub struct MutBorrowedDFSPreorderIterator<'a, Node>
 where
     Node: MutBorrowedTreeNode<'a>,
@@ -61,7 +86,7 @@ where
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS preorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
-                MutBorrowedDFSPreorderIteratorWithContext::new(root)
+                MutBorrowedDFSPreorderIteratorWithContext::new(root, Vec::new())
             }
         }
     }
@@ -156,11 +181,15 @@ impl<'a, Node> MutBorrowedDFSPreorderIteratorWithContext<'a, Node>
 where
     Node: MutBorrowedTreeNode<'a>,
 {
-    pub(crate) fn new(root: &'a mut Node) -> Self {
+    pub(crate) fn new(root: &'a mut Node, path: Vec<usize>) -> Self {
         Self {
             root: Some(root),
             traversal_stack: Vec::new(),
-            current_context: TreeContext::new(),
+            current_context: TreeContext {
+                path,
+                ancestors: Vec::new(),
+                children: None,
+            },
         }
     }
 }
@@ -233,6 +262,31 @@ where
     get_mut_ancestors!();
 }
 
+crate::collection_iterators::mut_borrowed_collection_iterator_impl!(
+    MutBorrowedBinaryDFSPreorderCollectionIterator,
+    MutBorrowedBinaryDFSPreorderIterator,
+    MutBorrowedBinaryTreeNode
+);
+
+impl<'a, IntoIter, Node> MutBorrowedBinaryDFSPreorderCollectionIterator<'a, IntoIter, Node>
+where
+    IntoIter: IntoIterator<Item = &'a mut Node>,
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    #[doc = include_str!("../../doc_files/collection_attach_context.md")]
+    pub fn attach_context(
+        self,
+    ) -> MutBorrowedBinaryDFSPreorderCollectionIteratorWithContext<'a, IntoIter, Node> {
+        MutBorrowedBinaryDFSPreorderCollectionIteratorWithContext::new(self)
+    }
+}
+
+crate::collection_iterators::mut_borrowed_binary_collection_context_iterator_impl!(
+    MutBorrowedBinaryDFSPreorderCollectionIteratorWithContext,
+    MutBorrowedBinaryDFSPreorderIteratorWithContext,
+    MutBorrowedBinaryDFSPreorderCollectionIterator
+);
+
 pub struct MutBorrowedBinaryDFSPreorderIterator<'a, Node>
 where
     Node: MutBorrowedBinaryTreeNode<'a>,
@@ -267,7 +321,7 @@ where
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS preorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
-                MutBorrowedBinaryDFSPreorderIteratorWithContext::new(root)
+                MutBorrowedBinaryDFSPreorderIteratorWithContext::new(root, Vec::new())
             }
         }
     }
@@ -417,11 +471,15 @@ impl<'a, Node> MutBorrowedBinaryDFSPreorderIteratorWithContext<'a, Node>
 where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
-    pub(crate) fn new(root: &'a mut Node) -> Self {
+    pub(crate) fn new(root: &'a mut Node, path: Vec<usize>) -> Self {
         Self {
             root: Some(root),
             traversal_stack: Vec::new(),
-            current_context: TreeContext::new(),
+            current_context: TreeContext {
+                path,
+                ancestors: Vec::new(),
+                children: None,
+            },
         }
     }
 }

@@ -16,6 +16,31 @@ use super::{
     get_mut_context, TraversalStatus,
 };
 
+crate::collection_iterators::mut_borrowed_collection_iterator_impl!(
+    MutBorrowedDFSInorderCollectionIterator,
+    MutBorrowedDFSInorderIterator,
+    MutBorrowedBinaryTreeNode
+);
+
+impl<'a, IntoIter, Node> MutBorrowedDFSInorderCollectionIterator<'a, IntoIter, Node>
+where
+    IntoIter: IntoIterator<Item = &'a mut Node>,
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    #[doc = include_str!("../../doc_files/collection_attach_context.md")]
+    pub fn attach_context(
+        self,
+    ) -> MutBorrowedDFSInorderCollectionIteratorWithContext<'a, IntoIter, Node> {
+        MutBorrowedDFSInorderCollectionIteratorWithContext::new(self)
+    }
+}
+
+crate::collection_iterators::mut_borrowed_binary_collection_context_iterator_impl!(
+    MutBorrowedDFSInorderCollectionIteratorWithContext,
+    MutBorrowedDFSInorderIteratorWithContext,
+    MutBorrowedDFSInorderCollectionIterator
+);
+
 pub struct MutBorrowedDFSInorderIterator<'a, Node>
 where
     Node: MutBorrowedBinaryTreeNode<'a>,
@@ -60,7 +85,7 @@ where
         let root = self.right_stack.pop();
         match self.moved {
             true => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
-            false => MutBorrowedDFSInorderIteratorWithContext::new(root.unwrap().unwrap())
+            false => MutBorrowedDFSInorderIteratorWithContext::new(root.unwrap().unwrap(), Vec::new())
         }
     }
 
@@ -166,11 +191,18 @@ impl<'a, Node> MutBorrowedDFSInorderIteratorWithContext<'a, Node>
 where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
-    pub(crate) fn new(root: &'a mut Node) -> MutBorrowedDFSInorderIteratorWithContext<Node> {
+    pub(crate) fn new(
+        root: &'a mut Node,
+        path: Vec<usize>,
+    ) -> MutBorrowedDFSInorderIteratorWithContext<Node> {
         let mut right_stack = Vec::new();
         right_stack.push(Some(root));
 
-        let context = TreeContext::new();
+        let context = TreeContext {
+            path,
+            ancestors: Vec::new(),
+            children: None,
+        };
 
         Self {
             right_stack,

@@ -18,6 +18,31 @@ use super::{
     postorder_ancestors_streaming_iterator_impl,
 };
 
+crate::collection_iterators::mut_borrowed_collection_iterator_impl!(
+    MutBorrowedDFSPostorderCollectionIterator,
+    MutBorrowedDFSPostorderIterator,
+    MutBorrowedTreeNode
+);
+
+impl<'a, IntoIter, Node> MutBorrowedDFSPostorderCollectionIterator<'a, IntoIter, Node>
+where
+    IntoIter: IntoIterator<Item = &'a mut Node>,
+    Node: MutBorrowedTreeNode<'a>,
+{
+    #[doc = include_str!("../../doc_files/collection_attach_context.md")]
+    pub fn attach_context(
+        self,
+    ) -> MutBorrowedDFSPostorderCollectionIteratorWithContext<'a, IntoIter, Node> {
+        MutBorrowedDFSPostorderCollectionIteratorWithContext::new(self)
+    }
+}
+
+crate::collection_iterators::mut_borrowed_collection_context_iterator_impl!(
+    MutBorrowedDFSPostorderCollectionIteratorWithContext,
+    MutBorrowedDFSPostorderIteratorWithContext,
+    MutBorrowedDFSPostorderCollectionIterator
+);
+
 pub struct MutBorrowedDFSPostorderIterator<'a, Node>
 where
     Node: MutBorrowedTreeNode<'a>,
@@ -57,7 +82,7 @@ where
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS postorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
-                MutBorrowedDFSPostorderIteratorWithContext::new(root)
+                MutBorrowedDFSPostorderIteratorWithContext::new(root, Vec::new())
             }
         }
     }
@@ -95,12 +120,19 @@ impl<'a, Node> MutBorrowedDFSPostorderIteratorWithContext<'a, Node>
 where
     Node: MutBorrowedTreeNode<'a>,
 {
-    fn new(root: &'a mut Node) -> MutBorrowedDFSPostorderIteratorWithContext<'_, Node> {
+    fn new(
+        root: &'a mut Node,
+        path: Vec<usize>,
+    ) -> MutBorrowedDFSPostorderIteratorWithContext<'_, Node> {
         Self {
             root: Some(root),
             traversal_stack: Vec::new(),
             into_iterator_stack: Vec::new(),
-            current_context: TreeContext::new(),
+            current_context: TreeContext {
+                path,
+                ancestors: Vec::new(),
+                children: None,
+            },
         }
     }
 }
@@ -234,6 +266,31 @@ where
     get_mut_ancestors!();
 }
 
+crate::collection_iterators::mut_borrowed_collection_iterator_impl!(
+    MutBorrowedBinaryDFSPostorderCollectionIterator,
+    MutBorrowedBinaryDFSPostorderIterator,
+    MutBorrowedBinaryTreeNode
+);
+
+impl<'a, IntoIter, Node> MutBorrowedBinaryDFSPostorderCollectionIterator<'a, IntoIter, Node>
+where
+    IntoIter: IntoIterator<Item = &'a mut Node>,
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    #[doc = include_str!("../../doc_files/collection_attach_context.md")]
+    pub fn attach_context(
+        self,
+    ) -> MutBorrowedBinaryDFSPostorderCollectionIteratorWithContext<'a, IntoIter, Node> {
+        MutBorrowedBinaryDFSPostorderCollectionIteratorWithContext::new(self)
+    }
+}
+
+crate::collection_iterators::mut_borrowed_binary_collection_context_iterator_impl!(
+    MutBorrowedBinaryDFSPostorderCollectionIteratorWithContext,
+    MutBorrowedBinaryDFSPostorderIteratorWithContext,
+    MutBorrowedBinaryDFSPostorderCollectionIterator
+);
+
 pub struct MutBorrowedBinaryDFSPostorderIterator<'a, Node>
 where
     Node: MutBorrowedBinaryTreeNode<'a>,
@@ -270,7 +327,7 @@ where
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS postorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
-                MutBorrowedBinaryDFSPostorderIteratorWithContext::new(root)
+                MutBorrowedBinaryDFSPostorderIteratorWithContext::new(root, Vec::new())
             }
         }
     }
@@ -360,10 +417,17 @@ impl<'a, Node> MutBorrowedBinaryDFSPostorderIteratorWithContext<'a, Node>
 where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
-    fn new(root: &'a mut Node) -> MutBorrowedBinaryDFSPostorderIteratorWithContext<'_, Node> {
+    fn new(
+        root: &'a mut Node,
+        path: Vec<usize>,
+    ) -> MutBorrowedBinaryDFSPostorderIteratorWithContext<'_, Node> {
         Self {
             root: Some(root),
-            current_context: TreeContext::new(),
+            current_context: TreeContext {
+                path,
+                ancestors: Vec::new(),
+                children: None,
+            },
             traversal_stack: Vec::new(),
             into_iterator_stack: Vec::new(),
         }
@@ -439,6 +503,19 @@ where
             None
         } else {
             Some(&self.current_context)
+        }
+    }
+}
+
+impl<'a, Node> StreamingIteratorMut for MutBorrowedBinaryDFSPostorderIteratorWithContext<'a, Node>
+where
+    Node: MutBorrowedBinaryTreeNode<'a>,
+{
+    fn get_mut(&mut self) -> Option<&mut Self::Item> {
+        if self.current_context.ancestors.is_empty() {
+            None
+        } else {
+            Some(&mut self.current_context)
         }
     }
 }
