@@ -18,6 +18,29 @@ use super::{
     postorder_ancestors_streaming_iterator_impl,
 };
 
+crate::collection_iterators::owned_collection_iterator_impl!(
+    OwnedDFSPostorderCollectionIterator,
+    OwnedDFSPostorderIterator,
+    OwnedTreeNode
+);
+
+impl<IntoIter> OwnedDFSPostorderCollectionIterator<IntoIter>
+where
+    IntoIter: IntoIterator,
+    IntoIter::Item: OwnedTreeNode,
+{
+    #[doc = include_str!("../../doc_files/collection_attach_context.md")]
+    pub fn attach_context(self) -> OwnedDFSPostorderCollectionIteratorWithContext<IntoIter> {
+        OwnedDFSPostorderCollectionIteratorWithContext::new(self)
+    }
+}
+
+crate::collection_iterators::owned_collection_context_no_children_iterator_impl!(
+    OwnedDFSPostorderCollectionIteratorWithContext,
+    OwnedDFSPostorderIteratorWithContext,
+    OwnedDFSPostorderCollectionIterator
+);
+
 pub struct OwnedDFSPostorderIterator<Node>
 where
     Node: OwnedTreeNode,
@@ -54,7 +77,7 @@ where
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS postorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
-                OwnedDFSPostorderIteratorWithContext::new(root)
+                OwnedDFSPostorderIteratorWithContext::new(root, Vec::new())
             }
         }
     }
@@ -91,11 +114,15 @@ impl<'a, Node> OwnedDFSPostorderIteratorWithContext<Node>
 where
     Node: OwnedTreeNode,
 {
-    fn new(root: Node) -> OwnedDFSPostorderIteratorWithContext<Node> {
+    fn new(root: Node, path: Vec<usize>) -> OwnedDFSPostorderIteratorWithContext<Node> {
         Self {
             root: Some(root),
             traversal_stack: Vec::new(),
-            current_context: TreeContext::new(),
+            current_context: TreeContext {
+                path,
+                ancestors: Vec::new(),
+                children: None,
+            },
         }
     }
 }
@@ -211,6 +238,29 @@ where
     get_mut_ancestors!();
 }
 
+crate::collection_iterators::owned_collection_iterator_impl!(
+    OwnedBinaryDFSPostorderCollectionIterator,
+    OwnedBinaryDFSPostorderIterator,
+    OwnedBinaryTreeNode
+);
+
+impl<IntoIter> OwnedBinaryDFSPostorderCollectionIterator<IntoIter>
+where
+    IntoIter: IntoIterator,
+    IntoIter::Item: OwnedBinaryTreeNode,
+{
+    #[doc = include_str!("../../doc_files/collection_attach_context.md")]
+    pub fn attach_context(self) -> OwnedBinaryDFSPostorderCollectionIteratorWithContext<IntoIter> {
+        OwnedBinaryDFSPostorderCollectionIteratorWithContext::new(self)
+    }
+}
+
+crate::collection_iterators::owned_collection_binary_context_no_children_iterator_impl!(
+    OwnedBinaryDFSPostorderCollectionIteratorWithContext,
+    OwnedBinaryDFSPostorderIteratorWithContext,
+    OwnedBinaryDFSPostorderCollectionIterator
+);
+
 pub struct OwnedBinaryDFSPostorderIterator<Node>
 where
     Node: OwnedBinaryTreeNode,
@@ -247,7 +297,7 @@ where
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS postorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
-                OwnedBinaryDFSPostorderIteratorWithContext::new(root)
+                OwnedBinaryDFSPostorderIteratorWithContext::new(root, Vec::new())
             }
         }
     }
@@ -333,10 +383,14 @@ impl<'a, Node> OwnedBinaryDFSPostorderIteratorWithContext<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
-    fn new(root: Node) -> OwnedBinaryDFSPostorderIteratorWithContext<Node> {
+    fn new(root: Node, path: Vec<usize>) -> OwnedBinaryDFSPostorderIteratorWithContext<Node> {
         Self {
             root: Some(root),
-            current_context: TreeContext::new(),
+            current_context: TreeContext {
+                path,
+                ancestors: Vec::new(),
+                children: None,
+            },
             traversal_stack: Vec::new(),
         }
     }
@@ -394,6 +448,19 @@ where
             None
         } else {
             Some(&self.current_context)
+        }
+    }
+}
+
+impl<'a, Node> StreamingIteratorMut for OwnedBinaryDFSPostorderIteratorWithContext<Node>
+where
+    Node: OwnedBinaryTreeNode,
+{
+    fn get_mut(&mut self) -> Option<&mut Self::Item> {
+        if self.current_context.ancestors.is_empty() {
+            None
+        } else {
+            Some(&mut self.current_context)
         }
     }
 }

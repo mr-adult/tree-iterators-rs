@@ -15,6 +15,29 @@ use super::{
     get_mut_context, TraversalStatus,
 };
 
+crate::collection_iterators::owned_collection_iterator_impl!(
+    OwnedDFSInorderCollectionIterator,
+    OwnedDFSInorderIterator,
+    OwnedBinaryTreeNode
+);
+
+impl<IntoIter> OwnedDFSInorderCollectionIterator<IntoIter>
+where
+    IntoIter: IntoIterator,
+    IntoIter::Item: OwnedBinaryTreeNode,
+{
+    #[doc = include_str!("../../doc_files/collection_attach_context.md")]
+    pub fn attach_context(self) -> OwnedDFSInorderCollectionIteratorWithContext<IntoIter> {
+        OwnedDFSInorderCollectionIteratorWithContext::new(self)
+    }
+}
+
+crate::collection_iterators::owned_collection_binary_context_no_children_iterator_impl!(
+    OwnedDFSInorderCollectionIteratorWithContext,
+    OwnedDFSInorderIteratorWithContext,
+    OwnedDFSInorderCollectionIterator
+);
+
 pub struct OwnedDFSInorderIterator<Node>
 where
     Node: OwnedBinaryTreeNode,
@@ -59,7 +82,7 @@ where
         let root = self.right_stack.pop();
         match self.moved {
             true => panic!("Attempted to attach metadata to a DFS in order iterator in the middle of a tree traversal. This is forbidden."),
-            false => OwnedDFSInorderIteratorWithContext::new(root.unwrap().unwrap())
+            false => OwnedDFSInorderIteratorWithContext::new(root.unwrap().unwrap(), Vec::new())
         }
     }
 
@@ -163,11 +186,15 @@ impl<Node> OwnedDFSInorderIteratorWithContext<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
-    pub(crate) fn new(root: Node) -> OwnedDFSInorderIteratorWithContext<Node> {
+    pub(crate) fn new(root: Node, path: Vec<usize>) -> OwnedDFSInorderIteratorWithContext<Node> {
         let mut right_stack = Vec::new();
         right_stack.push(Some(root));
 
-        let context = TreeContext::new();
+        let context = TreeContext {
+            path: path,
+            ancestors: Vec::new(),
+            children: None,
+        };
 
         Self {
             right_stack,

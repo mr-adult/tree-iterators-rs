@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct TreeContext<Value, Children> {
     #[doc = include_str!("../doc_files/path.md")]
     pub(crate) path: Vec<usize>,

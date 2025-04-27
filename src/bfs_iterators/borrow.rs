@@ -18,6 +18,29 @@ use super::{
     bfs_context_streaming_iterator_impl, bfs_next, TreeNodeVecDeque,
 };
 
+crate::collection_iterators::borrowed_collection_iterator_impl!(
+    BorrowedBFSCollectionIterator,
+    BorrowedBFSIterator,
+    BorrowedTreeNode
+);
+
+impl<'a, IntoIter, Node> BorrowedBFSCollectionIterator<'a, IntoIter, Node>
+where
+    IntoIter: IntoIterator<Item = &'a Node>,
+    Node: BorrowedTreeNode<'a>,
+{
+    #[doc = include_str!("../../doc_files/collection_attach_context.md")]
+    pub fn attach_context(self) -> BorrowedBFSCollectionIteratorWithContext<'a, IntoIter, Node> {
+        BorrowedBFSCollectionIteratorWithContext::new(self)
+    }
+}
+
+crate::collection_iterators::borrowed_collection_context_iterator_impl!(
+    BorrowedBFSCollectionIteratorWithContext,
+    BorrowedBFSIteratorWithContext,
+    BorrowedBFSCollectionIterator
+);
+
 pub struct BorrowedBFSIterator<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
@@ -50,7 +73,7 @@ where
     pub fn attach_context(self) -> BorrowedBFSIteratorWithContext<'a, Node> {
         match self.root {
             None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
-            Some(root) => BorrowedBFSIteratorWithContext::new(root)
+            Some(root) => BorrowedBFSIteratorWithContext::new(root, Vec::new())
         }
     }
 
@@ -87,14 +110,17 @@ impl<'a, Node> BorrowedBFSIteratorWithContext<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
 {
-    fn new(root: &'a Node) -> Self {
+    fn new(root: &'a Node, path: Vec<usize>) -> Self {
         let (value, children) = root.get_value_and_children_iter();
         let tree_cache = TreeNodeVecDeque::default();
 
         let iterator_queue = VecDeque::new();
-        let mut current_context = TreeContext::new();
+        let mut current_context = TreeContext {
+            path,
+            ancestors: Vec::new(),
+            children: Some(children),
+        };
         current_context.ancestors.push(value);
-        current_context.children = Some(children);
 
         BorrowedBFSIteratorWithContext {
             is_root: true,
@@ -178,6 +204,31 @@ where
     bfs_ancestors_streaming_iterator_impl!(get_value_and_children_iter);
 }
 
+crate::collection_iterators::borrowed_collection_iterator_impl!(
+    BorrowedBinaryBFSCollectionIterator,
+    BorrowedBinaryBFSIterator,
+    BorrowedBinaryTreeNode
+);
+
+impl<'a, IntoIter, Node> BorrowedBinaryBFSCollectionIterator<'a, IntoIter, Node>
+where
+    IntoIter: IntoIterator<Item = &'a Node>,
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+    #[doc = include_str!("../../doc_files/collection_attach_context.md")]
+    pub fn attach_context(
+        self,
+    ) -> BorrowedBinaryBFSCollectionIteratorWithContext<'a, IntoIter, Node> {
+        BorrowedBinaryBFSCollectionIteratorWithContext::new(self)
+    }
+}
+
+crate::collection_iterators::borrowed_binary_collection_context_iterator_impl!(
+    BorrowedBinaryBFSCollectionIteratorWithContext,
+    BorrowedBinaryBFSIteratorWithContext,
+    BorrowedBinaryBFSCollectionIterator
+);
+
 pub struct BorrowedBinaryBFSIterator<'a, Node>
 where
     Node: BorrowedBinaryTreeNode<'a>,
@@ -210,7 +261,7 @@ where
     pub fn attach_context(self) -> BorrowedBinaryBFSIteratorWithContext<'a, Node> {
         match self.root {
             None => panic!("Attempted to attach metadata to a BFS iterator in the middle of a tree traversal. This is forbidden."),
-            Some(root) => BorrowedBinaryBFSIteratorWithContext::new(root)
+            Some(root) => BorrowedBinaryBFSIteratorWithContext::new(root, Vec::new())
         }
     }
 
@@ -297,14 +348,17 @@ impl<'a, Node> BorrowedBinaryBFSIteratorWithContext<'a, Node>
 where
     Node: BorrowedBinaryTreeNode<'a>,
 {
-    fn new(root: &'a Node) -> Self {
+    fn new(root: &'a Node, path: Vec<usize>) -> Self {
         let (value, children) = root.get_value_and_children_binary_iter();
         let tree_cache = TreeNodeVecDeque::default();
 
         let iterator_queue = VecDeque::new();
-        let mut current_context = TreeContext::new();
+        let mut current_context = TreeContext {
+            path,
+            ancestors: Vec::new(),
+            children: Some(children),
+        };
         current_context.ancestors.push(value);
-        current_context.children = Some(children);
 
         Self {
             is_root: true,

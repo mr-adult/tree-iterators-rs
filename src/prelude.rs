@@ -1,6 +1,7 @@
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 
+use core::slice::{Iter, IterMut};
 use core::{fmt::Debug, iter::FusedIterator};
 
 use core::iter::FlatMap;
@@ -8,15 +9,37 @@ use core::iter::FlatMap;
 #[cfg(feature = "serde")]
 use serde_derive::{Deserialize, Serialize};
 
+use crate::bfs_iterators::borrow::{
+    BorrowedBFSCollectionIterator, BorrowedBinaryBFSCollectionIterator,
+};
+use crate::bfs_iterators::mut_borrow::{
+    MutBorrowedBFSCollectionIterator, MutBorrowedBinaryBFSCollectionIterator,
+};
+use crate::bfs_iterators::owned::{OwnedBFSCollectionIterator, OwnedBinaryBFSCollectionIterator};
+use crate::dfs_inorder_iterators::borrow::BorrowedDFSInorderCollectionIterator;
+use crate::dfs_inorder_iterators::mut_borrow::MutBorrowedDFSInorderCollectionIterator;
+use crate::dfs_inorder_iterators::owned::OwnedDFSInorderCollectionIterator;
+use crate::dfs_postorder_iterators::borrow::{
+    BorrowedBinaryDFSPostorderCollectionIterator, BorrowedDFSPostorderCollectionIterator,
+};
+use crate::dfs_postorder_iterators::mut_borrow::{
+    MutBorrowedBinaryDFSPostorderCollectionIterator, MutBorrowedDFSPostorderCollectionIterator,
+};
+use crate::dfs_postorder_iterators::owned::{
+    OwnedBinaryDFSPostorderCollectionIterator, OwnedDFSPostorderCollectionIterator,
+};
 use crate::dfs_preorder_iterators::borrow::{
-    BorrowedBinaryDFSPreorderIteratorWithPathTracking, BorrowedDFSPreorderIteratorWithPathTracking,
+    BorrowedBinaryDFSPreorderCollectionIterator, BorrowedBinaryDFSPreorderIteratorWithPathTracking,
+    BorrowedDFSPreorderCollectionIterator, BorrowedDFSPreorderIteratorWithPathTracking,
 };
 use crate::dfs_preorder_iterators::mut_borrow::{
-    MutBorrowedBinaryDFSPreorderIteratorWithPathTracking,
+    MutBorrowedBinaryDFSPreorderCollectionIterator,
+    MutBorrowedBinaryDFSPreorderIteratorWithPathTracking, MutBorrowedDFSPreorderCollectionIterator,
     MutBorrowedDFSPreorderIteratorWithPathTracking,
 };
 use crate::dfs_preorder_iterators::owned::{
-    OwnedBinaryDFSPreorderIteratorWithPathTracking, OwnedDFSPreorderIteratorWithPathTracking,
+    OwnedBinaryDFSPreorderCollectionIterator, OwnedBinaryDFSPreorderIteratorWithPathTracking,
+    OwnedDFSPreorderCollectionIterator, OwnedDFSPreorderIteratorWithPathTracking,
 };
 
 use super::bfs_iterators::{
@@ -2946,6 +2969,320 @@ where
             ],
         )
     }
+}
+
+pub trait OwnedIntoIteratorOfTrees<T>: IntoIterator<Item = T> + Sized
+where
+    T: OwnedTreeNode,
+{
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a breadth first search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.bfs());
+    /// ```
+    fn bfs_each(self) -> OwnedBFSCollectionIterator<Self> {
+        OwnedBFSCollectionIterator::new(self)
+    }
+
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a depth first preorder search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.dfs_preorder());
+    /// ```
+    fn dfs_preorder_each(self) -> OwnedDFSPreorderCollectionIterator<Self> {
+        OwnedDFSPreorderCollectionIterator::new(self)
+    }
+
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a depth first postorder search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.dfs_postorder());
+    /// ```
+    fn dfs_postorder_each(self) -> OwnedDFSPostorderCollectionIterator<Self> {
+        OwnedDFSPostorderCollectionIterator::new(self)
+    }
+}
+
+pub trait OwnedIntoIteratorOfBinaryTrees<T>: IntoIterator<Item = T> + Sized
+where
+    T: OwnedBinaryTreeNode,
+{
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a breadth first search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.bfs());
+    /// ```
+    fn bfs_each(self) -> OwnedBinaryBFSCollectionIterator<Self> {
+        OwnedBinaryBFSCollectionIterator::new(self)
+    }
+
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a depth first preorder search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.dfs_preorder());
+    /// ```
+    fn dfs_preorder_each(self) -> OwnedBinaryDFSPreorderCollectionIterator<Self> {
+        OwnedBinaryDFSPreorderCollectionIterator::new(self)
+    }
+
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a depth first inorder search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.dfs_inorder());
+    /// ```
+    fn dfs_inorder_each(self) -> OwnedDFSInorderCollectionIterator<Self> {
+        OwnedDFSInorderCollectionIterator::new(self)
+    }
+
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a depth first postorder search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.dfs_postorder());
+    /// ```
+    fn dfs_postorder_each(self) -> OwnedBinaryDFSPostorderCollectionIterator<Self> {
+        OwnedBinaryDFSPostorderCollectionIterator::new(self)
+    }
+}
+
+pub trait MutBorrowedIntoIteratorOfTrees<'a, T>: IntoIterator<Item = &'a mut T> + Sized
+where
+    T: MutBorrowedTreeNode<'a>,
+{
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a breadth first search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.bfs_iter_mut());
+    /// ```
+    fn bfs_each_iter_mut(self) -> MutBorrowedBFSCollectionIterator<'a, Self, T> {
+        MutBorrowedBFSCollectionIterator::new(self)
+    }
+
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a depth first preorder search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.dfs_preorder_iter_mut());
+    /// ```
+    fn dfs_preorder_each_iter_mut(self) -> MutBorrowedDFSPreorderCollectionIterator<'a, Self, T> {
+        MutBorrowedDFSPreorderCollectionIterator::new(self)
+    }
+
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a depth first postorder search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.dfs_postorder_iter_mut());
+    /// ```
+    fn dfs_postorder_each_iter_mut(self) -> MutBorrowedDFSPostorderCollectionIterator<'a, Self, T> {
+        MutBorrowedDFSPostorderCollectionIterator::new(self)
+    }
+}
+
+pub trait MutBorrowedIntoIteratorOfBinaryTrees<'a, T>:
+    IntoIterator<Item = &'a mut T> + Sized
+where
+    T: MutBorrowedBinaryTreeNode<'a>,
+{
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a breadth first search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.bfs_iter_mut());
+    /// ```
+    fn bfs_each_iter_mut(self) -> MutBorrowedBinaryBFSCollectionIterator<'a, Self, T> {
+        MutBorrowedBinaryBFSCollectionIterator::new(self)
+    }
+
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a depth first preorder search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.dfs_preorder_iter_mut());
+    /// ```
+    fn dfs_preorder_each_iter_mut(
+        self,
+    ) -> MutBorrowedBinaryDFSPreorderCollectionIterator<'a, Self, T> {
+        MutBorrowedBinaryDFSPreorderCollectionIterator::new(self)
+    }
+
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a depth first inorder search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.dfs_inorder_iter_mut());
+    /// ```
+    fn dfs_inorder_each_iter_mut(self) -> MutBorrowedDFSInorderCollectionIterator<'a, Self, T> {
+        MutBorrowedDFSInorderCollectionIterator::new(self)
+    }
+
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a depth first postorder search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.dfs_postorder_iter_mut());
+    /// ```
+    fn dfs_postorder_each_iter_mut(
+        self,
+    ) -> MutBorrowedBinaryDFSPostorderCollectionIterator<'a, Self, T> {
+        MutBorrowedBinaryDFSPostorderCollectionIterator::new(self)
+    }
+}
+
+pub trait BorrowedIntoIteratorOfTrees<'a, T>: IntoIterator<Item = &'a T> + Sized
+where
+    T: BorrowedTreeNode<'a>,
+{
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a breadth first search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.bfs_iter());
+    /// ```
+    fn bfs_each_iter(self) -> BorrowedBFSCollectionIterator<'a, Self, T> {
+        BorrowedBFSCollectionIterator::new(self)
+    }
+
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a depth first preorder search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.dfs_preorder_iter());
+    /// ```
+    fn dfs_preorder_each_iter(self) -> BorrowedDFSPreorderCollectionIterator<'a, Self, T> {
+        BorrowedDFSPreorderCollectionIterator::new(self)
+    }
+
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a depth first postorder search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.dfs_postorder_iter());
+    /// ```
+    fn dfs_postorder_each_iter(self) -> BorrowedDFSPostorderCollectionIterator<'a, Self, T> {
+        BorrowedDFSPostorderCollectionIterator::new(self)
+    }
+}
+
+pub trait BorrowedIntoIteratorOfBinaryTrees<'a, T>: IntoIterator<Item = &'a T> + Sized
+where
+    T: BorrowedBinaryTreeNode<'a>,
+{
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a breadth first search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.bfs_iter());
+    /// ```
+    fn bfs_each_iter(self) -> BorrowedBinaryBFSCollectionIterator<'a, Self, T> {
+        BorrowedBinaryBFSCollectionIterator::new(self)
+    }
+
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a depth first preorder search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.dfs_preorder_iter());
+    /// ```
+    fn dfs_preorder_each_iter(self) -> BorrowedBinaryDFSPreorderCollectionIterator<'a, Self, T> {
+        BorrowedBinaryDFSPreorderCollectionIterator::new(self)
+    }
+
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a depth first inorder search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.dfs_inorder_iter());
+    /// ```
+    fn dfs_inorder_each_iter(self) -> BorrowedDFSInorderCollectionIterator<'a, Self, T> {
+        BorrowedDFSInorderCollectionIterator::new(self)
+    }
+
+    /// Iterates over each tree in the IntoIterator, then over each node in
+    /// each tree in a depth first postorder search.
+    /// 
+    /// This is equivalent to the following:
+    /// 
+    /// ```ignore
+    /// self.into_iter().flat_map(|tree| tree.dfs_postorder_iter());
+    /// ```
+    fn dfs_postorder_each_iter(self) -> BorrowedBinaryDFSPostorderCollectionIterator<'a, Self, T> {
+        BorrowedBinaryDFSPostorderCollectionIterator::new(self)
+    }
+}
+
+impl<T> OwnedIntoIteratorOfTrees<T> for Vec<T> where T: OwnedTreeNode {}
+impl<T> OwnedIntoIteratorOfBinaryTrees<T> for Vec<T> where T: OwnedBinaryTreeNode {}
+
+impl<'a, T> MutBorrowedIntoIteratorOfTrees<'a, T> for &'a mut Vec<T> where T: MutBorrowedTreeNode<'a>
+{}
+impl<'a, T> MutBorrowedIntoIteratorOfTrees<'a, T> for IterMut<'a, T> where T: MutBorrowedTreeNode<'a>
+{}
+impl<'a, T> MutBorrowedIntoIteratorOfBinaryTrees<'a, T> for &'a mut Vec<T> where
+    T: MutBorrowedBinaryTreeNode<'a>
+{
+}
+impl<'a, T> MutBorrowedIntoIteratorOfBinaryTrees<'a, T> for IterMut<'a, T> where
+    T: MutBorrowedBinaryTreeNode<'a>
+{
+}
+
+impl<'a, T> BorrowedIntoIteratorOfTrees<'a, T> for &'a Vec<T> where T: BorrowedTreeNode<'a> {}
+impl<'a, T> BorrowedIntoIteratorOfTrees<'a, T> for Iter<'a, T> where T: BorrowedTreeNode<'a> {}
+impl<'a, T> BorrowedIntoIteratorOfBinaryTrees<'a, T> for &'a Vec<T> where
+    T: BorrowedBinaryTreeNode<'a>
+{
+}
+impl<'a, T> BorrowedIntoIteratorOfBinaryTrees<'a, T> for Iter<'a, T> where
+    T: BorrowedBinaryTreeNode<'a>
+{
 }
 
 fn opt_to_opt<T>(opt: Option<T>) -> Option<T> {

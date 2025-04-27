@@ -24,6 +24,29 @@ use super::{
     preorder_context_streaming_iterator_impl,
 };
 
+crate::collection_iterators::owned_collection_iterator_impl!(
+    OwnedDFSPreorderCollectionIterator,
+    OwnedDFSPreorderIterator,
+    OwnedTreeNode
+);
+
+impl<IntoIter> OwnedDFSPreorderCollectionIterator<IntoIter>
+where
+    IntoIter: IntoIterator,
+    IntoIter::Item: OwnedTreeNode,
+{
+    #[doc = include_str!("../../doc_files/collection_attach_context.md")]
+    pub fn attach_context(self) -> OwnedDFSPreorderCollectionIteratorWithContext<IntoIter> {
+        OwnedDFSPreorderCollectionIteratorWithContext::new(self)
+    }
+}
+
+crate::collection_iterators::owned_collection_context_iterator_impl!(
+    OwnedDFSPreorderCollectionIteratorWithContext,
+    OwnedDFSPreorderIteratorWithContext,
+    OwnedDFSPreorderCollectionIterator
+);
+
 pub struct OwnedDFSPreorderIterator<Node>
 where
     Node: OwnedTreeNode,
@@ -58,7 +81,7 @@ where
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS preorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
-                OwnedDFSPreorderIteratorWithContext::new(root)
+                OwnedDFSPreorderIteratorWithContext::new(root, Vec::new())
             }
         }
     }
@@ -151,11 +174,15 @@ impl<'a, Node> OwnedDFSPreorderIteratorWithContext<Node>
 where
     Node: OwnedTreeNode,
 {
-    pub(crate) fn new(root: Node) -> Self {
+    pub(crate) fn new(root: Node, path: Vec<usize>) -> Self {
         Self {
             root: Some(root),
             traversal_stack: Vec::new(),
-            current_context: TreeContext::new(),
+            current_context: TreeContext {
+                path,
+                ancestors: Vec::new(),
+                children: None,
+            },
         }
     }
 }
@@ -227,6 +254,29 @@ where
     get_mut_ancestors!();
 }
 
+crate::collection_iterators::owned_collection_iterator_impl!(
+    OwnedBinaryDFSPreorderCollectionIterator,
+    OwnedBinaryDFSPreorderIterator,
+    OwnedBinaryTreeNode
+);
+
+impl<IntoIter> OwnedBinaryDFSPreorderCollectionIterator<IntoIter>
+where
+    IntoIter: IntoIterator,
+    IntoIter::Item: OwnedBinaryTreeNode,
+{
+    #[doc = include_str!("../../doc_files/collection_attach_context.md")]
+    pub fn attach_context(self) -> OwnedBinaryDFSPreorderCollectionIteratorWithContext<IntoIter> {
+        OwnedBinaryDFSPreorderCollectionIteratorWithContext::new(self)
+    }
+}
+
+crate::collection_iterators::owned_collection_binary_context_iterator_impl!(
+    OwnedBinaryDFSPreorderCollectionIteratorWithContext,
+    OwnedBinaryDFSPreorderIteratorWithContext,
+    OwnedBinaryDFSPreorderCollectionIterator
+);
+
 pub struct OwnedBinaryDFSPreorderIterator<Node>
 where
     Node: OwnedBinaryTreeNode,
@@ -261,7 +311,7 @@ where
         match self.root {
             None => panic!("Attempted to attach metadata to a DFS preorder iterator in the middle of a tree traversal. This is forbidden."),
             Some(root) => {
-                OwnedBinaryDFSPreorderIteratorWithContext::new(root)
+                OwnedBinaryDFSPreorderIteratorWithContext::new(root, Vec::new())
             }
         }
     }
@@ -405,11 +455,15 @@ impl<Node> OwnedBinaryDFSPreorderIteratorWithContext<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
-    pub(crate) fn new(root: Node) -> Self {
+    pub(crate) fn new(root: Node, path: Vec<usize>) -> Self {
         Self {
             root: Some(root),
             traversal_stack: Vec::new(),
-            current_context: TreeContext::new(),
+            current_context: TreeContext {
+                path,
+                ancestors: Vec::new(),
+                children: None,
+            },
         }
     }
 }
