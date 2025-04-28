@@ -3265,9 +3265,15 @@ impl<const LEN: usize, T> OwnedIntoIteratorOfBinaryTrees<T> for [T; LEN] where T
 
 impl<'a, T> MutBorrowedIntoIteratorOfTrees<'a, T> for &'a mut Vec<T> where T: MutBorrowedTreeNode<'a>
 {}
+impl<'a, const LEN: usize, T> MutBorrowedIntoIteratorOfTrees<'a, T> for &'a mut [T; LEN] where T: MutBorrowedTreeNode<'a>
+{}
 impl<'a, T> MutBorrowedIntoIteratorOfTrees<'a, T> for IterMut<'a, T> where T: MutBorrowedTreeNode<'a>
 {}
 impl<'a, T> MutBorrowedIntoIteratorOfBinaryTrees<'a, T> for &'a mut Vec<T> where
+    T: MutBorrowedBinaryTreeNode<'a>
+{
+}
+impl<'a, const LEN: usize, T> MutBorrowedIntoIteratorOfBinaryTrees<'a, T> for &'a mut [T; LEN] where
     T: MutBorrowedBinaryTreeNode<'a>
 {
 }
@@ -3277,8 +3283,13 @@ impl<'a, T> MutBorrowedIntoIteratorOfBinaryTrees<'a, T> for IterMut<'a, T> where
 }
 
 impl<'a, T> BorrowedIntoIteratorOfTrees<'a, T> for &'a Vec<T> where T: BorrowedTreeNode<'a> {}
+impl<'a, T> BorrowedIntoIteratorOfTrees<'a, T> for &'a [T] where T: BorrowedTreeNode<'a> {}
 impl<'a, T> BorrowedIntoIteratorOfTrees<'a, T> for Iter<'a, T> where T: BorrowedTreeNode<'a> {}
 impl<'a, T> BorrowedIntoIteratorOfBinaryTrees<'a, T> for &'a Vec<T> where
+    T: BorrowedBinaryTreeNode<'a>
+{
+}
+impl<'a, const LEN: usize, T> BorrowedIntoIteratorOfBinaryTrees<'a, T> for &'a [T; LEN] where
     T: BorrowedBinaryTreeNode<'a>
 {
 }
