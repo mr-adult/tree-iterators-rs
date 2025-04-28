@@ -13,14 +13,6 @@ pub struct TreeContext<Value, Children> {
 }
 
 impl<Value, Children> TreeContext<Value, Children> {
-    pub(crate) fn new() -> Self {
-        Self {
-            path: Vec::new(),
-            ancestors: Vec::new(),
-            children: None,
-        }
-    }
-
     /// Gets the depth of the current node in the tree. This is zero-based,
     /// so the root node is at depth zero.
     ///
