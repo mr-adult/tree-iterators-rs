@@ -88,8 +88,26 @@ into other iterators by chaining one of the following methods:
 
 ## Change Log
 
+- 3.2.0
+  - Adds the IntoIteratorOfTrees and IntoIteratorOfBinaryTrees traits for more
+    easily working with collections of trees. A default implementation of all
+    functionality is provided for [`Vec`](alloc::vec::Vec) and
+    [`[T]`](core::array) types. The new traits include:
+    - [`OwnedIntoIteratorOfTrees`](crate::prelude::OwnedIntoIteratorOfTrees)
+    - [`OwnedIntoIteratorOfBinaryTrees`](crate::prelude::OwnedIntoIteratorOfBinaryTrees)
+    - [`MutBorrowedIntoIteratorOfTrees`](crate::prelude::MutBorrowedIntoIteratorOfTrees)
+    - [`MutBorrowedIntoIteratorOfBinaryTrees`](crate::prelude::MutBorrowedIntoIteratorOfBinaryTrees)
+    - [`BorrowedIntoIteratorOfTrees`](crate::prelude::BorrowedIntoIteratorOfTrees)
+    - [`BorrowedIntoIteratorOfBinaryTrees`](crate::prelude::BorrowedIntoIteratorOfBinaryTrees)
+  - Additionally, each of these traits' iteration APIs allow calling
+    .attach_context(). These IntoIterator-based .attach_context() calls will
+    track the index in the IntoIteratorOfTrees as part of the path provided in
+    the [`TreeContext`](crate::prelude::TreeContext)
+
 - 3.1.0
-  - Adds the [prune](crate::prelude::OwnedTreeNode::prune), [map](crate::prelude::OwnedTreeNode::map), and [fold](crate::prelude::OwnedTreeNode::fold) methods to all Tree traits.
+  - Adds the [prune](crate::prelude::OwnedTreeNode::prune),
+    [map](crate::prelude::OwnedTreeNode::map), and
+    [fold](crate::prelude::OwnedTreeNode::fold) methods to all Tree traits.
   > **_NOTE_**: These are named `_mut` or `_ref` for the borrowed traits
 
 - 3.0.0
