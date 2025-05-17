@@ -1,6 +1,5 @@
-The children of the current node. This will always be empty for depth first
-postorder searches and will always be populated for depth first preorder and
-breadth first searches.
+The children of the current node. This is unavailable in the owned
+dfs_postorder() and dfs_inorder() APIs, but is otherwise available.
 
 NOTE: If Children is an Iterator type, consuming items from the iterator will
 result in them disappearing from tree traversal.
