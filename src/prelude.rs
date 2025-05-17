@@ -3061,9 +3061,9 @@ where
 {
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a breadth first search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.bfs());
     /// ```
@@ -3073,9 +3073,9 @@ where
 
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a depth first preorder search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.dfs_preorder());
     /// ```
@@ -3085,9 +3085,9 @@ where
 
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a depth first postorder search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.dfs_postorder());
     /// ```
@@ -3102,9 +3102,9 @@ where
 {
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a breadth first search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.bfs());
     /// ```
@@ -3114,9 +3114,9 @@ where
 
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a depth first preorder search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.dfs_preorder());
     /// ```
@@ -3126,9 +3126,9 @@ where
 
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a depth first inorder search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.dfs_inorder());
     /// ```
@@ -3138,9 +3138,9 @@ where
 
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a depth first postorder search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.dfs_postorder());
     /// ```
@@ -3155,9 +3155,9 @@ where
 {
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a breadth first search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.bfs_iter_mut());
     /// ```
@@ -3167,9 +3167,9 @@ where
 
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a depth first preorder search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.dfs_preorder_iter_mut());
     /// ```
@@ -3179,9 +3179,9 @@ where
 
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a depth first postorder search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.dfs_postorder_iter_mut());
     /// ```
@@ -3197,9 +3197,9 @@ where
 {
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a breadth first search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.bfs_iter_mut());
     /// ```
@@ -3209,9 +3209,9 @@ where
 
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a depth first preorder search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.dfs_preorder_iter_mut());
     /// ```
@@ -3223,9 +3223,9 @@ where
 
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a depth first inorder search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.dfs_inorder_iter_mut());
     /// ```
@@ -3235,9 +3235,9 @@ where
 
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a depth first postorder search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.dfs_postorder_iter_mut());
     /// ```
@@ -3254,9 +3254,9 @@ where
 {
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a breadth first search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.bfs_iter());
     /// ```
@@ -3266,9 +3266,9 @@ where
 
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a depth first preorder search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.dfs_preorder_iter());
     /// ```
@@ -3278,9 +3278,9 @@ where
 
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a depth first postorder search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.dfs_postorder_iter());
     /// ```
@@ -3295,9 +3295,9 @@ where
 {
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a breadth first search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.bfs_iter());
     /// ```
@@ -3307,9 +3307,9 @@ where
 
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a depth first preorder search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.dfs_preorder_iter());
     /// ```
@@ -3319,9 +3319,9 @@ where
 
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a depth first inorder search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.dfs_inorder_iter());
     /// ```
@@ -3331,9 +3331,9 @@ where
 
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a depth first postorder search.
-    /// 
+    ///
     /// This is equivalent to the following:
-    /// 
+    ///
     /// ```ignore
     /// self.into_iter().flat_map(|tree| tree.dfs_postorder_iter());
     /// ```
@@ -3345,12 +3345,15 @@ where
 impl<T> OwnedIntoIteratorOfTrees<T> for Vec<T> where T: OwnedTreeNode {}
 impl<T> OwnedIntoIteratorOfBinaryTrees<T> for Vec<T> where T: OwnedBinaryTreeNode {}
 impl<const LEN: usize, T> OwnedIntoIteratorOfTrees<T> for [T; LEN] where T: OwnedTreeNode {}
-impl<const LEN: usize, T> OwnedIntoIteratorOfBinaryTrees<T> for [T; LEN] where T: OwnedBinaryTreeNode {}
+impl<const LEN: usize, T> OwnedIntoIteratorOfBinaryTrees<T> for [T; LEN] where T: OwnedBinaryTreeNode
+{}
 
 impl<'a, T> MutBorrowedIntoIteratorOfTrees<'a, T> for &'a mut Vec<T> where T: MutBorrowedTreeNode<'a>
 {}
-impl<'a, const LEN: usize, T> MutBorrowedIntoIteratorOfTrees<'a, T> for &'a mut [T; LEN] where T: MutBorrowedTreeNode<'a>
-{}
+impl<'a, const LEN: usize, T> MutBorrowedIntoIteratorOfTrees<'a, T> for &'a mut [T; LEN] where
+    T: MutBorrowedTreeNode<'a>
+{
+}
 impl<'a, T> MutBorrowedIntoIteratorOfTrees<'a, T> for IterMut<'a, T> where T: MutBorrowedTreeNode<'a>
 {}
 impl<'a, T> MutBorrowedIntoIteratorOfBinaryTrees<'a, T> for &'a mut Vec<T> where

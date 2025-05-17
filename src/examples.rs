@@ -1,4 +1,4 @@
-use crate::prelude::{Tree, BinaryTree};
+use crate::prelude::{BinaryTree, Tree};
 use alloc::boxed::Box;
 
 pub fn create_example_binary_tree() -> BinaryTree<usize> {
