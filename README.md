@@ -88,6 +88,14 @@ into other iterators by chaining one of the following methods:
 
 ## Change Log
 
+- 3.3.0
+  - adds [at_path](crate::prelude::OwnedTreeNode::at_path)
+  - adds [at_path](crate::prelude::OwnedBinaryTreeNode::at_path)
+  - adds [at_path_mut](crate::prelude::MutBorrowedTreeNode::at_path_mut)
+  - adds [at_path_mut](crate::prelude::MutBorrowedBinaryTreeNode::at_path_mut)
+  - adds [at_path_ref](crate::prelude::BorrowedTreeNode::at_path_ref)
+  - adds [at_path_ref](crate::prelude::BorrowedBinaryTreeNode::at_path_ref)
+
 - 3.2.0
   - Adds the IntoIteratorOfTrees and IntoIteratorOfBinaryTrees traits for more
     easily working with collections of trees. A default implementation of all
