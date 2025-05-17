@@ -748,13 +748,13 @@ println!("{}", result);
 
 This crates' APIs are powered by 3 traits. The traits include:
 
-1. [OwnedTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.OwnedTreeNode.html)/[OwnedBinaryTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.OwnedBinaryTree.html) -
+1. [OwnedTreeNode](crate::prelude::OwnedTreeNode)/[OwnedBinaryTreeNode](crate::prelude::OwnedBinaryTreeNode) -
    these traits powers the bfs(), dfs_preorder(), dfs_inorder() and
    dfs_postorder() APIs.
-2. [MutBorrowedTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.MutBorrowedTreeNode.html)/[MutBorrowedBinaryTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.MutBorrowedBinaryTreeNode.html) -
+2. [MutBorrowedTreeNode](crate::prelude::MutBorrowedTreeNode)/[MutBorrowedBinaryTreeNode](crate::prelude::MutBorrowedBinaryTreeNode) -
    these traits powers the bfs_iter_mut(), dfs_preorder_iter_mut(),
    dfs_inorder_iter_mut and dfs_postorder() APIs.
-3. [BorrowedTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.BorrowedTreeNode.html)/[BorrowedBinaryTreeNode](https://docs.rs/tree_iterators_rs/latest/tree_iterators_rs/prelude/trait.BorrowedBinaryTreeNode.html) -
+3. [BorrowedTreeNode](crate::prelude::BorrowedTreeNode)/[BorrowedBinaryTreeNode](crate::prelude::BorrowedBinaryTreeNode) -
    these traits powers the bfs_iter(), dfs_preorder_iter(), dfs_inorder_iter()
    and dfs_postorder_iter() APIs.
 
