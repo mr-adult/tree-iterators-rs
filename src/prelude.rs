@@ -130,6 +130,20 @@ where
         )
     }
 
+    #[doc = include_str!("../doc_files/at_path.md")]
+    #[doc = include_str!("../doc_files/at_path_binary_example.md")]
+    fn at_path(self, path: &[usize]) -> Option<Self> {
+        let mut current = self;
+        for path_segment in path {
+            current = current
+                .get_value_and_children_binary()
+                .1
+                .into_iter()
+                .nth(*path_segment)??;
+        }
+        Some(current)
+    }
+
     /// This method retrieves an iterator that can be used to perform
     /// Breadth First (Queue - specifically VecDeque-based) searches of a tree.
     ///
@@ -662,6 +676,20 @@ where
     /// an infinite loop.
     fn get_value_and_children(self) -> (Self::OwnedValue, Self::OwnedChildren);
 
+    #[doc = include_str!("../doc_files/at_path.md")]
+    #[doc = include_str!("../doc_files/at_path_tree_example.md")]
+    fn at_path(self, path: &[usize]) -> Option<Self> {
+        let mut current = self;
+        for path_segment in path {
+            current = current
+                .get_value_and_children()
+                .1
+                .into_iter()
+                .nth(*path_segment)?;
+        }
+        Some(current)
+    }
+
     /// This method retrieves an iterator that can be used to perform
     /// Breadth First (Queue - specifically VecDeque-based) searches of a tree.
     ///
@@ -1094,6 +1122,20 @@ where
                 .into_iter()
                 .flat_map(opt_to_opt as fn(Option<&'a mut Self>) -> Option<&'a mut Self>),
         )
+    }
+
+    #[doc = include_str!("../doc_files/at_path.md")]
+    #[doc = include_str!("../doc_files/at_path_binary_example.md")]
+    fn at_path_mut(&'a mut self, path: &[usize]) -> Option<&'a mut Self> {
+        let mut current = self;
+        for path_segment in path {
+            current = current
+                .get_value_and_children_binary_iter_mut()
+                .1
+                .into_iter()
+                .nth(*path_segment)??;
+        }
+        Some(current)
     }
 
     /// This method retrieves an iterator that can be used to perform
@@ -1559,6 +1601,20 @@ where
         &'a mut self,
     ) -> (Self::MutBorrowedValue, Self::MutBorrowedChildren);
 
+    #[doc = include_str!("../doc_files/at_path.md")]
+    #[doc = include_str!("../doc_files/at_path_tree_example.md")]
+    fn at_path_mut(&'a mut self, path: &[usize]) -> Option<&'a mut Self> {
+        let mut current = self;
+        for path_segment in path {
+            current = current
+                .get_value_and_children_iter_mut()
+                .1
+                .into_iter()
+                .nth(*path_segment)?;
+        }
+        Some(current)
+    }
+
     /// This method retrieves an iterator that can be used to perform
     /// Breadth First (VecDeque-based) searches of a tree.
     ///
@@ -1990,6 +2046,20 @@ where
                 .into_iter()
                 .flat_map(opt_to_opt as fn(Option<&'a Self>) -> Option<&'a Self>),
         )
+    }
+
+    #[doc = include_str!("../doc_files/at_path.md")]
+    #[doc = include_str!("../doc_files/at_path_binary_example.md")]
+    fn at_path_ref(&'a self, path: &[usize]) -> Option<&'a Self> {
+        let mut current = self;
+        for path_segment in path {
+            current = current
+                .get_value_and_children_binary_iter()
+                .1
+                .into_iter()
+                .nth(*path_segment)??;
+        }
+        Some(current)
     }
 
     /// This method retrieves an iterator that can be used to perform
@@ -2451,6 +2521,20 @@ where
     /// in the process. The other methods of this trait assume that the 'Children'
     /// list does not contain and circular references back to parent nodes.
     fn get_value_and_children_iter(&'a self) -> (Self::BorrowedValue, Self::BorrowedChildren);
+
+    #[doc = include_str!("../doc_files/at_path.md")]
+    #[doc = include_str!("../doc_files/at_path_tree_example.md")]
+    fn at_path_ref(&'a self, path: &[usize]) -> Option<&'a Self> {
+        let mut current = self;
+        for path_segment in path {
+            current = current
+                .get_value_and_children_iter()
+                .1
+                .into_iter()
+                .nth(*path_segment)?;
+        }
+        Some(current)
+    }
 
     /// This method retrieves an iterator that can be used to perform
     /// Breadth First (Queue - specifically VecDeque-based) searches of a tree.
@@ -5645,6 +5729,151 @@ pub(crate) mod tests {
                 for (i, value) in bfs_leaves.enumerate() {
                     assert_eq!(expected_leaves[i + num_leaves_seen], value);
                 }
+            }
+        }
+    }
+
+    mod get_at_path_tests {
+        use alloc::boxed::Box;
+        use alloc::vec::Vec;
+
+        use super::create_binary_tree_for_testing;
+        use super::create_tree_for_testing;
+
+        fn get_tree_path_value_pairs() -> Box<[(Box<[usize]>, Option<usize>)]> {
+            Box::new([
+                (Box::new([]), Some(0)),
+                (Box::new([0]), Some(1)),
+                (Box::new([1]), Some(2)),
+                (Box::new([2]), None),
+                (Box::new([0, 0]), Some(3)),
+                (Box::new([0, 1]), Some(4)),
+                (Box::new([0, 2]), None),
+                (Box::new([1, 0]), Some(5)),
+                (Box::new([1, 1]), Some(6)),
+                (Box::new([1, 2]), None),
+                (Box::new([1, 1, 0]), Some(7)),
+                (Box::new([1, 1, 1]), None),
+                (Box::new([1, 1, 1, 0]), None),
+                (Box::new([1, 1, 0, 0]), Some(8)),
+                (Box::new([1, 1, 0, 1]), None),
+                (Box::new([1, 1, 0, 0, 0]), Some(9)),
+                (Box::new([1, 1, 0, 0, 1]), None),
+                (Box::new([1, 1, 0, 0, 0, 0]), Some(10)),
+                (Box::new([1, 1, 0, 0, 0, 1]), None),
+                (Box::new([1, 1, 0, 0, 0, 0, 0]), None),
+            ])
+        }
+
+        #[test]
+        fn tree_at_path() {
+            use super::OwnedTreeNode;
+
+            let tree = create_tree_for_testing(Vec::with_capacity(0));
+            for path_value_pair in get_tree_path_value_pairs() {
+                assert_eq!(
+                    path_value_pair.1,
+                    tree.clone()
+                        .at_path(&path_value_pair.0)
+                        .map(|tree| tree.value)
+                )
+            }
+        }
+
+        #[test]
+        fn tree_at_path_ref() {
+            use super::BorrowedTreeNode;
+
+            let tree = create_tree_for_testing(Vec::with_capacity(0));
+            for path_value_pair in get_tree_path_value_pairs() {
+                assert_eq!(
+                    path_value_pair.1,
+                    tree.at_path_ref(&path_value_pair.0).map(|tree| tree.value)
+                )
+            }
+        }
+
+        #[test]
+        fn tree_at_path_mut() {
+            use super::MutBorrowedTreeNode;
+
+            let mut tree = create_tree_for_testing(Vec::with_capacity(0));
+            for path_value_pair in get_tree_path_value_pairs() {
+                assert_eq!(
+                    path_value_pair.1,
+                    tree.at_path_mut(&path_value_pair.0).map(|tree| tree.value)
+                )
+            }
+        }
+
+        fn get_binary_tree_path_value_pairs() -> Box<[(Box<[usize]>, Option<usize>)]> {
+            Box::new([
+                (Box::new([]), Some(0)),
+                (Box::new([0]), Some(1)),
+                (Box::new([1]), Some(2)),
+                (Box::new([2]), None),
+                (Box::new([0, 0]), Some(3)),
+                (Box::new([0, 1]), Some(4)),
+                (Box::new([0, 2]), None),
+                (Box::new([1, 0]), Some(5)),
+                (Box::new([1, 1]), Some(6)),
+                (Box::new([1, 2]), None),
+                (Box::new([1, 1, 0]), Some(7)),
+                (Box::new([1, 1, 1]), None),
+                (Box::new([1, 1, 1, 0]), None),
+                (Box::new([1, 1, 0, 1]), Some(8)),
+                (Box::new([1, 1, 0, 0]), None),
+                (Box::new([1, 1, 0, 1, 0]), Some(9)),
+                (Box::new([1, 1, 0, 1, 1]), None),
+                (Box::new([1, 1, 0, 1, 0, 1]), Some(10)),
+                (Box::new([1, 1, 0, 1, 0, 0]), None),
+                (Box::new([1, 1, 0, 1, 0, 1, 0]), None),
+            ])
+        }
+
+        #[test]
+        fn binary_tree_at_path() {
+            use crate::prelude::OwnedBinaryTreeNode;
+
+            let binary_tree = create_binary_tree_for_testing();
+            for path_value_pair in get_binary_tree_path_value_pairs() {
+                assert_eq!(
+                    path_value_pair.1,
+                    binary_tree
+                        .clone()
+                        .at_path(&path_value_pair.0)
+                        .map(|tree| tree.value)
+                )
+            }
+        }
+
+        #[test]
+        fn binary_tree_at_path_ref() {
+            use crate::prelude::BorrowedBinaryTreeNode;
+
+            let binary_tree = create_binary_tree_for_testing();
+            for path_value_pair in get_binary_tree_path_value_pairs() {
+                assert_eq!(
+                    path_value_pair.1,
+                    binary_tree
+                        .at_path_ref(&path_value_pair.0)
+                        .map(|tree| tree.value)
+                )
+            }
+        }
+
+        #[test]
+        fn binary_tree_at_path_mut() {
+            use crate::prelude::MutBorrowedBinaryTreeNode;
+
+            let mut binary_tree = create_binary_tree_for_testing();
+            for path_value_pair in get_binary_tree_path_value_pairs() {
+                assert_eq!(
+                    path_value_pair.1,
+                    binary_tree
+                        .at_path_mut(&path_value_pair.0)
+                        .map(|tree| tree.value)
+                )
             }
         }
     }
