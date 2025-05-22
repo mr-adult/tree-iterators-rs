@@ -3059,6 +3059,14 @@ pub trait OwnedIntoIteratorOfTrees<T>: IntoIterator<Item = T> + Sized
 where
     T: OwnedTreeNode,
 {
+    #[doc = include_str!("../doc_files/at_path.md")]
+    #[doc = include_str!("../doc_files/at_path_tree_collection_example.md")]
+    fn at_path(self, path: &[usize]) -> Option<T> {
+        let first_path_segment = path.first()?;
+        let tree = self.into_iter().nth(*first_path_segment)?;
+        tree.at_path(&path[1..])
+    }
+
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a breadth first search.
     ///
@@ -3100,6 +3108,14 @@ pub trait OwnedIntoIteratorOfBinaryTrees<T>: IntoIterator<Item = T> + Sized
 where
     T: OwnedBinaryTreeNode,
 {
+    #[doc = include_str!("../doc_files/at_path.md")]
+    #[doc = include_str!("../doc_files/at_path_binary_collection_example.md")]
+    fn at_path(self, path: &[usize]) -> Option<T> {
+        let first_path_segment = path.first()?;
+        let tree = self.into_iter().nth(*first_path_segment)?;
+        tree.at_path(&path[1..])
+    }
+
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a breadth first search.
     ///
@@ -3153,6 +3169,14 @@ pub trait MutBorrowedIntoIteratorOfTrees<'a, T>: IntoIterator<Item = &'a mut T> 
 where
     T: MutBorrowedTreeNode<'a>,
 {
+    #[doc = include_str!("../doc_files/at_path.md")]
+    #[doc = include_str!("../doc_files/at_path_tree_collection_example.md")]
+    fn at_path_mut(self, path: &[usize]) -> Option<&'a mut T> {
+        let first_path_segment = path.first()?;
+        let tree = self.into_iter().nth(*first_path_segment)?;
+        tree.at_path_mut(&path[1..])
+    }
+
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a breadth first search.
     ///
@@ -3195,6 +3219,14 @@ pub trait MutBorrowedIntoIteratorOfBinaryTrees<'a, T>:
 where
     T: MutBorrowedBinaryTreeNode<'a>,
 {
+    #[doc = include_str!("../doc_files/at_path.md")]
+    #[doc = include_str!("../doc_files/at_path_binary_collection_example.md")]
+    fn at_path_mut(self, path: &[usize]) -> Option<&'a mut T> {
+        let first_path_segment = path.first()?;
+        let tree = self.into_iter().nth(*first_path_segment)?;
+        tree.at_path_mut(&path[1..])
+    }
+
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a breadth first search.
     ///
@@ -3252,6 +3284,14 @@ pub trait BorrowedIntoIteratorOfTrees<'a, T>: IntoIterator<Item = &'a T> + Sized
 where
     T: BorrowedTreeNode<'a>,
 {
+    #[doc = include_str!("../doc_files/at_path.md")]
+    #[doc = include_str!("../doc_files/at_path_tree_collection_example.md")]
+    fn at_path_ref(self, path: &[usize]) -> Option<&'a T> {
+        let first_path_segment = path.first()?;
+        let tree = self.into_iter().nth(*first_path_segment)?;
+        tree.at_path_ref(&path[1..])
+    }
+
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a breadth first search.
     ///
@@ -3293,6 +3333,14 @@ pub trait BorrowedIntoIteratorOfBinaryTrees<'a, T>: IntoIterator<Item = &'a T> +
 where
     T: BorrowedBinaryTreeNode<'a>,
 {
+    #[doc = include_str!("../doc_files/at_path.md")]
+    #[doc = include_str!("../doc_files/at_path_binary_collection_example.md")]
+    fn at_path_ref(self, path: &[usize]) -> Option<&'a T> {
+        let first_path_segment = path.first()?;
+        let tree = self.into_iter().nth(*first_path_segment)?;
+        tree.at_path_ref(&path[1..])
+    }
+
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a breadth first search.
     ///
