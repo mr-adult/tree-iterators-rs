@@ -88,13 +88,37 @@ into other iterators by chaining one of the following methods:
 
 ## Change Log
 
+- 3.4.0
+  - adds
+    [`OwnedIntoIteratorOfTrees::at_path`](crate::prelude::OwnedIntoIteratorOfTrees::at_path)
+  - adds
+    [`OwnedIntoIteratorOfBinaryTrees::at_path`](crate::prelude::OwnedIntoIteratorOfBinaryTrees::at_path)
+  - adds
+    [`MutBorrowedIntoIteratorOfTrees::at_path_mut`](crate::prelude::MutBorrowedIntoIteratorOfTrees::at_path_mut)
+  - adds
+    [`MutBorrowedIntoIteratorOfBinaryTrees::at_path_mut`](crate::prelude::MutBorrowedIntoIteratorOfBinaryTrees::at_path_mut)
+  - adds
+    [`BorrowedIntoIteratorOfTrees::at_path_ref`](crate::prelude::BorrowedIntoIteratorOfTrees::at_path_ref)
+  - adds
+    [`BorrowedIntoIteratorOfBinaryTrees::at_path_ref`](crate::prelude::BorrowedIntoIteratorOfBinaryTrees::at_path_ref)
+
+- 3.3.1
+  - Updates documentation on
+    [`TreeContext::children`](crate::prelude::TreeContext::children) and
+    [`TreeContext::children_mut`](crate::prelude::TreeContext::children_mut)
+
 - 3.3.0
-  - adds [at_path](crate::prelude::OwnedTreeNode::at_path)
-  - adds [at_path](crate::prelude::OwnedBinaryTreeNode::at_path)
-  - adds [at_path_mut](crate::prelude::MutBorrowedTreeNode::at_path_mut)
-  - adds [at_path_mut](crate::prelude::MutBorrowedBinaryTreeNode::at_path_mut)
-  - adds [at_path_ref](crate::prelude::BorrowedTreeNode::at_path_ref)
-  - adds [at_path_ref](crate::prelude::BorrowedBinaryTreeNode::at_path_ref)
+  - adds [`OwnedTreeNode::at_path`](crate::prelude::OwnedTreeNode::at_path)
+  - adds
+    [`OwnedBinaryTreeNode::at_path`](crate::prelude::OwnedBinaryTreeNode::at_path)
+  - adds
+    [`MutBorrowedTreeNode::at_path_mut`](crate::prelude::MutBorrowedTreeNode::at_path_mut)
+  - adds
+    [`MutBorrowedBinaryTreeNode::at_path_mut`](crate::prelude::MutBorrowedBinaryTreeNode::at_path_mut)
+  - adds
+    [`BorrowedTreeNode::at_path_ref`](crate::prelude::BorrowedTreeNode::at_path_ref)
+  - adds
+    [`BorrowedBinaryTreeNode::at_path_ref`](crate::prelude::BorrowedBinaryTreeNode::at_path_ref)
 
 - 3.2.0
   - Adds the IntoIteratorOfTrees and IntoIteratorOfBinaryTrees traits for more
