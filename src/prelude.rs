@@ -71,6 +71,11 @@ pub use super::tree_iterators::{
     TreeIterator, TreeIteratorBase,
 };
 
+pub use super::fallible_tree_iterators::{
+    FallibleBinaryPrune, FallibleBinaryTreeIterator, FallibleMap, FalliblePrune,
+    FalliblePruneDepth, FalliblePrunePath, FallibleTreeIterator, FallibleTreeIteratorBase,
+};
+
 /// A default implemenation of a binary tree node. This struct
 /// provides a series of tree traversal utilities to allow
 /// you to easily work with and modify binary trees.
