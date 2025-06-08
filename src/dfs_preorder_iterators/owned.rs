@@ -137,9 +137,6 @@ where
     dfs_preorder_next_with_path_tracking!(get_value_and_children);
 }
 
-impl<Node> crate::Sealed for OwnedDFSPreorderIteratorWithPathTracking<Node> where Node: OwnedTreeNode
-{}
-
 impl<Node> TreeIteratorBase<Node::OwnedValue, Node::OwnedChildren>
     for OwnedDFSPreorderIteratorWithPathTracking<Node>
 where
@@ -365,11 +362,6 @@ where
 {
     type Item = Node::OwnedValue;
     dfs_preorder_binary_next_with_path_tracking!(get_value_and_children_binary);
-}
-
-impl<'a, Node> crate::Sealed for OwnedBinaryDFSPreorderIteratorWithPathTracking<Node> where
-    Node: OwnedBinaryTreeNode
-{
 }
 
 impl<'a, Node> TreeIteratorBase<Node::OwnedValue, [Option<Node>; 2]>

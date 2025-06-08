@@ -142,11 +142,6 @@ where
     dfs_preorder_next_with_path_tracking!(get_value_and_children_iter_mut);
 }
 
-impl<'a, Node> crate::Sealed for MutBorrowedDFSPreorderIteratorWithPathTracking<'a, Node> where
-    Node: MutBorrowedTreeNode<'a>
-{
-}
-
 impl<'a, Node> TreeIteratorBase<Node::MutBorrowedValue, Node::MutBorrowedChildren>
     for MutBorrowedDFSPreorderIteratorWithPathTracking<'a, Node>
 where
@@ -375,11 +370,6 @@ where
 {
     type Item = Node::MutBorrowedValue;
     dfs_preorder_binary_next_with_path_tracking!(get_value_and_children_binary_iter_mut);
-}
-
-impl<'a, Node> crate::Sealed for MutBorrowedBinaryDFSPreorderIteratorWithPathTracking<'a, Node> where
-    Node: MutBorrowedBinaryTreeNode<'a>
-{
 }
 
 impl<'a, Node> TreeIteratorBase<Node::MutBorrowedValue, [Option<&'a mut Node>; 2]>

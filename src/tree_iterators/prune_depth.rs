@@ -12,11 +12,6 @@ where
     pub(crate) depth: usize,
 }
 
-impl<Value, Children, Inner> crate::Sealed for PruneDepth<Value, Children, Inner> where
-    Inner: TreeIteratorBase<Value, Children>
-{
-}
-
 impl<Value, Children, Inner> Iterator for PruneDepth<Value, Children, Inner>
 where
     Inner: TreeIteratorBase<Value, Children>,

@@ -12,8 +12,7 @@ pub use prune::{BinaryPrune, Prune};
 pub use prune_depth::PruneDepth;
 pub use prune_path::{BinaryPrunePath, PrunePath};
 
-#[allow(private_bounds)]
-pub trait TreeIteratorBase<Value, Children>: crate::Sealed + Iterator<Item = Value>
+pub trait TreeIteratorBase<Value, Children>: Iterator<Item = Value>
 where
     Self: Sized,
 {
