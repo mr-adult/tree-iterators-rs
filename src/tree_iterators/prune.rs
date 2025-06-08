@@ -98,13 +98,6 @@ where
     }
 }
 
-impl<Value, Children, InnerIter, F> crate::Sealed for Prune<Value, Children, InnerIter, F>
-where
-    InnerIter: TreeIterator<Value, Children>,
-    F: FnMut(&Value) -> bool,
-{
-}
-
 impl<Value, Children, InnerIter, F> TreeIteratorBase<Value, Children>
     for Prune<Value, Children, InnerIter, F>
 where
@@ -173,13 +166,6 @@ where
 
         None
     }
-}
-
-impl<Value, Children, InnerIter, F> crate::Sealed for BinaryPrune<Value, Children, InnerIter, F>
-where
-    InnerIter: BinaryTreeIterator<Value, Children>,
-    F: FnMut(&Value) -> bool,
-{
 }
 
 impl<Value, Children, InnerIter, F> TreeIteratorBase<Value, Children>

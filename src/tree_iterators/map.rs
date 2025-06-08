@@ -28,14 +28,6 @@ where
     }
 }
 
-impl<Value, Children, InnerIter, F, Output> crate::Sealed
-    for Map<Value, Children, InnerIter, F, Output>
-where
-    InnerIter: TreeIteratorBase<Value, Children>,
-    F: FnMut(Value) -> Output,
-{
-}
-
 impl<Value, Children, InnerIter, F, Output> Iterator for Map<Value, Children, InnerIter, F, Output>
 where
     InnerIter: TreeIteratorBase<Value, Children>,
