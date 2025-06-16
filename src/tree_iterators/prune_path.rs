@@ -55,6 +55,7 @@ where
 
             loop {
                 if matched_up_to_depth >= inner_path.len() {
+                    self.pruned_at_each_depth.truncate(matched_up_to_depth);
                     self.current_path.truncate(matched_up_to_depth);
                     break;
                 }
@@ -63,7 +64,7 @@ where
                 let pruned_at_depth = self.pruned_at_each_depth[matched_up_to_depth];
                 let inner_path_at_depth = inner_path[matched_up_to_depth];
                 if (current_path_at_depth + pruned_at_depth) != inner_path_at_depth {
-                    self.pruned_at_each_depth.truncate(matched_up_to_depth + 1);
+                    self.pruned_at_each_depth.truncate(matched_up_to_depth);
                     self.current_path.truncate(matched_up_to_depth);
                     break;
                 }
@@ -81,8 +82,7 @@ where
                     .push(inner_path_at_depth - pruned_at_depth);
             }
 
-            let path = &self.current_path;
-            if (&mut self.f)(&path, &item) {
+            if (&mut self.f)(inner_path, &item) {
                 self.prune_current_subtree();
                 let current_depth = self.current_depth();
                 if current_depth > 0 {
