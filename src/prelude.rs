@@ -30,16 +30,19 @@ use crate::dfs_postorder_iterators::owned::{
 };
 use crate::dfs_preorder_iterators::borrow::{
     BorrowedBinaryDFSPreorderCollectionIterator, BorrowedBinaryDFSPreorderIteratorWithPathTracking,
-    BorrowedDFSPreorderCollectionIterator, BorrowedDFSPreorderIteratorWithPathTracking,
+    BorrowedDFSPreorderCollectionIterator, BorrowedDFSPreorderCollectionIteratorWithPathTracking,
+    BorrowedDFSPreorderIteratorWithPathTracking,
 };
 use crate::dfs_preorder_iterators::mut_borrow::{
     MutBorrowedBinaryDFSPreorderCollectionIterator,
     MutBorrowedBinaryDFSPreorderIteratorWithPathTracking, MutBorrowedDFSPreorderCollectionIterator,
+    MutBorrowedDFSPreorderCollectionIteratorWithPathTracking,
     MutBorrowedDFSPreorderIteratorWithPathTracking,
 };
 use crate::dfs_preorder_iterators::owned::{
     OwnedBinaryDFSPreorderCollectionIterator, OwnedBinaryDFSPreorderIteratorWithPathTracking,
-    OwnedDFSPreorderCollectionIterator, OwnedDFSPreorderIteratorWithPathTracking,
+    OwnedDFSPreorderCollectionIterator, OwnedDFSPreorderCollectionIteratorWithPathTracking,
+    OwnedDFSPreorderIteratorWithPathTracking,
 };
 
 use super::bfs_iterators::{
@@ -74,6 +77,12 @@ pub use super::tree_iterators::{
 pub use super::fallible_tree_iterators::{
     FallibleBinaryPrune, FallibleBinaryTreeIterator, FallibleMap, FalliblePrune,
     FalliblePruneDepth, FalliblePrunePath, FallibleTreeIterator, FallibleTreeIteratorBase,
+};
+
+pub use super::tree_collection_iterators::{
+    BinaryCollectionPrune, BinaryCollectionPrunePath, BinaryTreeCollectionIterator, CollectionMap,
+    CollectionPrune, CollectionPruneDepth, CollectionPrunePath, TreeCollectionIterator,
+    TreeCollectionIteratorBase,
 };
 
 /// A default implemenation of a binary tree node. This struct
@@ -860,7 +869,7 @@ where
     ///     result);
     /// ```
     fn into_pipeline(self) -> impl TreeIterator<Self::OwnedValue, Self::OwnedChildren> {
-        OwnedDFSPreorderIteratorWithPathTracking::new(self)
+        OwnedDFSPreorderIteratorWithPathTracking::new(self, Vec::new())
     }
 
     /// Prune is a tree-based analog to [`filter`](core::iter::Iterator::filter).
@@ -1787,7 +1796,7 @@ where
     fn into_pipeline_mut(
         &'a mut self,
     ) -> impl TreeIterator<Self::MutBorrowedValue, Self::MutBorrowedChildren> {
-        MutBorrowedDFSPreorderIteratorWithPathTracking::new(self)
+        MutBorrowedDFSPreorderIteratorWithPathTracking::new(self, Vec::new())
     }
 
     /// Prune is a tree-based analog to [`filter`](core::iter::Iterator::filter).
@@ -2708,7 +2717,7 @@ where
     fn into_pipeline_ref(
         &'a self,
     ) -> impl TreeIterator<Self::BorrowedValue, Self::BorrowedChildren> {
-        BorrowedDFSPreorderIteratorWithPathTracking::new(self)
+        BorrowedDFSPreorderIteratorWithPathTracking::new(self, Vec::new())
     }
 
     /// Prune is a tree-based analog to [`filter`](core::iter::Iterator::filter).
@@ -3072,6 +3081,10 @@ where
         tree.at_path(&path[1..])
     }
 
+    fn into_pipeline(self) -> impl TreeCollectionIterator<T::OwnedValue, T::OwnedChildren> {
+        OwnedDFSPreorderCollectionIteratorWithPathTracking::new(self)
+    }
+
     /// Iterates over each tree in the IntoIterator, then over each node in
     /// each tree in a breadth first search.
     ///
@@ -3180,6 +3193,12 @@ where
         let first_path_segment = path.first()?;
         let tree = self.into_iter().nth(*first_path_segment)?;
         tree.at_path_mut(&path[1..])
+    }
+
+    fn into_pipeline_mut(
+        self,
+    ) -> impl TreeCollectionIterator<T::MutBorrowedValue, T::MutBorrowedChildren> {
+        MutBorrowedDFSPreorderCollectionIteratorWithPathTracking::new(self)
     }
 
     /// Iterates over each tree in the IntoIterator, then over each node in
@@ -3295,6 +3314,12 @@ where
         let first_path_segment = path.first()?;
         let tree = self.into_iter().nth(*first_path_segment)?;
         tree.at_path_ref(&path[1..])
+    }
+
+    fn into_pipeline_ref(
+        self,
+    ) -> impl TreeCollectionIterator<T::BorrowedValue, T::BorrowedChildren> {
+        BorrowedDFSPreorderCollectionIteratorWithPathTracking::new(self)
     }
 
     /// Iterates over each tree in the IntoIterator, then over each node in

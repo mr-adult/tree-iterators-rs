@@ -12,5 +12,6 @@ pub mod examples;
 pub(crate) mod fallible_tree_iterators;
 pub mod leaves_iterators;
 pub mod prelude;
+mod tree_collection_iterators;
 mod tree_context;
 pub(crate) mod tree_iterators;
