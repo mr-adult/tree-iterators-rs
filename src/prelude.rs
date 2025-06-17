@@ -74,11 +74,6 @@ pub use super::tree_iterators::{
     TreeIterator, TreeIteratorBase,
 };
 
-pub use super::fallible_tree_iterators::{
-    FallibleBinaryPrune, FallibleBinaryTreeIterator, FallibleMap, FalliblePrune,
-    FalliblePruneDepth, FalliblePrunePath, FallibleTreeIterator, FallibleTreeIteratorBase,
-};
-
 pub use super::tree_collection_iterators::{
     BinaryCollectionPrune, BinaryCollectionPrunePath, BinaryTreeCollectionIterator, CollectionMap,
     CollectionPrune, CollectionPruneDepth, CollectionPrunePath, TreeCollectionIterator,
