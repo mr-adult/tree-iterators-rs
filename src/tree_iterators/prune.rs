@@ -50,20 +50,12 @@ where
                 self.current_path.push(0);
             }
 
-            if (&mut self.f)(&item) {
-                self.prune_current_subtree();
-                if inner_depth > 0 {
-                    let pruned_at_current_depth = &mut self.pruned_at_each_depth[inner_depth - 1];
-                    *pruned_at_current_depth += 1;
-                }
-                continue;
-            }
-
             let mut matched_up_to_depth = 0;
             let inner_path = self.inner.current_path();
 
             loop {
-                if matched_up_to_depth >= inner_depth {
+                if matched_up_to_depth >= inner_path.len() {
+                    self.pruned_at_each_depth.truncate(matched_up_to_depth);
                     self.current_path.truncate(matched_up_to_depth);
                     break;
                 }
@@ -72,7 +64,7 @@ where
                 let pruned_at_depth = self.pruned_at_each_depth[matched_up_to_depth];
                 let inner_path_at_depth = inner_path[matched_up_to_depth];
                 if (current_path_at_depth + pruned_at_depth) != inner_path_at_depth {
-                    self.pruned_at_each_depth.truncate(matched_up_to_depth + 1);
+                    self.pruned_at_each_depth.truncate(matched_up_to_depth);
                     self.current_path.truncate(matched_up_to_depth);
                     break;
                 }
@@ -81,12 +73,23 @@ where
             }
 
             for depth in matched_up_to_depth..inner_depth {
-                let inner_at_depth = inner_path[depth];
+                let inner_path_at_depth = inner_path[depth];
                 if self.pruned_at_each_depth.len() == depth {
                     self.pruned_at_each_depth.push(0);
                 }
                 let pruned_at_depth = self.pruned_at_each_depth[depth];
-                self.current_path.push(inner_at_depth - pruned_at_depth);
+                self.current_path
+                    .push(inner_path_at_depth - pruned_at_depth);
+            }
+
+            if (&mut self.f)(&item) {
+                self.prune_current_subtree();
+                let current_depth = self.current_depth();
+                if current_depth > 0 {
+                    let pruned_at_current_depth = &mut self.pruned_at_each_depth[current_depth - 1];
+                    *pruned_at_current_depth += 1;
+                }
+                continue;
             }
 
             return Some(item);
