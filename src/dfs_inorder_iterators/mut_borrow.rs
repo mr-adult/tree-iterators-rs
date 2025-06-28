@@ -194,7 +194,7 @@ where
     pub(crate) fn new(
         root: &'a mut Node,
         path: Vec<usize>,
-    ) -> MutBorrowedDFSInorderIteratorWithContext<Node> {
+    ) -> MutBorrowedDFSInorderIteratorWithContext<'a, Node> {
         let mut right_stack = Vec::new();
         right_stack.push(Some(root));
 

@@ -116,7 +116,7 @@ impl<'a, Node> BorrowedDFSPostorderIteratorWithContext<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
 {
-    fn new(root: &'a Node, path: Vec<usize>) -> BorrowedDFSPostorderIteratorWithContext<'_, Node> {
+    fn new(root: &'a Node, path: Vec<usize>) -> BorrowedDFSPostorderIteratorWithContext<'a, Node> {
         Self {
             root: Some(root),
             traversal_stack: Vec::new(),
@@ -211,7 +211,7 @@ impl<'a, Node> BorrowedDFSPostorderIteratorWithAncestors<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
 {
-    fn new(root: &'a Node) -> BorrowedDFSPostorderIteratorWithAncestors<'_, Node> {
+    fn new(root: &'a Node) -> BorrowedDFSPostorderIteratorWithAncestors<'a, Node> {
         Self {
             root: Some(root),
             item_stack: Vec::new(),
@@ -342,7 +342,7 @@ impl<'a, Node> BorrowedBinaryDFSPostorderIteratorWithAncestors<'a, Node>
 where
     Node: BorrowedBinaryTreeNode<'a>,
 {
-    fn new(root: &'a Node) -> BorrowedBinaryDFSPostorderIteratorWithAncestors<'_, Node> {
+    fn new(root: &'a Node) -> BorrowedBinaryDFSPostorderIteratorWithAncestors<'a, Node> {
         Self {
             root: Some(root),
             item_stack: Vec::new(),
@@ -389,7 +389,7 @@ where
     fn new(
         root: &'a Node,
         path: Vec<usize>,
-    ) -> BorrowedBinaryDFSPostorderIteratorWithContext<'_, Node> {
+    ) -> BorrowedBinaryDFSPostorderIteratorWithContext<'a, Node> {
         Self {
             root: Some(root),
             current_context: TreeContext {
