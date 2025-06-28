@@ -1166,7 +1166,7 @@ where
     ///           10
     /// ```
     ///
-    fn bfs_iter_mut(&'a mut self) -> MutBorrowedBinaryBFSIterator<'_, Self> {
+    fn bfs_iter_mut(&'a mut self) -> MutBorrowedBinaryBFSIterator<'a, Self> {
         MutBorrowedBinaryBFSIterator::new(self)
     }
 
@@ -1198,7 +1198,7 @@ where
     ///           10
     /// ```
     ///
-    fn dfs_preorder_iter_mut(&'a mut self) -> MutBorrowedBinaryDFSPreorderIterator<'_, Self> {
+    fn dfs_preorder_iter_mut(&'a mut self) -> MutBorrowedBinaryDFSPreorderIterator<'a, Self> {
         MutBorrowedBinaryDFSPreorderIterator::new(self)
     }
 
@@ -1231,7 +1231,7 @@ where
     ///           10
     /// ```
     ///
-    fn dfs_inorder_iter_mut(&'a mut self) -> MutBorrowedDFSInorderIterator<'_, Self> {
+    fn dfs_inorder_iter_mut(&'a mut self) -> MutBorrowedDFSInorderIterator<'a, Self> {
         MutBorrowedDFSInorderIterator::new(self)
     }
 
@@ -1267,7 +1267,7 @@ where
     /// This traversal type guarantees that getChildren() will only be
     /// called once per node of the tree.
     ///
-    fn dfs_postorder_iter_mut(&'a mut self) -> MutBorrowedBinaryDFSPostorderIterator<'_, Self> {
+    fn dfs_postorder_iter_mut(&'a mut self) -> MutBorrowedBinaryDFSPostorderIterator<'a, Self> {
         MutBorrowedBinaryDFSPostorderIterator::new(self)
     }
 
@@ -1643,7 +1643,7 @@ where
     ///           10
     /// ```
     ///
-    fn bfs_iter_mut(&'a mut self) -> MutBorrowedBFSIterator<'_, Self> {
+    fn bfs_iter_mut(&'a mut self) -> MutBorrowedBFSIterator<'a, Self> {
         MutBorrowedBFSIterator::new(self)
     }
 
@@ -1675,7 +1675,7 @@ where
     ///           10
     /// ```
     ///
-    fn dfs_preorder_iter_mut(&'a mut self) -> MutBorrowedDFSPreorderIterator<'_, Self> {
+    fn dfs_preorder_iter_mut(&'a mut self) -> MutBorrowedDFSPreorderIterator<'a, Self> {
         MutBorrowedDFSPreorderIterator::new(self)
     }
 
@@ -1711,7 +1711,7 @@ where
     /// This traversal type guarantees that getChildren() will only be
     /// called once per node of the tree.
     ///
-    fn dfs_postorder_iter_mut(&'a mut self) -> MutBorrowedDFSPostorderIterator<'_, Self> {
+    fn dfs_postorder_iter_mut(&'a mut self) -> MutBorrowedDFSPostorderIterator<'a, Self> {
         MutBorrowedDFSPostorderIterator::new(self)
     }
 
@@ -2090,7 +2090,7 @@ where
     ///           10
     /// ```
     ///
-    fn bfs_iter(&'a self) -> BorrowedBinaryBFSIterator<'_, Self> {
+    fn bfs_iter(&'a self) -> BorrowedBinaryBFSIterator<'a, Self> {
         BorrowedBinaryBFSIterator::new(self)
     }
 
@@ -2122,7 +2122,7 @@ where
     ///           10
     /// ```
     ///
-    fn dfs_preorder_iter(&'a self) -> BorrowedBinaryDFSPreorderIterator<'_, Self> {
+    fn dfs_preorder_iter(&'a self) -> BorrowedBinaryDFSPreorderIterator<'a, Self> {
         BorrowedBinaryDFSPreorderIterator::new(self)
     }
 
@@ -2155,7 +2155,7 @@ where
     ///           10
     /// ```
     ///
-    fn dfs_inorder_iter(&'a self) -> BorrowedDFSInorderIterator<'_, Self> {
+    fn dfs_inorder_iter(&'a self) -> BorrowedDFSInorderIterator<'a, Self> {
         BorrowedDFSInorderIterator::new(self)
     }
 
@@ -2191,7 +2191,7 @@ where
     /// This traversal type guarantees that getChildren() will only be
     /// called once per node of the tree.
     ///
-    fn dfs_postorder_iter(&'a self) -> BorrowedBinaryDFSPostorderIterator<'_, Self> {
+    fn dfs_postorder_iter(&'a self) -> BorrowedBinaryDFSPostorderIterator<'a, Self> {
         BorrowedBinaryDFSPostorderIterator::new(self)
     }
 
@@ -2564,7 +2564,7 @@ where
     ///           10
     /// ```
     ///
-    fn bfs_iter(&'a self) -> BorrowedBFSIterator<'_, Self> {
+    fn bfs_iter(&'a self) -> BorrowedBFSIterator<'a, Self> {
         BorrowedBFSIterator::new(self)
     }
 
@@ -2596,7 +2596,7 @@ where
     ///           10
     /// ```
     ///
-    fn dfs_preorder_iter(&'a self) -> BorrowedDFSPreorderIterator<'_, Self> {
+    fn dfs_preorder_iter(&'a self) -> BorrowedDFSPreorderIterator<'a, Self> {
         BorrowedDFSPreorderIterator::new(self)
     }
 
@@ -2632,7 +2632,7 @@ where
     /// This traversal type guarantees that getChildren() will only be
     /// called once per node of the tree.
     ///
-    fn dfs_postorder_iter(&'a self) -> BorrowedDFSPostorderIterator<'_, Self> {
+    fn dfs_postorder_iter(&'a self) -> BorrowedDFSPostorderIterator<'a, Self> {
         BorrowedDFSPostorderIterator::new(self)
     }
 
