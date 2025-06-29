@@ -104,6 +104,7 @@ where
     ///     },
     ///     result);
     /// ```
+    #[must_use]
     fn prune_depth(self, depth_limit: usize) -> PruneDepth<Value, Children, Self> {
         PruneDepth {
             inner: self,
@@ -157,6 +158,7 @@ where
     ///     },
     ///     result);
     /// ```
+    #[must_use]
     fn map_tree<F, Output>(self, f: F) -> Map<Value, Children, Self, F, Output>
     where
         F: FnMut(Value) -> Output,
@@ -230,6 +232,7 @@ where
     /// 1
     /// 2
     /// ```
+    #[must_use]
     fn prune<F>(self, f: F) -> Prune<Value, Children, Self, F>
     where
         F: FnMut(&Value) -> bool,
@@ -240,6 +243,7 @@ where
     /// Identical to [`prune`](TreeIterator::prune) except that the closure is passed
     /// an additional parameter: the path of the current node in the tree (see
     /// [`current_path`](TreeIteratorBase::current_path) for more details).
+    #[must_use]
     fn prune_path<F>(self, f: F) -> PrunePath<Value, Children, Self, F>
     where
         F: FnMut(&[usize], &Value) -> bool,
@@ -314,12 +318,12 @@ where
     /// Folds every node in the tree into an accumulated value by applying an operation,
     /// returning the final result.
     ///
-    /// fold() takes one arguments: a closure with two arguments: an ‘accumulator’ (the
+    /// fold_tree() takes one arguments: a closure with two arguments: an ‘accumulator’ (the
     /// result of accumulating all children of the current node), and the current node's
     /// value. The closure returns the value that the accumulator should have for the
     /// subtree's parent's iteration.
     ///
-    /// After applying this closure to every element of the iterator, fold() returns the
+    /// After applying this closure to every element of the tree, fold_tree() returns the
     /// accumulator.
     ///
     /// Folding is useful whenever you have a tree of something, and want to produce a
@@ -460,6 +464,7 @@ where
     /// 1
     /// 2
     /// ```
+    #[must_use]
     fn prune<F>(self, f: F) -> BinaryPrune<Value, Children, Self, F>
     where
         F: FnMut(&Value) -> bool,
@@ -470,6 +475,7 @@ where
     /// Identical to [`prune`](TreeIterator::prune) except that the closure is passed
     /// an additional parameter: the path of the current node in the tree (see
     /// [`current_path`](TreeIteratorBase::current_path) for more details).
+    #[must_use]
     fn prune_path<F>(self, f: F) -> BinaryPrunePath<Value, Children, Self, F>
     where
         F: FnMut(&[usize], &Value) -> bool,
