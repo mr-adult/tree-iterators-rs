@@ -1,4 +1,7 @@
-use core::array::IntoIter;
+use core::{
+    array::IntoIter,
+    iter::{Enumerate, Fuse},
+};
 
 use crate::{
     leaves_iterators::{
@@ -9,7 +12,8 @@ use crate::{
         depth_first::borrow::{BorrowedBinaryLeavesIterator, BorrowedLeavesIterator},
     },
     prelude::{
-        BinaryChildren, BinaryTreeIterator, BorrowedBinaryTreeNode, BorrowedTreeNode, TreeContext,
+        BinaryChildren, BinaryTreeCollectionIterator, BinaryTreeIterator, BorrowedBinaryTreeNode,
+        BorrowedTreeNode, TreeCollectionIterator, TreeCollectionIteratorBase, TreeContext,
         TreeIterator, TreeIteratorBase,
     },
 };
@@ -46,6 +50,85 @@ crate::collection_iterators::borrowed_collection_context_iterator_impl!(
     BorrowedDFSPreorderIteratorWithContext,
     BorrowedDFSPreorderCollectionIterator
 );
+
+pub(crate) struct BorrowedDFSPreorderCollectionIteratorWithPathTracking<'a, Node, IntoIter>
+where
+    IntoIter: IntoIterator<Item = &'a Node>,
+    Node: BorrowedTreeNode<'a>,
+{
+    tree_collection: Enumerate<Fuse<IntoIter::IntoIter>>,
+    current_tree_iterator: Option<BorrowedDFSPreorderIteratorWithPathTracking<'a, Node>>,
+}
+
+impl<'a, Node, IntoIter> BorrowedDFSPreorderCollectionIteratorWithPathTracking<'a, Node, IntoIter>
+where
+    IntoIter: IntoIterator<Item = &'a Node>,
+    Node: BorrowedTreeNode<'a>,
+{
+    pub(crate) fn new(into_iter: IntoIter) -> Self {
+        Self {
+            tree_collection: into_iter.into_iter().fuse().enumerate(),
+            current_tree_iterator: None,
+        }
+    }
+}
+
+impl<'a, Node, IntoIter> Iterator
+    for BorrowedDFSPreorderCollectionIteratorWithPathTracking<'a, Node, IntoIter>
+where
+    IntoIter: IntoIterator<Item = &'a Node>,
+    Node: BorrowedTreeNode<'a>,
+{
+    type Item = Node::BorrowedValue;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if let Some(current_tree_iterator) = &mut self.current_tree_iterator {
+                if let Some(current) = current_tree_iterator.next() {
+                    return Some(current);
+                }
+            }
+
+            if let Some(next_tree) = self.tree_collection.next() {
+                let mut path = Vec::new();
+                path.push(next_tree.0);
+                self.current_tree_iterator = Some(
+                    BorrowedDFSPreorderIteratorWithPathTracking::new(next_tree.1, path),
+                );
+            } else {
+                return None;
+            }
+        }
+    }
+}
+
+impl<'a, Node, IntoIter> TreeCollectionIteratorBase<Node::BorrowedValue, Node::BorrowedChildren>
+    for BorrowedDFSPreorderCollectionIteratorWithPathTracking<'a, Node, IntoIter>
+where
+    IntoIter: IntoIterator<Item = &'a Node>,
+    Node: BorrowedTreeNode<'a>,
+{
+    fn current_path(&self) -> &[usize] {
+        self.current_tree_iterator
+            .as_ref()
+            .map(|iter| iter.current_path())
+            .unwrap_or(&[])
+    }
+
+    fn prune_current_subtree(&mut self) {
+        if let Some(inner) = self.current_tree_iterator.as_mut() {
+            inner.prune_current_subtree();
+        }
+    }
+}
+
+impl<'a, Node, IntoIter> TreeCollectionIterator<Node::BorrowedValue, Node::BorrowedChildren>
+    for BorrowedDFSPreorderCollectionIteratorWithPathTracking<'a, Node, IntoIter>
+where
+    IntoIter: IntoIterator<Item = &'a Node>,
+    Node: BorrowedTreeNode<'a>,
+{
+}
 
 impl<'a, IntoIter, Node> BorrowedBinaryDFSPreorderCollectionIterator<'a, IntoIter, Node>
 where
@@ -140,10 +223,10 @@ impl<'a, Node> BorrowedDFSPreorderIteratorWithPathTracking<'a, Node>
 where
     Node: BorrowedTreeNode<'a>,
 {
-    pub(crate) fn new(root: &'a Node) -> Self {
+    pub(crate) fn new(root: &'a Node, path: Vec<usize>) -> Self {
         Self {
             root: Some(root),
-            path: Vec::new(),
+            path,
             on_deck_into_iterator: None,
             traversal_stack: Vec::new(),
         }
@@ -266,6 +349,86 @@ crate::collection_iterators::borrowed_collection_iterator_impl!(
     BorrowedBinaryTreeNode
 );
 
+pub(crate) struct BorrowedBinaryDFSPreorderCollectionIteratorWithPathTracking<'a, Node, IntoIter>
+where
+    IntoIter: IntoIterator<Item = &'a Node>,
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+    tree_collection: Enumerate<Fuse<IntoIter::IntoIter>>,
+    current_tree_iterator: Option<BorrowedBinaryDFSPreorderIteratorWithPathTracking<'a, Node>>,
+}
+
+impl<'a, Node, IntoIter>
+    BorrowedBinaryDFSPreorderCollectionIteratorWithPathTracking<'a, Node, IntoIter>
+where
+    IntoIter: IntoIterator<Item = &'a Node>,
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+    pub(crate) fn new(into_iter: IntoIter) -> Self {
+        Self {
+            tree_collection: into_iter.into_iter().fuse().enumerate(),
+            current_tree_iterator: None,
+        }
+    }
+}
+
+impl<'a, Node, IntoIter> Iterator
+    for BorrowedBinaryDFSPreorderCollectionIteratorWithPathTracking<'a, Node, IntoIter>
+where
+    IntoIter: IntoIterator<Item = &'a Node>,
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+    type Item = Node::BorrowedValue;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if let Some(current_tree_iterator) = &mut self.current_tree_iterator {
+                if let Some(current) = current_tree_iterator.next() {
+                    return Some(current);
+                }
+            }
+
+            if let Some(next_tree) = self.tree_collection.next() {
+                let mut path = Vec::new();
+                path.push(next_tree.0);
+                self.current_tree_iterator = Some(
+                    BorrowedBinaryDFSPreorderIteratorWithPathTracking::new(next_tree.1, path),
+                );
+            } else {
+                return None;
+            }
+        }
+    }
+}
+
+impl<'a, Node, IntoIter> TreeCollectionIteratorBase<Node::BorrowedValue, [Option<&'a Node>; 2]>
+    for BorrowedBinaryDFSPreorderCollectionIteratorWithPathTracking<'a, Node, IntoIter>
+where
+    IntoIter: IntoIterator<Item = &'a Node>,
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+    fn current_path(&self) -> &[usize] {
+        self.current_tree_iterator
+            .as_ref()
+            .map(|iter| iter.current_path())
+            .unwrap_or(&[])
+    }
+
+    fn prune_current_subtree(&mut self) {
+        if let Some(inner) = self.current_tree_iterator.as_mut() {
+            inner.prune_current_subtree();
+        }
+    }
+}
+
+impl<'a, Node, IntoIter> BinaryTreeCollectionIterator<Node::BorrowedValue, [Option<&'a Node>; 2]>
+    for BorrowedBinaryDFSPreorderCollectionIteratorWithPathTracking<'a, Node, IntoIter>
+where
+    IntoIter: IntoIterator<Item = &'a Node>,
+    Node: BorrowedBinaryTreeNode<'a>,
+{
+}
+
 pub struct BorrowedBinaryDFSPreorderIterator<'a, Node>
 where
     Node: BorrowedBinaryTreeNode<'a>,
@@ -338,11 +501,11 @@ impl<'a, Node> BorrowedBinaryDFSPreorderIteratorWithPathTracking<'a, Node>
 where
     Node: BorrowedBinaryTreeNode<'a>,
 {
-    pub(crate) fn new(root: &'a Node) -> Self {
+    pub(crate) fn new(root: &'a Node, path: Vec<usize>) -> Self {
         Self {
             root: Some(root),
             traversal_stack: Vec::new(),
-            path: Vec::new(),
+            path,
             on_deck_into_iterator: None,
         }
     }

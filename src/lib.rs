@@ -11,5 +11,6 @@ pub mod dfs_preorder_iterators;
 pub mod examples;
 pub mod leaves_iterators;
 pub mod prelude;
+mod tree_collection_iterators;
 mod tree_context;
 pub(crate) mod tree_iterators;
