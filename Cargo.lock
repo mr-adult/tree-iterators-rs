@@ -59,7 +59,7 @@ dependencies = [
 
 [[package]]
 name = "tree_iterators_rs"
-version = "3.4.1"
+version = "3.5.0"
 dependencies = [
  "serde",
  "serde_derive",
