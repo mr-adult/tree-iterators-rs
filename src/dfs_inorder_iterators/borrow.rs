@@ -118,7 +118,7 @@ impl<'a, Node> BorrowedDFSInorderIteratorWithAncestors<'a, Node>
 where
     Node: BorrowedBinaryTreeNode<'a>,
 {
-    pub(crate) fn new(root: &'a Node) -> BorrowedDFSInorderIteratorWithAncestors<Node> {
+    pub(crate) fn new(root: &'a Node) -> BorrowedDFSInorderIteratorWithAncestors<'a, Node> {
         let mut right_stack = Vec::new();
         right_stack.push(Some(root));
 
@@ -182,7 +182,7 @@ where
     pub(crate) fn new(
         root: &'a Node,
         path: Vec<usize>,
-    ) -> BorrowedDFSInorderIteratorWithContext<Node> {
+    ) -> BorrowedDFSInorderIteratorWithContext<'a, Node> {
         let mut right_stack = Vec::new();
         right_stack.push(Some(root));
 

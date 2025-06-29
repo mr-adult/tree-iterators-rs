@@ -43,43 +43,25 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(item) = self.inner.next() {
-            let inner_depth = self.inner.current_depth();
+            let inner_path_len = self.inner.current_path().len();
 
-            if self.pruned_at_each_depth.len() < inner_depth {
-                self.pruned_at_each_depth.push(0);
-                self.current_path.push(0);
-            }
-
-            let mut matched_up_to_depth = 0;
-            let inner_path = self.inner.current_path();
-
-            loop {
-                if matched_up_to_depth >= inner_path.len() {
-                    self.pruned_at_each_depth.truncate(matched_up_to_depth);
-                    self.current_path.truncate(matched_up_to_depth);
-                    break;
-                }
-
-                let current_path_at_depth = self.current_path[matched_up_to_depth];
-                let pruned_at_depth = self.pruned_at_each_depth[matched_up_to_depth];
-                let inner_path_at_depth = inner_path[matched_up_to_depth];
-                if (current_path_at_depth + pruned_at_depth) != inner_path_at_depth {
-                    self.pruned_at_each_depth.truncate(matched_up_to_depth);
-                    self.current_path.truncate(matched_up_to_depth);
-                    break;
-                }
-
-                matched_up_to_depth += 1;
-            }
-
-            for depth in matched_up_to_depth..inner_depth {
-                let inner_path_at_depth = inner_path[depth];
-                if self.pruned_at_each_depth.len() == depth {
+            if self.pruned_at_each_depth.len() < inner_path_len {
+                // Technically, this only needs to be a single .push() call on each collection,
+                // but putting it in a loop will prevent panics if inner is implemented incorrectly.
+                loop {
                     self.pruned_at_each_depth.push(0);
+                    self.current_path.push(0);
+                    if self.pruned_at_each_depth.len() == inner_path_len {
+                        break;
+                    }
                 }
-                let pruned_at_depth = self.pruned_at_each_depth[depth];
-                self.current_path
-                    .push(inner_path_at_depth - pruned_at_depth);
+            } else if self.pruned_at_each_depth.len() > inner_path_len {
+                self.pruned_at_each_depth.truncate(inner_path_len);
+                self.current_path.truncate(inner_path_len);
+
+                if let Some(last_path_segment) = self.current_path.last_mut() {
+                    *last_path_segment += 1;
+                }
             }
 
             if (&mut self.f)(&item) {
@@ -95,17 +77,13 @@ where
             return Some(item);
         }
 
+        // Clean up memory just in case our caller keeps this object in memory for a while.
         self.current_path.clear();
+        self.pruned_at_each_depth.clear();
         self.current_path.shrink_to_fit();
+        self.pruned_at_each_depth.shrink_to_fit();
         None
     }
-}
-
-impl<Value, Children, InnerIter, F> crate::Sealed for Prune<Value, Children, InnerIter, F>
-where
-    InnerIter: TreeIterator<Value, Children>,
-    F: FnMut(&Value) -> bool,
-{
 }
 
 impl<Value, Children, InnerIter, F> TreeIteratorBase<Value, Children>
@@ -176,13 +154,6 @@ where
 
         None
     }
-}
-
-impl<Value, Children, InnerIter, F> crate::Sealed for BinaryPrune<Value, Children, InnerIter, F>
-where
-    InnerIter: BinaryTreeIterator<Value, Children>,
-    F: FnMut(&Value) -> bool,
-{
 }
 
 impl<Value, Children, InnerIter, F> TreeIteratorBase<Value, Children>
