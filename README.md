@@ -88,6 +88,9 @@ into other iterators by chaining one of the following methods:
 
 ## Change Log
 
+- 3.5.0
+  - Adds the [`prune_each`], [`prune_path_each`], [`prune_depth_each`], [`map_each`], and [`fold_each`] APIs to the various IntoIteratorOf\[Binary\]Trees traits.
+
 - 3.4.1
   - fixes [a crash when prune() or prune_path() APIs cause an asymmetrical prune](https://github.com/mr-adult/tree-iterators-rs/issues/15).
 
@@ -138,12 +141,6 @@ into other iterators by chaining one of the following methods:
     .attach_context(). These IntoIterator-based .attach_context() calls will
     track the index in the IntoIteratorOfTrees as part of the path provided in
     the [`TreeContext`](crate::prelude::TreeContext)
-
-- 3.1.0
-  - Adds the [prune](crate::prelude::OwnedTreeNode::prune),
-    [map](crate::prelude::OwnedTreeNode::map), and
-    [fold](crate::prelude::OwnedTreeNode::fold) methods to all Tree traits.
-  > **_NOTE_**: These are named `_mut` or `_ref` for the borrowed traits
 
 ## Examples
 
