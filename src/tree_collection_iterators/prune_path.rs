@@ -2,11 +2,11 @@ use core::marker::PhantomData;
 
 use alloc::vec::Vec;
 
-use super::{BinaryTreeIterator, TreeIterator, TreeIteratorBase};
+use super::{BinaryTreeCollectionIterator, TreeCollectionIterator, TreeCollectionIteratorBase};
 
-pub struct PrunePath<Value, Children, InnerIter, F>
+pub struct CollectionPrunePath<Value, Children, InnerIter, F>
 where
-    InnerIter: TreeIterator<Value, Children>,
+    InnerIter: TreeCollectionIterator<Value, Children>,
     F: FnMut(&[usize], &Value) -> bool,
 {
     phantom1: PhantomData<Value>,
@@ -17,47 +17,52 @@ where
     current_path: Vec<usize>,
 }
 
-impl<Value, Children, InnerIter, F> PrunePath<Value, Children, InnerIter, F>
+impl<Value, Children, InnerIter, F> CollectionPrunePath<Value, Children, InnerIter, F>
 where
-    InnerIter: TreeIterator<Value, Children>,
+    InnerIter: TreeCollectionIterator<Value, Children>,
     F: FnMut(&[usize], &Value) -> bool,
 {
     pub(crate) fn new(iter: InnerIter, f: F) -> Self {
+        let mut pruned_at_each_depth = Vec::new();
+        pruned_at_each_depth.push(0);
+        let mut current_path = Vec::new();
+        current_path.push(0);
+
         Self {
             phantom1: Default::default(),
             phantom2: Default::default(),
             inner: iter,
             f,
-            pruned_at_each_depth: Vec::new(),
-            current_path: Vec::new(),
+            pruned_at_each_depth,
+            current_path,
         }
     }
 }
 
-impl<Value, Children, InnerIter, F> Iterator for PrunePath<Value, Children, InnerIter, F>
+impl<Value, Children, InnerIter, F> Iterator for CollectionPrunePath<Value, Children, InnerIter, F>
 where
-    InnerIter: TreeIterator<Value, Children>,
+    InnerIter: TreeCollectionIterator<Value, Children>,
     F: FnMut(&[usize], &Value) -> bool,
 {
     type Item = Value;
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(item) = self.inner.next() {
-            let inner_depth = self.inner.current_depth();
+            let inner_path_len = self.inner.current_path().len();
 
-            if self.pruned_at_each_depth.len() < inner_depth {
+            if self.pruned_at_each_depth.len() < inner_path_len {
                 // Technically, this only needs to be a single .push() call on each collection,
                 // but putting it in a loop will prevent panics if inner is implemented incorrectly.
                 loop {
                     self.pruned_at_each_depth.push(0);
                     self.current_path.push(0);
-                    if self.pruned_at_each_depth.len() == inner_depth {
+                    if self.pruned_at_each_depth.len() == inner_path_len {
                         break;
                     }
                 }
-            } else if self.pruned_at_each_depth.len() > inner_depth {
-                self.pruned_at_each_depth.truncate(inner_depth);
-                self.current_path.truncate(inner_depth);
+            } else if self.pruned_at_each_depth.len() > inner_path_len {
+                self.pruned_at_each_depth.truncate(inner_path_len);
+                self.current_path.truncate(inner_path_len);
 
                 if let Some(last_path_segment) = self.current_path.last_mut() {
                     *last_path_segment += 1;
@@ -66,7 +71,7 @@ where
 
             if (&mut self.f)(self.inner.current_path(), &item) {
                 self.prune_current_subtree();
-                let current_depth = self.current_depth();
+                let current_depth = self.current_path().len();
                 if current_depth > 0 {
                     let pruned_at_current_depth = &mut self.pruned_at_each_depth[current_depth - 1];
                     *pruned_at_current_depth += 1;
@@ -86,10 +91,10 @@ where
     }
 }
 
-impl<Value, Children, InnerIter, F> TreeIteratorBase<Value, Children>
-    for PrunePath<Value, Children, InnerIter, F>
+impl<Value, Children, InnerIter, F> TreeCollectionIteratorBase<Value, Children>
+    for CollectionPrunePath<Value, Children, InnerIter, F>
 where
-    InnerIter: TreeIterator<Value, Children>,
+    InnerIter: TreeCollectionIterator<Value, Children>,
     F: FnMut(&[usize], &Value) -> bool,
 {
     fn current_path(&self) -> &[usize] {
@@ -101,17 +106,17 @@ where
     }
 }
 
-impl<Value, Children, InnerIter, F> TreeIterator<Value, Children>
-    for PrunePath<Value, Children, InnerIter, F>
+impl<Value, Children, InnerIter, F> TreeCollectionIterator<Value, Children>
+    for CollectionPrunePath<Value, Children, InnerIter, F>
 where
-    InnerIter: TreeIterator<Value, Children>,
+    InnerIter: TreeCollectionIterator<Value, Children>,
     F: FnMut(&[usize], &Value) -> bool,
 {
 }
 
-pub struct BinaryPrunePath<Value, Children, InnerIter, F>
+pub struct BinaryCollectionPrunePath<Value, Children, InnerIter, F>
 where
-    InnerIter: BinaryTreeIterator<Value, Children>,
+    InnerIter: BinaryTreeCollectionIterator<Value, Children>,
     F: FnMut(&[usize], &Value) -> bool,
 {
     phantom1: PhantomData<Value>,
@@ -120,9 +125,9 @@ where
     f: F,
 }
 
-impl<Value, Children, InnerIter, F> BinaryPrunePath<Value, Children, InnerIter, F>
+impl<Value, Children, InnerIter, F> BinaryCollectionPrunePath<Value, Children, InnerIter, F>
 where
-    InnerIter: BinaryTreeIterator<Value, Children>,
+    InnerIter: BinaryTreeCollectionIterator<Value, Children>,
     F: FnMut(&[usize], &Value) -> bool,
 {
     pub(crate) fn new(iter: InnerIter, f: F) -> Self {
@@ -135,9 +140,10 @@ where
     }
 }
 
-impl<Value, Children, InnerIter, F> Iterator for BinaryPrunePath<Value, Children, InnerIter, F>
+impl<Value, Children, InnerIter, F> Iterator
+    for BinaryCollectionPrunePath<Value, Children, InnerIter, F>
 where
-    InnerIter: BinaryTreeIterator<Value, Children>,
+    InnerIter: BinaryTreeCollectionIterator<Value, Children>,
     F: FnMut(&[usize], &Value) -> bool,
 {
     type Item = Value;
@@ -157,10 +163,10 @@ where
     }
 }
 
-impl<Value, Children, InnerIter, F> TreeIteratorBase<Value, Children>
-    for BinaryPrunePath<Value, Children, InnerIter, F>
+impl<Value, Children, InnerIter, F> TreeCollectionIteratorBase<Value, Children>
+    for BinaryCollectionPrunePath<Value, Children, InnerIter, F>
 where
-    InnerIter: BinaryTreeIterator<Value, Children>,
+    InnerIter: BinaryTreeCollectionIterator<Value, Children>,
     F: FnMut(&[usize], &Value) -> bool,
 {
     fn current_path(&self) -> &[usize] {
@@ -172,10 +178,10 @@ where
     }
 }
 
-impl<Value, Children, InnerIter, F> BinaryTreeIterator<Value, Children>
-    for BinaryPrunePath<Value, Children, InnerIter, F>
+impl<Value, Children, InnerIter, F> BinaryTreeCollectionIterator<Value, Children>
+    for BinaryCollectionPrunePath<Value, Children, InnerIter, F>
 where
-    InnerIter: BinaryTreeIterator<Value, Children>,
+    InnerIter: BinaryTreeCollectionIterator<Value, Children>,
     F: FnMut(&[usize], &Value) -> bool,
 {
 }
