@@ -1,10 +1,10 @@
+use super::get_value_to_path_map_binary;
 use super::{
     assert_len, create_binary_tree_for_testing, create_trees_for_testing,
     get_expected_metadata_for_value, get_value_to_path_map,
 };
-use crate::prelude::*;
-use crate::tests::get_value_to_path_map_binary;
 use streaming_iterator::StreamingIterator;
+use tree_iterators_rs::prelude::*;
 
 pub(crate) fn get_expected_order_dfs_postorder() -> [usize; 11] {
     [3, 4, 1, 5, 10, 9, 8, 7, 6, 2, 0]
@@ -116,7 +116,7 @@ fn binary_dfs_postorder_attach_context_works() {
             *expected_paths
                 .get(value.ancestors().last().unwrap())
                 .unwrap(),
-            value.path
+            value.path()
         );
         i += 1;
     }
@@ -136,7 +136,7 @@ fn binary_dfs_postorder_attach_context_works() {
             *expected_paths
                 .get(value.ancestors().last().unwrap())
                 .unwrap(),
-            value.path
+            value.path()
         );
         i += 1;
     }
@@ -156,7 +156,7 @@ fn binary_dfs_postorder_attach_context_works() {
             *expected_paths
                 .get(value.ancestors().last().unwrap())
                 .unwrap(),
-            value.path
+            value.path()
         );
         i += 1;
     }
@@ -182,7 +182,7 @@ fn dfs_postorder_attach_context_works() {
                 *expected_paths
                     .get(*value.ancestors().last().unwrap())
                     .unwrap(),
-                value.path
+                value.path()
             );
             i += 1;
         }
@@ -202,7 +202,7 @@ fn dfs_postorder_attach_context_works() {
                 *expected_paths
                     .get(*value.ancestors().last().unwrap())
                     .unwrap(),
-                value.path
+                value.path()
             );
             i += 1;
         }
@@ -222,7 +222,7 @@ fn dfs_postorder_attach_context_works() {
                 *expected_paths
                     .get(value.ancestors().last().unwrap())
                     .unwrap(),
-                value.path
+                value.path()
             );
             i += 1;
         }

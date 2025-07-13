@@ -58,6 +58,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "tests"
+version = "0.1.0"
+dependencies = [
+ "streaming-iterator",
+ "tree_iterators_rs",
+]
+
+[[package]]
 name = "tree_iterators_rs"
 version = "3.5.0"
 dependencies = [

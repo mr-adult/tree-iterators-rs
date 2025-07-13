@@ -1,5 +1,3 @@
-use alloc::boxed::Box;
-
 use super::create_binary_tree_for_testing;
 use super::create_tree_for_testing;
 
@@ -30,7 +28,7 @@ fn get_tree_path_value_pairs() -> Box<[(Box<[usize]>, Option<usize>)]> {
 
 #[test]
 fn tree_at_path() {
-    use super::OwnedTreeNode;
+    use tree_iterators_rs::prelude::OwnedTreeNode;
 
     let tree = create_tree_for_testing();
     for path_value_pair in get_tree_path_value_pairs() {
@@ -45,7 +43,7 @@ fn tree_at_path() {
 
 #[test]
 fn tree_at_path_ref() {
-    use super::BorrowedTreeNode;
+    use tree_iterators_rs::prelude::BorrowedTreeNode;
 
     let tree = create_tree_for_testing();
     for path_value_pair in get_tree_path_value_pairs() {
@@ -58,7 +56,7 @@ fn tree_at_path_ref() {
 
 #[test]
 fn tree_at_path_mut() {
-    use super::MutBorrowedTreeNode;
+    use tree_iterators_rs::prelude::MutBorrowedTreeNode;
 
     let mut tree = create_tree_for_testing();
     for path_value_pair in get_tree_path_value_pairs() {
@@ -96,7 +94,7 @@ fn get_binary_tree_path_value_pairs() -> Box<[(Box<[usize]>, Option<usize>)]> {
 
 #[test]
 fn binary_tree_at_path() {
-    use crate::prelude::OwnedBinaryTreeNode;
+    use tree_iterators_rs::prelude::OwnedBinaryTreeNode;
 
     let binary_tree = create_binary_tree_for_testing();
     for path_value_pair in get_binary_tree_path_value_pairs() {
@@ -112,7 +110,7 @@ fn binary_tree_at_path() {
 
 #[test]
 fn binary_tree_at_path_ref() {
-    use crate::prelude::BorrowedBinaryTreeNode;
+    use tree_iterators_rs::prelude::BorrowedBinaryTreeNode;
 
     let binary_tree = create_binary_tree_for_testing();
     for path_value_pair in get_binary_tree_path_value_pairs() {
@@ -127,7 +125,7 @@ fn binary_tree_at_path_ref() {
 
 #[test]
 fn binary_tree_at_path_mut() {
-    use crate::prelude::MutBorrowedBinaryTreeNode;
+    use tree_iterators_rs::prelude::MutBorrowedBinaryTreeNode;
 
     let mut binary_tree = create_binary_tree_for_testing();
     for path_value_pair in get_binary_tree_path_value_pairs() {

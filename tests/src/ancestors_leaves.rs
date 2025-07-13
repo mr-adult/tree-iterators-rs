@@ -1,10 +1,10 @@
-use alloc::vec;
-use alloc::vec::Vec;
-use alloc::{boxed::Box, string::ToString};
+use crate::create_trees_for_testing;
 use streaming_iterator::StreamingIterator;
 
-use super::{assert_len, create_binary_tree_for_testing, create_trees_for_testing};
-use crate::prelude::*;
+#[cfg(test)]
+use super::assert_len;
+use super::create_binary_tree_for_testing;
+use tree_iterators_rs::prelude::*;
 
 fn get_expected_order_leaves() -> [Vec<usize>; 4] {
     [
@@ -32,7 +32,7 @@ fn leaves_has_correct_order() {
             assert_len!(
                 expected.len(),
                 borrowed_iter,
-                alloc::format!("Failure at index {}", i.to_string())
+                format!("Failure at index {}", i.to_string())
             );
             i += 1;
         }
@@ -149,7 +149,7 @@ fn binary_leaves_has_correct_order() {
         assert_len!(
             expected.len(),
             borrowed_iter,
-            alloc::format!("Failure at index {}", i.to_string())
+            format!("Failure at index {}", i.to_string())
         );
         i += 1;
     }

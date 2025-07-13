@@ -2,8 +2,8 @@ use super::{
     assert_len, create_binary_tree_for_testing, create_trees_for_testing,
     get_expected_metadata_for_value, get_value_to_path_map, get_value_to_path_map_binary,
 };
-use crate::prelude::*;
 use streaming_iterator::StreamingIterator;
+use tree_iterators_rs::prelude::*;
 
 pub(crate) fn get_expected_order_dfs_preorder() -> [usize; 11] {
     [0, 1, 3, 4, 2, 5, 6, 7, 8, 9, 10]
@@ -110,13 +110,13 @@ fn dfs_preorder_attach_context_works() {
             let expected =
                 get_expected_metadata_for_value(*value.ancestors()[value.ancestors().len() - 1]);
             for j in 0..expected.len() {
-                assert_eq!(expected[j], *value.ancestors[j]);
+                assert_eq!(expected[j], *value.ancestors()[j]);
             }
             assert_eq!(
                 *expected_paths
                     .get(*value.ancestors().last().unwrap())
                     .unwrap(),
-                value.path
+                value.path()
             );
             i += 1;
         }
@@ -136,7 +136,7 @@ fn dfs_preorder_attach_context_works() {
                 *expected_paths
                     .get(*value.ancestors().last().unwrap())
                     .unwrap(),
-                value.path
+                value.path()
             );
             i += 1;
         }
@@ -156,7 +156,7 @@ fn dfs_preorder_attach_context_works() {
                 *expected_paths
                     .get(value.ancestors().last().unwrap())
                     .unwrap(),
-                value.path
+                value.path()
             );
             i += 1;
         }
@@ -222,13 +222,13 @@ fn binary_dfs_preorder_attach_context_works() {
         let expected =
             get_expected_metadata_for_value(*value.ancestors()[value.ancestors().len() - 1]);
         for j in 0..expected.len() {
-            assert_eq!(expected[j], *value.ancestors[j]);
+            assert_eq!(expected[j], *value.ancestors()[j]);
         }
         assert_eq!(
             *expected_paths
                 .get(*value.ancestors().last().unwrap())
                 .unwrap(),
-            value.path
+            value.path()
         );
         i += 1;
     }
@@ -248,7 +248,7 @@ fn binary_dfs_preorder_attach_context_works() {
             *expected_paths
                 .get(*value.ancestors().last().unwrap())
                 .unwrap(),
-            value.path
+            value.path()
         );
         i += 1;
     }
@@ -268,7 +268,7 @@ fn binary_dfs_preorder_attach_context_works() {
             *expected_paths
                 .get(value.ancestors().last().unwrap())
                 .unwrap(),
-            value.path
+            value.path()
         );
         i += 1;
     }
