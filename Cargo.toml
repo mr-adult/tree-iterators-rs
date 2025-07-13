@@ -2,6 +2,14 @@
 resolver = "3"
 members = ["tests","tree_iterators_rs"]
 
+[workspace.lints.rust]
+absolute_paths_not_starting_with_crate = "warn"
+non_ascii_idents = "warn"
+unit-bindings = "warn"
+tail_expr_drop_order = "warn"
+unsafe_op_in_unsafe_fn = "warn"
+unused_unsafe = "warn"
+
 [workspace.dependencies]
 streaming-iterator = { version = "0.1.9", features = ["alloc"] }
 tree_iterators_rs = { version = "3.5.0", path = "tree_iterators_rs" }
