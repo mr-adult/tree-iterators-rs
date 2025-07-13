@@ -71,7 +71,7 @@ where
 
         OwnedBinaryLeavesIterator {
             root: None,
-            traversal_stack_bottom: traversal_stack_bottom,
+            traversal_stack_bottom,
             traversal_stack_top: Vec::new(),
             item_stack: Vec::new(),
         }
@@ -191,7 +191,7 @@ where
         right_stack.push(Some(root));
 
         let context = TreeContext {
-            path: path,
+            path,
             ancestors: Vec::new(),
             children: None,
         };
@@ -271,7 +271,7 @@ where
     }
 }
 
-impl<'a, Node> StreamingIteratorMut for OwnedDFSInorderIteratorWithContext<Node>
+impl<Node> StreamingIteratorMut for OwnedDFSInorderIteratorWithContext<Node>
 where
     Node: OwnedBinaryTreeNode,
 {

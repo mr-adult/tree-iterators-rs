@@ -1,4 +1,4 @@
-use core::{array::IntoIter, usize};
+use core::array::IntoIter;
 
 use alloc::{collections::VecDeque, vec::Vec};
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
@@ -109,7 +109,7 @@ where
     pub(crate) path_counter: usize,
 }
 
-impl<'a, Node> OwnedBFSIteratorWithContext<Node>
+impl<Node> OwnedBFSIteratorWithContext<Node>
 where
     Node: OwnedTreeNode,
 {
@@ -121,7 +121,7 @@ where
         let mut current_context = TreeContext {
             ancestors: Vec::new(),
             children: Some(children),
-            path: path,
+            path,
         };
         current_context.ancestors.push(value);
 
@@ -138,7 +138,7 @@ where
     bfs_context_advance_iterator!();
 }
 
-impl<'a, Node> StreamingIterator for OwnedBFSIteratorWithContext<Node>
+impl<Node> StreamingIterator for OwnedBFSIteratorWithContext<Node>
 where
     Node: OwnedTreeNode,
 {
@@ -147,7 +147,7 @@ where
     bfs_context_streaming_iterator_impl!(get_value_and_children);
 }
 
-impl<'a, Node> StreamingIteratorMut for OwnedBFSIteratorWithContext<Node>
+impl<Node> StreamingIteratorMut for OwnedBFSIteratorWithContext<Node>
 where
     Node: OwnedTreeNode,
 {
@@ -165,7 +165,7 @@ where
     pub(crate) iterator_queue: VecDeque<<Node::OwnedChildren as IntoIterator>::IntoIter>,
 }
 
-impl<'a, Node> OwnedBFSIteratorWithAncestors<Node>
+impl<Node> OwnedBFSIteratorWithAncestors<Node>
 where
     Node: OwnedTreeNode,
 {
@@ -205,7 +205,7 @@ where
     bfs_ancestors_advance_iterator!(get_value_and_children);
 }
 
-impl<'a, Node> StreamingIterator for OwnedBFSIteratorWithAncestors<Node>
+impl<Node> StreamingIterator for OwnedBFSIteratorWithAncestors<Node>
 where
     Node: OwnedTreeNode,
 {
@@ -214,7 +214,7 @@ where
     bfs_ancestors_streaming_iterator_impl!(get_value_and_children);
 }
 
-impl<'a, Node> StreamingIteratorMut for OwnedBFSIteratorWithAncestors<Node>
+impl<Node> StreamingIteratorMut for OwnedBFSIteratorWithAncestors<Node>
 where
     Node: OwnedTreeNode,
 {
@@ -308,7 +308,7 @@ where
     pub(crate) iterator_queue: VecDeque<BinaryChildren<Node>>,
 }
 
-impl<'a, Node> OwnedBinaryBFSIteratorWithAncestors<Node>
+impl<Node> OwnedBinaryBFSIteratorWithAncestors<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
@@ -338,7 +338,7 @@ where
     bfs_ancestors_advance_iterator!(get_value_and_children);
 }
 
-impl<'a, Node> StreamingIterator for OwnedBinaryBFSIteratorWithAncestors<Node>
+impl<Node> StreamingIterator for OwnedBinaryBFSIteratorWithAncestors<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
@@ -347,7 +347,7 @@ where
     bfs_ancestors_streaming_iterator_impl!(get_value_and_children);
 }
 
-impl<'a, Node> StreamingIteratorMut for OwnedBinaryBFSIteratorWithAncestors<Node>
+impl<Node> StreamingIteratorMut for OwnedBinaryBFSIteratorWithAncestors<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
@@ -366,7 +366,7 @@ where
     pub(crate) path_counter: usize,
 }
 
-impl<'a, Node> OwnedBinaryBFSIteratorWithContext<Node>
+impl<Node> OwnedBinaryBFSIteratorWithContext<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
@@ -395,7 +395,7 @@ where
     bfs_context_advance_iterator!();
 }
 
-impl<'a, Node> StreamingIterator for OwnedBinaryBFSIteratorWithContext<Node>
+impl<Node> StreamingIterator for OwnedBinaryBFSIteratorWithContext<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
@@ -403,7 +403,7 @@ where
     bfs_context_binary_streaming_iterator_impl!(get_value_and_children_binary);
 }
 
-impl<'a, Node> StreamingIteratorMut for OwnedBinaryBFSIteratorWithContext<Node>
+impl<Node> StreamingIteratorMut for OwnedBinaryBFSIteratorWithContext<Node>
 where
     Node: OwnedBinaryTreeNode,
 {

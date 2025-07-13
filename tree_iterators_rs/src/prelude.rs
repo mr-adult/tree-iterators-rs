@@ -3404,14 +3404,8 @@ impl<T> OwnedBinaryTreeNode for BinaryTree<T> {
         (
             self.value,
             [
-                match self.left {
-                    Some(boxed) => Some(*boxed),
-                    None => None,
-                },
-                match self.right {
-                    Some(boxed) => Some(*boxed),
-                    None => None,
-                },
+                self.left.map(|boxed| *boxed),
+                self.right.map(|boxed| *boxed),
             ],
         )
     }

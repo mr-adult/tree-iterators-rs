@@ -1,5 +1,7 @@
 #![no_std]
 #![doc = include_str!("../README.md")]
+#![allow(clippy::type_complexity)]
+#![allow(clippy::vec_init_then_push)]
 extern crate alloc;
 extern crate core;
 

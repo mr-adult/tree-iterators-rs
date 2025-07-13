@@ -65,11 +65,7 @@ where
             });
         }
 
-        while !keeping_stack.is_empty() {
-            let popped = keeping_stack
-                .pop()
-                .expect("the keeping stack to always have an item");
-
+        while let Some(popped) = keeping_stack.pop() {
             match keeping_stack.last_mut() {
                 None => return Some(popped),
                 Some(top) => top.children.push(popped),
@@ -155,11 +151,7 @@ where
             ));
         }
 
-        while !keeping_stack.is_empty() {
-            let popped = keeping_stack
-                .pop()
-                .expect("the keeping stack to always have an item");
-
+        while let Some(popped) = keeping_stack.pop() {
             match keeping_stack.last_mut() {
                 None => return Some(popped.1),
                 Some(top) => match popped.0 {

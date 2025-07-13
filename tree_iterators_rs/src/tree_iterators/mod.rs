@@ -388,11 +388,9 @@ where
             folded_so_far.last_mut().unwrap().push(folded);
         }
 
-        if let Some(root) = inversion_stack.pop() {
-            Some(f(folded_so_far.pop().unwrap_or_default(), root))
-        } else {
-            None
-        }
+        inversion_stack
+            .pop()
+            .map(|root| f(folded_so_far.pop().unwrap_or_default(), root))
     }
 }
 
@@ -532,7 +530,7 @@ where
                 }
             }
 
-            let index = self.current_path().last().map(|i| *i).unwrap_or_default();
+            let index = self.current_path().last().copied().unwrap_or_default();
 
             keeping_stack.push((
                 index,
@@ -635,7 +633,7 @@ where
 
             inversion_stack.push(item);
             folded_so_far.push(Default::default());
-            paths.push(self.current_path().last().map(|i| *i).unwrap_or_default());
+            paths.push(self.current_path().last().copied().unwrap_or_default());
         }
 
         while folded_so_far.len() > 1 {
@@ -646,10 +644,8 @@ where
             folded_so_far.last_mut().unwrap()[path_segment] = Some(folded);
         }
 
-        if let Some(root) = inversion_stack.pop() {
-            Some(f(folded_so_far.pop().unwrap_or_default(), root))
-        } else {
-            None
-        }
+        inversion_stack
+            .pop()
+            .map(|root| f(folded_so_far.pop().unwrap_or_default(), root))
     }
 }

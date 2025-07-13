@@ -428,7 +428,7 @@ where
 
         'outer: loop {
             if let Some(top) = self.traversal_stack.last_mut() {
-                while let Some(node) = top.next() {
+                for node in top.by_ref() {
                     let last = self
                         .current_context
                         .path

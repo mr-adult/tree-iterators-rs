@@ -19,7 +19,7 @@ where
     type Item = Value;
 
     fn next(&mut self) -> Option<Value> {
-        while let Some(value) = self.inner.next() {
+        if let Some(value) = self.inner.next() {
             if self.current_depth() == self.depth {
                 self.prune_current_subtree();
             }

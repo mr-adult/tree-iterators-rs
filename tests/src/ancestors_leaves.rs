@@ -22,7 +22,7 @@ fn leaves_has_correct_order() {
         for mut borrowed_iter in get_borrowed_leaves_iters(&test_tree) {
             let mut i = 0;
             while let Some(value) = borrowed_iter.next() {
-                assert!(expected[i].iter().eq(value.iter().map(|val| *val)));
+                assert!(expected[i].iter().eq(value.iter().copied()));
                 i += 1;
             }
         }
@@ -132,7 +132,7 @@ fn binary_leaves_has_correct_order() {
     for mut borrowed_iter in get_borrowed_leaves_binary_iters(&test_tree) {
         let mut i = 0;
         while let Some(value) = borrowed_iter.next() {
-            assert!(expected[i].iter().eq(value.iter().map(|val| *val)));
+            assert!(expected[i].iter().eq(value.iter().copied()));
             i += 1;
         }
     }
@@ -263,7 +263,7 @@ fn dfs_preorder_transformation_can_happen_mid_traversal() {
             let mut preorder_iter_leaves = preorder_iter.leaves();
             let mut i = 0;
             while let Some(value) = preorder_iter_leaves.next() {
-                assert!(expected_leaves[i].iter().eq(value.iter().map(|val| *val)));
+                assert!(expected_leaves[i].iter().eq(value.iter().copied()));
                 i += 1;
             }
             drop(preorder_iter_leaves);
@@ -330,7 +330,7 @@ fn dfs_postorder_transformation_can_happen_mid_traversal() {
             let mut postorder_iter_leaves = postorder_iter.leaves();
             let mut i = 0;
             while let Some(value) = postorder_iter_leaves.next() {
-                assert!(expected_leaves[i].iter().eq(value.iter().map(|val| *val)));
+                assert!(expected_leaves[i].iter().eq(value.iter().copied()));
                 i += 1;
             }
             drop(postorder_iter_leaves);
@@ -401,7 +401,7 @@ fn bfs_transformation_can_happen_mid_traversal() {
             let mut bfs_iter_leaves = bfs_iter.leaves();
             let mut i = 0;
             while let Some(value) = bfs_iter_leaves.next() {
-                assert!(expected_leaves[i].iter().eq(value.iter().map(|val| *val)));
+                assert!(expected_leaves[i].iter().eq(value.iter().copied()));
                 i += 1;
             }
             drop(bfs_iter_leaves);
@@ -464,7 +464,7 @@ fn dfs_preorder_binary_transformation_can_happen_mid_traversal() {
         let mut preorder_iter_leaves = preorder_iter.leaves();
         let mut i = 0;
         while let Some(value) = preorder_iter_leaves.next() {
-            assert!(expected_leaves[i].iter().eq(value.iter().map(|val| *val)));
+            assert!(expected_leaves[i].iter().eq(value.iter().copied()));
             i += 1;
         }
         drop(preorder_iter_leaves);
@@ -530,7 +530,7 @@ fn dfs_inorder_binary_transformation_can_happen_mid_traversal() {
         let mut inorder_iter_leaves = inorder_iter.leaves();
         let mut i = 0;
         while let Some(value) = inorder_iter_leaves.next() {
-            assert!(expected_leaves[i].iter().eq(value.iter().map(|val| *val)));
+            assert!(expected_leaves[i].iter().eq(value.iter().copied()));
             i += 1;
         }
         drop(inorder_iter_leaves);
@@ -608,7 +608,7 @@ fn dfs_postorder_binary_transformation_can_happen_mid_traversal() {
             if num_leaves_seen == expected_leaves.len() {
                 continue;
             }
-            assert!(expected_leaves[i].iter().eq(value.iter().map(|val| *val)));
+            assert!(expected_leaves[i].iter().eq(value.iter().copied()));
             i += 1;
         }
         drop(postorder_iter_leaves);
@@ -678,7 +678,7 @@ fn bfs_binary_transformation_can_happen_mid_traversal() {
         let mut bfs_iter_leaves = bfs_iter.leaves();
         let mut i = 0;
         while let Some(value) = bfs_iter_leaves.next() {
-            assert!(expected_leaves[i].iter().eq(value.iter().map(|val| *val)));
+            assert!(expected_leaves[i].iter().eq(value.iter().copied()));
             i += 1;
         }
         drop(bfs_iter_leaves);

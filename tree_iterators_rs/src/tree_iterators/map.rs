@@ -36,7 +36,7 @@ where
     type Item = Output;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next().map(|value| (&mut self.f)(value))
+        self.inner.next().map(|value| (self.f)(value))
     }
 }
 

@@ -74,7 +74,7 @@ where
 
         MutBorrowedBinaryLeavesIterator {
             root: None,
-            traversal_stack_bottom: traversal_stack_bottom,
+            traversal_stack_bottom,
             traversal_stack_top: Vec::new(),
             item_stack: Vec::new(),
         }

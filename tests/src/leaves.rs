@@ -180,7 +180,7 @@ fn dfs_preorder_transformation_can_happen_mid_traversal() {
         for _ in 0..expected_dfs_preorder.len() {
             let mut preorder_iter = test_tree.dfs_preorder_iter();
             let mut num_leaves_seen = 0;
-            while let Some(value) = preorder_iter.next() {
+            for value in preorder_iter.by_ref() {
                 if *value == expected_leaves[num_leaves_seen] {
                     num_leaves_seen += 1;
                 }
@@ -193,7 +193,7 @@ fn dfs_preorder_transformation_can_happen_mid_traversal() {
 
             let mut preorder_iter_mut = test_tree.dfs_preorder_iter_mut();
             let mut num_leaves_seen = 0;
-            while let Some(value) = preorder_iter_mut.next() {
+            for value in preorder_iter_mut.by_ref() {
                 if *value == expected_leaves[num_leaves_seen] {
                     num_leaves_seen += 1;
                 }
@@ -206,7 +206,7 @@ fn dfs_preorder_transformation_can_happen_mid_traversal() {
 
             let mut preorder = test_tree.clone().dfs_preorder();
             let mut num_leaves_seen = 0;
-            while let Some(value) = preorder.next() {
+            for value in preorder.by_ref() {
                 if value == expected_leaves[num_leaves_seen] {
                     num_leaves_seen += 1;
                 }
@@ -229,7 +229,7 @@ fn dfs_postorder_transformation_can_happen_mid_traversal() {
         for _ in 0..expected_dfs_postorder.len() {
             let mut postorder_iter = test_tree.dfs_postorder_iter();
             let mut num_leaves_seen = 0;
-            while let Some(value) = postorder_iter.next() {
+            for value in postorder_iter.by_ref() {
                 // dont index outside the array!
                 if num_leaves_seen == expected_leaves.len() {
                     continue;
@@ -246,7 +246,7 @@ fn dfs_postorder_transformation_can_happen_mid_traversal() {
 
             let mut postorder_iter_mut = test_tree.dfs_postorder_iter_mut();
             let mut num_leaves_seen = 0;
-            while let Some(value) = postorder_iter_mut.next() {
+            for value in postorder_iter_mut.by_ref() {
                 // dont index outside the array!
                 if num_leaves_seen == expected_leaves.len() {
                     continue;
@@ -263,7 +263,7 @@ fn dfs_postorder_transformation_can_happen_mid_traversal() {
 
             let mut postorder = test_tree.clone().dfs_postorder();
             let mut num_leaves_seen = 0;
-            while let Some(value) = postorder.next() {
+            for value in postorder.by_ref() {
                 // dont index outside the array!
                 if num_leaves_seen == expected_leaves.len() {
                     continue;
@@ -290,7 +290,7 @@ fn bfs_transformation_can_happen_mid_traversal() {
         for _ in 0..expected_bfs.len() {
             let mut bfs_iter = test_tree.bfs_iter();
             let mut num_leaves_seen = 0;
-            while let Some(value) = bfs_iter.next() {
+            for value in bfs_iter.by_ref() {
                 if *value == expected_leaves[num_leaves_seen] {
                     num_leaves_seen += 1;
                 }
@@ -303,7 +303,7 @@ fn bfs_transformation_can_happen_mid_traversal() {
 
             let mut bfs_iter_mut = test_tree.bfs_iter_mut();
             let mut num_leaves_seen = 0;
-            while let Some(value) = bfs_iter_mut.next() {
+            for value in bfs_iter_mut.by_ref() {
                 if *value == expected_leaves[num_leaves_seen] {
                     num_leaves_seen += 1;
                 }
@@ -316,7 +316,7 @@ fn bfs_transformation_can_happen_mid_traversal() {
 
             let mut bfs = test_tree.clone().bfs();
             let mut num_leaves_seen = 0;
-            while let Some(value) = bfs.next() {
+            for value in bfs.by_ref() {
                 if value == expected_leaves[num_leaves_seen] {
                     num_leaves_seen += 1;
                 }
@@ -339,7 +339,7 @@ fn dfs_preorder_binary_transformation_can_happen_mid_traversal() {
     for _ in 0..expected_dfs_preorder.len() {
         let mut preorder_iter = test_tree.dfs_preorder_iter();
         let mut num_leaves_seen = 0;
-        while let Some(value) = preorder_iter.next() {
+        for value in preorder_iter.by_ref() {
             if *value == expected_leaves[num_leaves_seen] {
                 num_leaves_seen += 1;
             }
@@ -352,7 +352,7 @@ fn dfs_preorder_binary_transformation_can_happen_mid_traversal() {
 
         let mut preorder_iter_mut = test_tree.dfs_preorder_iter_mut();
         let mut num_leaves_seen = 0;
-        while let Some(value) = preorder_iter_mut.next() {
+        for value in preorder_iter_mut.by_ref() {
             if *value == expected_leaves[num_leaves_seen] {
                 num_leaves_seen += 1;
             }
@@ -365,7 +365,7 @@ fn dfs_preorder_binary_transformation_can_happen_mid_traversal() {
 
         let mut preorder = test_tree.clone().dfs_preorder();
         let mut num_leaves_seen = 0;
-        while let Some(value) = preorder.next() {
+        for value in preorder.by_ref() {
             if value == expected_leaves[num_leaves_seen] {
                 num_leaves_seen += 1;
             }
@@ -387,7 +387,7 @@ fn dfs_inorder_binary_transformation_can_happen_mid_traversal() {
     for _ in 0..expected_dfs_inorder.len() {
         let mut inorder_iter = test_tree.dfs_inorder_iter();
         let mut num_leaves_seen = 0;
-        while let Some(value) = inorder_iter.next() {
+        for value in inorder_iter.by_ref() {
             // dont index outside the array!
             if num_leaves_seen == expected_leaves.len() {
                 continue;
@@ -404,7 +404,7 @@ fn dfs_inorder_binary_transformation_can_happen_mid_traversal() {
 
         let mut inorder_iter_mut = test_tree.dfs_inorder_iter_mut();
         let mut num_leaves_seen = 0;
-        while let Some(value) = inorder_iter_mut.next() {
+        for value in inorder_iter_mut.by_ref() {
             // dont index outside the array!
             if num_leaves_seen == expected_leaves.len() {
                 continue;
@@ -421,7 +421,7 @@ fn dfs_inorder_binary_transformation_can_happen_mid_traversal() {
 
         let mut inorder = test_tree.clone().dfs_inorder();
         let mut num_leaves_seen = 0;
-        while let Some(value) = inorder.next() {
+        for value in inorder.by_ref() {
             // dont index outside the array!
             if num_leaves_seen == expected_leaves.len() {
                 continue;
@@ -447,7 +447,7 @@ fn dfs_postorder_binary_transformation_can_happen_mid_traversal() {
     for _ in 0..expected_dfs_postorder.len() {
         let mut postorder_iter = test_tree.dfs_postorder_iter();
         let mut num_leaves_seen = 0;
-        while let Some(value) = postorder_iter.next() {
+        for value in postorder_iter.by_ref() {
             // dont index outside the array!
             if num_leaves_seen == expected_leaves.len() {
                 continue;
@@ -468,7 +468,7 @@ fn dfs_postorder_binary_transformation_can_happen_mid_traversal() {
 
         let mut postorder_iter_mut = test_tree.dfs_postorder_iter_mut();
         let mut num_leaves_seen = 0;
-        while let Some(value) = postorder_iter_mut.next() {
+        for value in postorder_iter_mut.by_ref() {
             // dont index outside the array!
             if num_leaves_seen == expected_leaves.len() {
                 continue;
@@ -485,7 +485,7 @@ fn dfs_postorder_binary_transformation_can_happen_mid_traversal() {
 
         let mut postorder = test_tree.clone().dfs_postorder();
         let mut num_leaves_seen = 0;
-        while let Some(value) = postorder.next() {
+        for value in postorder.by_ref() {
             // dont index outside the array!
             if num_leaves_seen == expected_leaves.len() {
                 continue;
@@ -511,7 +511,7 @@ fn bfs_binary_transformation_can_happen_mid_traversal() {
     for _ in 0..expected_bfs.len() {
         let mut bfs_iter = test_tree.bfs_iter();
         let mut num_leaves_seen = 0;
-        while let Some(value) = bfs_iter.next() {
+        for value in bfs_iter.by_ref() {
             if *value == expected_leaves[num_leaves_seen] {
                 num_leaves_seen += 1;
             }
@@ -524,7 +524,7 @@ fn bfs_binary_transformation_can_happen_mid_traversal() {
 
         let mut bfs_iter_mut = test_tree.bfs_iter_mut();
         let mut num_leaves_seen = 0;
-        while let Some(value) = bfs_iter_mut.next() {
+        for value in bfs_iter_mut.by_ref() {
             if *value == expected_leaves[num_leaves_seen] {
                 num_leaves_seen += 1;
             }
@@ -537,7 +537,7 @@ fn bfs_binary_transformation_can_happen_mid_traversal() {
 
         let mut bfs = test_tree.clone().bfs();
         let mut num_leaves_seen = 0;
-        while let Some(value) = bfs.next() {
+        for value in bfs.by_ref() {
             if value == expected_leaves[num_leaves_seen] {
                 num_leaves_seen += 1;
             }
