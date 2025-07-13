@@ -64,7 +64,7 @@ where
                 }
             }
 
-            if (&mut self.f)(&item) {
+            if (self.f)(&item) {
                 self.prune_current_subtree();
                 let current_depth = self.current_depth();
                 if current_depth > 0 {
@@ -144,7 +144,7 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(item) = self.inner.next() {
-            if (&mut self.f)(&item) {
+            if (self.f)(&item) {
                 self.prune_current_subtree();
                 continue;
             }

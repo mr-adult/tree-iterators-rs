@@ -13,7 +13,7 @@ where
     pub(crate) item_stack: Vec<Node::OwnedValue>,
 }
 
-impl<'a, Node> Iterator for OwnedLeavesIterator<Node>
+impl<Node> Iterator for OwnedLeavesIterator<Node>
 where
     Node: OwnedTreeNode,
 {

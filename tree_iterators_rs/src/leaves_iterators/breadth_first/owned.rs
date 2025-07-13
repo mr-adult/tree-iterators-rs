@@ -17,7 +17,7 @@ where
         VecDeque<Peekable<<<Node as OwnedTreeNode>::OwnedChildren as IntoIterator>::IntoIter>>,
 }
 
-impl<'a, Node, Iter> OwnedLeavesIterator<Node, Iter>
+impl<Node, Iter> OwnedLeavesIterator<Node, Iter>
 where
     Node: OwnedTreeNode,
     Iter: Iterator<Item = Node>,
@@ -52,7 +52,7 @@ where
     bfs_next!(get_value_and_children, Node::OwnedValue);
 }
 
-impl<'a, Node, Iter> Iterator for OwnedBinaryLeavesIterator<Node, Iter>
+impl<Node, Iter> Iterator for OwnedBinaryLeavesIterator<Node, Iter>
 where
     Node: OwnedBinaryTreeNode,
     Iter: Iterator<Item = Node>,

@@ -110,7 +110,7 @@ where
     current_context: TreeContext<Node::OwnedValue, ()>,
 }
 
-impl<'a, Node> OwnedDFSPostorderIteratorWithContext<Node>
+impl<Node> OwnedDFSPostorderIteratorWithContext<Node>
 where
     Node: OwnedTreeNode,
 {
@@ -195,7 +195,7 @@ where
     traversal_stack: Vec<<Node::OwnedChildren as IntoIterator>::IntoIter>,
 }
 
-impl<'a, Node> OwnedDFSPostorderIteratorWithAncestors<Node>
+impl<Node> OwnedDFSPostorderIteratorWithAncestors<Node>
 where
     Node: OwnedTreeNode,
 {
@@ -330,7 +330,7 @@ where
     traversal_stack: Vec<BinaryChildren<Node>>,
 }
 
-impl<'a, Node> OwnedBinaryDFSPostorderIteratorWithAncestors<Node>
+impl<Node> OwnedBinaryDFSPostorderIteratorWithAncestors<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
@@ -379,7 +379,7 @@ where
     current_context: TreeContext<Node::OwnedValue, ()>,
 }
 
-impl<'a, Node> OwnedBinaryDFSPostorderIteratorWithContext<Node>
+impl<Node> OwnedBinaryDFSPostorderIteratorWithContext<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
@@ -396,7 +396,7 @@ where
     }
 }
 
-impl<'a, Node> StreamingIterator for OwnedBinaryDFSPostorderIteratorWithContext<Node>
+impl<Node> StreamingIterator for OwnedBinaryDFSPostorderIteratorWithContext<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
@@ -416,7 +416,7 @@ where
 
         'outer: loop {
             if let Some(top) = self.traversal_stack.last_mut() {
-                while let Some(node) = top.next() {
+                for node in top.by_ref() {
                     let last = self
                         .current_context
                         .path
@@ -452,7 +452,7 @@ where
     }
 }
 
-impl<'a, Node> StreamingIteratorMut for OwnedBinaryDFSPostorderIteratorWithContext<Node>
+impl<Node> StreamingIteratorMut for OwnedBinaryDFSPostorderIteratorWithContext<Node>
 where
     Node: OwnedBinaryTreeNode,
 {

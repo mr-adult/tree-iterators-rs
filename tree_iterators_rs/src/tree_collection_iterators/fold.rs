@@ -57,7 +57,7 @@ where
             while folded_so_far.len() > self.inner.current_depth() {
                 let items = folded_so_far.pop().unwrap();
                 let value_to_fold = inversion_stack.pop().unwrap();
-                let folded = (&mut self.f)(items, value_to_fold);
+                let folded = (self.f)(items, value_to_fold);
                 if let Some(last) = folded_so_far.last_mut() {
                     last.push(folded);
                 } else {
@@ -70,10 +70,9 @@ where
             folded_so_far.push(Vec::new())
         }
 
-        while !folded_so_far.is_empty() {
-            let items = folded_so_far.pop().unwrap();
+        while let Some(items) = folded_so_far.pop() {
             let value_to_fold = inversion_stack.pop().unwrap();
-            let folded = (&mut self.f)(items, value_to_fold);
+            let folded = (self.f)(items, value_to_fold);
             if let Some(last) = folded_so_far.last_mut() {
                 last.push(folded);
             } else {
@@ -137,7 +136,7 @@ where
             while folded_so_far.len() > self.inner.current_depth() {
                 let items = folded_so_far.pop().unwrap();
                 let value_to_fold = inversion_stack.pop().unwrap();
-                let folded = (&mut self.f)(items.1, value_to_fold);
+                let folded = (self.f)(items.1, value_to_fold);
                 if let Some(last) = folded_so_far.last_mut() {
                     last.1[items.0] = Some(folded);
                 } else {
@@ -150,10 +149,9 @@ where
             folded_so_far.push((*self.inner.current_path().last().unwrap(), [None, None]))
         }
 
-        while !folded_so_far.is_empty() {
-            let items = folded_so_far.pop().unwrap();
+        while let Some(items) = folded_so_far.pop() {
             let value_to_fold = inversion_stack.pop().unwrap();
-            let folded = (&mut self.f)(items.1, value_to_fold);
+            let folded = (self.f)(items.1, value_to_fold);
             if let Some(last) = folded_so_far.last_mut() {
                 last.1[items.0] = Some(folded);
             } else {

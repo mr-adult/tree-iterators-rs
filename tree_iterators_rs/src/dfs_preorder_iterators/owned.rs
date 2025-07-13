@@ -256,7 +256,7 @@ where
     current_context: TreeContext<Node::OwnedValue, Node::OwnedChildren>,
 }
 
-impl<'a, Node> OwnedDFSPreorderIteratorWithContext<Node>
+impl<Node> OwnedDFSPreorderIteratorWithContext<Node>
 where
     Node: OwnedTreeNode,
 {
@@ -297,7 +297,7 @@ where
     item_stack: Vec<Node::OwnedValue>,
 }
 
-impl<'a, Node> OwnedDFSPreorderIteratorWithAncestors<Node>
+impl<Node> OwnedDFSPreorderIteratorWithAncestors<Node>
 where
     Node: OwnedTreeNode,
 {
@@ -532,7 +532,7 @@ where
     dfs_preorder_binary_next_with_path_tracking!(get_value_and_children_binary);
 }
 
-impl<'a, Node> TreeIteratorBase<Node::OwnedValue, [Option<Node>; 2]>
+impl<Node> TreeIteratorBase<Node::OwnedValue, [Option<Node>; 2]>
     for OwnedBinaryDFSPreorderIteratorWithPathTracking<Node>
 where
     Node: OwnedBinaryTreeNode,
@@ -546,7 +546,7 @@ where
     }
 }
 
-impl<'a, Node> BinaryTreeIterator<Node::OwnedValue, [Option<Node>; 2]>
+impl<Node> BinaryTreeIterator<Node::OwnedValue, [Option<Node>; 2]>
     for OwnedBinaryDFSPreorderIteratorWithPathTracking<Node>
 where
     Node: OwnedBinaryTreeNode,
@@ -562,7 +562,7 @@ where
     item_stack: Vec<Node::OwnedValue>,
 }
 
-impl<'a, Node> OwnedBinaryDFSPreorderIteratorWithAncestors<Node>
+impl<Node> OwnedBinaryDFSPreorderIteratorWithAncestors<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
@@ -587,7 +587,7 @@ where
     }
 }
 
-impl<'a, Node> StreamingIterator for OwnedBinaryDFSPreorderIteratorWithAncestors<Node>
+impl<Node> StreamingIterator for OwnedBinaryDFSPreorderIteratorWithAncestors<Node>
 where
     Node: OwnedBinaryTreeNode,
 {
@@ -595,7 +595,7 @@ where
     preorder_ancestors_streaming_iterator_impl!(get_value_and_children);
 }
 
-impl<'a, Node> StreamingIteratorMut for OwnedBinaryDFSPreorderIteratorWithAncestors<Node>
+impl<Node> StreamingIteratorMut for OwnedBinaryDFSPreorderIteratorWithAncestors<Node>
 where
     Node: OwnedBinaryTreeNode,
 {

@@ -43,9 +43,7 @@ macro_rules! owned_collection_iterator_impl {
                         .next()
                         .map(|item| $inner_iterator::new(item));
 
-                    if self.tree_traversal_iterator.is_none() {
-                        return None;
-                    }
+                    self.tree_traversal_iterator.as_ref()?;
                 }
             }
         }
@@ -460,9 +458,7 @@ macro_rules! mut_borrowed_collection_iterator_impl {
                         .next()
                         .map(|item| $inner_iterator::new(item));
 
-                    if self.tree_traversal_iterator.is_none() {
-                        return None;
-                    }
+                    self.tree_traversal_iterator.as_ref()?;
                 }
             }
         }
@@ -686,9 +682,7 @@ macro_rules! borrowed_collection_iterator_impl {
                         .next()
                         .map(|item| $inner_iterator::new(item));
 
-                    if self.tree_traversal_iterator.is_none() {
-                        return None;
-                    }
+                    self.tree_traversal_iterator.as_ref()?;
                 }
             }
         }
