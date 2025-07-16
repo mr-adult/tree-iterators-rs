@@ -1,9 +1,10 @@
+#[cfg(feature = "double_ended")]
+use alloc::collections::vec_deque::VecDeque;
+use alloc::vec::Vec;
 use core::{
     array::IntoIter,
     iter::{Enumerate, Fuse},
 };
-
-use alloc::vec::Vec;
 use streaming_iterator::{StreamingIterator, StreamingIteratorMut};
 
 use crate::{
@@ -141,7 +142,11 @@ where
     Node: OwnedTreeNode,
 {
     root: Option<Node>,
-    traversal_stack: Vec<<Node::OwnedChildren as IntoIterator>::IntoIter>,
+    preorder_traversal_stack: Vec<<Node::OwnedChildren as IntoIterator>::IntoIter>,
+    #[cfg(feature = "double_ended")]
+    postorder_traversal_stack: VecDeque<<Node::OwnedChildren as IntoIterator>::IntoIter>,
+    #[cfg(feature = "double_ended")]
+    postorder_item_stack: VecDeque<Node::OwnedValue>,
 }
 
 impl<Node> OwnedDFSPreorderIterator<Node>
@@ -151,7 +156,11 @@ where
     pub(crate) fn new(root: Node) -> Self {
         Self {
             root: Some(root),
-            traversal_stack: Vec::new(),
+            preorder_traversal_stack: Vec::new(),
+            #[cfg(feature = "double_ended")]
+            postorder_traversal_stack: VecDeque::new(),
+            #[cfg(feature = "double_ended")]
+            postorder_item_stack: VecDeque::new(),
         }
     }
 
@@ -159,7 +168,7 @@ where
     pub fn leaves(self) -> OwnedLeavesIterator<Node> {
         OwnedLeavesIterator {
             root: self.root,
-            traversal_stack_bottom: self.traversal_stack,
+            traversal_stack_bottom: self.preorder_traversal_stack,
             traversal_stack_top: Vec::new(),
             item_stack: Vec::new(),
         }
@@ -447,7 +456,11 @@ where
     Node: OwnedBinaryTreeNode,
 {
     root: Option<Node>,
-    pub(crate) traversal_stack: Vec<BinaryChildren<Node>>,
+    pub(crate) preorder_traversal_stack: Vec<BinaryChildren<Node>>,
+    #[cfg(feature = "double_ended")]
+    postorder_traversal_stack: VecDeque<BinaryChildren<Node>>,
+    #[cfg(feature = "double_ended")]
+    postorder_item_stack: VecDeque<Node::OwnedValue>,
 }
 
 impl<Node> OwnedBinaryDFSPreorderIterator<Node>
@@ -457,7 +470,11 @@ where
     pub(crate) fn new(root: Node) -> Self {
         Self {
             root: Some(root),
-            traversal_stack: Vec::new(),
+            preorder_traversal_stack: Vec::new(),
+            #[cfg(feature = "double_ended")]
+            postorder_traversal_stack: VecDeque::new(),
+            #[cfg(feature = "double_ended")]
+            postorder_item_stack: VecDeque::new(),
         }
     }
 
@@ -465,7 +482,7 @@ where
     pub fn leaves(self) -> OwnedBinaryLeavesIterator<Node, BinaryChildren<Node>> {
         OwnedBinaryLeavesIterator {
             root: self.root,
-            traversal_stack_bottom: self.traversal_stack,
+            traversal_stack_bottom: self.preorder_traversal_stack,
             traversal_stack_top: Vec::new(),
             item_stack: Vec::new(),
         }
@@ -498,6 +515,56 @@ where
 {
     type Item = Node::OwnedValue;
     dfs_preorder_next!(get_value_and_children);
+}
+
+#[cfg(feature = "double_ended")]
+impl<Node> DoubleEndedIterator for OwnedDFSPreorderIterator<Node>
+where
+    Node: OwnedTreeNode,
+    <Node::OwnedChildren as IntoIterator>::IntoIter: DoubleEndedIterator,
+{
+    fn next_back(&mut self) -> Option<Self::Item> {
+        loop {
+            if let Some(root) = self.root.take() {
+                let (value, children) = root.get_value_and_children();
+                self.postorder_traversal_stack
+                    .push_back(children.into_iter());
+                self.postorder_item_stack.push_back(value);
+            }
+
+            loop {
+                if let Some(last) = self.postorder_traversal_stack.back_mut() {
+                    if let Some(next) = last.next_back() {
+                        let (value, children) = next.get_value_and_children();
+                        self.postorder_item_stack.push_back(value);
+                        self.postorder_traversal_stack
+                            .push_back(children.into_iter());
+                        continue;
+                    }
+
+                    self.postorder_traversal_stack.pop_back();
+                }
+
+                if let Some(item) = self.postorder_item_stack.pop_back() {
+                    return Some(item);
+                }
+
+                if let Some(last) = self.preorder_traversal_stack.last_mut() {
+                    if let Some(next) = last.next_back() {
+                        let (value, children) = next.get_value_and_children();
+                        self.postorder_item_stack.push_back(value);
+                        self.postorder_traversal_stack
+                            .push_back(children.into_iter());
+                        continue;
+                    }
+
+                    self.preorder_traversal_stack.pop();
+                }
+
+                return None;
+            }
+        }
+    }
 }
 
 pub(crate) struct OwnedBinaryDFSPreorderIteratorWithPathTracking<Node>

@@ -6,3 +6,6 @@ edition = "2021"
 [dependencies]
 streaming-iterator = { workspace = true }
 tree_iterators_rs = { workspace = true }
+
+[features]
+double_ended = ["tree_iterators_rs/double_ended"]

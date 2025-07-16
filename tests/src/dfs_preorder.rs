@@ -1,3 +1,5 @@
+#[cfg(feature = "double_ended")]
+use super::create_tree_for_testing;
 use super::{
     assert_len, create_binary_tree_for_testing, create_trees_for_testing,
     get_expected_metadata_for_value, get_value_to_path_map, get_value_to_path_map_binary,
@@ -29,6 +31,97 @@ fn dfs_preorder_has_correct_order() {
         }
         assert_len!(expected.len(), test_tree.dfs_preorder());
     }
+}
+
+#[cfg(feature = "double_ended")]
+#[test]
+fn dfs_preorder_rev_has_correct_order() {
+    let mut expected = get_expected_order_dfs_preorder();
+    expected.reverse();
+
+    let mut iter = create_tree_for_testing().dfs_preorder();
+    assert_eq!(Some(10), iter.next_back());
+    assert_eq!(Some(0), iter.next());
+    assert_eq!(Some(9), iter.next_back());
+    assert_eq!(Some(1), iter.next());
+    assert_eq!(Some(8), iter.next_back());
+    assert_eq!(Some(3), iter.next());
+    assert_eq!(Some(7), iter.next_back());
+    assert_eq!(Some(4), iter.next());
+    assert_eq!(Some(6), iter.next_back());
+    assert_eq!(Some(2), iter.next());
+    assert_eq!(Some(5), iter.next());
+    assert_eq!(None, iter.next());
+    
+    // let mut iter = create_tree_for_testing().dfs_preorder_iter();
+    // assert_eq!(Some(&10), iter.next_back());
+    // assert_eq!(Some(&0), iter.next());
+    // assert_eq!(Some(&9), iter.next_back());
+    // assert_eq!(Some(&1), iter.next());
+    // assert_eq!(Some(&8), iter.next_back());
+    // assert_eq!(Some(&3), iter.next());
+    // assert_eq!(Some(&7), iter.next_back());
+    // assert_eq!(Some(&4), iter.next());
+    // assert_eq!(Some(&6), iter.next_back());
+    // assert_eq!(Some(&2), iter.next());
+    // assert_eq!(Some(&5), iter.next());
+    // assert_eq!(None, iter.next());
+
+    // let mut iter = create_tree_for_testing().dfs_preorder_iter_mut();
+    // assert_eq!(Some(&mut 10), iter.next_back());
+    // assert_eq!(Some(&mut 0), iter.next());
+    // assert_eq!(Some(&mut 9), iter.next_back());
+    // assert_eq!(Some(&mut 1), iter.next());
+    // assert_eq!(Some(&mut 8), iter.next_back());
+    // assert_eq!(Some(&mut 3), iter.next());
+    // assert_eq!(Some(&mut 7), iter.next_back());
+    // assert_eq!(Some(&mut 4), iter.next());
+    // assert_eq!(Some(&mut 6), iter.next_back());
+    // assert_eq!(Some(&mut 2), iter.next());
+    // assert_eq!(Some(&mut 5), iter.next());
+    // assert_eq!(None, iter.next());
+
+    let mut iter = create_tree_for_testing().dfs_preorder();
+    assert_eq!(Some(0), iter.next());
+    assert_eq!(Some(10), iter.next_back());
+    assert_eq!(Some(1), iter.next());
+    assert_eq!(Some(9), iter.next_back());
+    assert_eq!(Some(3), iter.next());
+    assert_eq!(Some(8), iter.next_back());
+    assert_eq!(Some(4), iter.next());
+    assert_eq!(Some(7), iter.next_back());
+    assert_eq!(Some(2), iter.next());
+    assert_eq!(Some(6), iter.next_back());
+    assert_eq!(Some(5), iter.next());
+    assert_eq!(None, iter.next());
+
+    // let mut iter = create_tree_for_testing().dfs_preorder_iter();
+    // assert_eq!(Some(&0), iter.next());
+    // assert_eq!(Some(&10), iter.next_back());
+    // assert_eq!(Some(&1), iter.next());
+    // assert_eq!(Some(&9), iter.next_back());
+    // assert_eq!(Some(&3), iter.next());
+    // assert_eq!(Some(&8), iter.next_back());
+    // assert_eq!(Some(&4), iter.next());
+    // assert_eq!(Some(&7), iter.next_back());
+    // assert_eq!(Some(&2), iter.next());
+    // assert_eq!(Some(&6), iter.next_back());
+    // assert_eq!(Some(&5), iter.next());
+    // assert_eq!(None, iter.next());
+
+    // let mut iter = create_tree_for_testing().dfs_preorder_iter_mut();
+    // assert_eq!(Some(&mut 0), iter.next());
+    // assert_eq!(Some(&mut 10), iter.next_back());
+    // assert_eq!(Some(&mut 1), iter.next());
+    // assert_eq!(Some(&mut 9), iter.next_back());
+    // assert_eq!(Some(&mut 3), iter.next());
+    // assert_eq!(Some(&mut 8), iter.next_back());
+    // assert_eq!(Some(&mut 4), iter.next());
+    // assert_eq!(Some(&mut 7), iter.next_back());
+    // assert_eq!(Some(&mut 2), iter.next());
+    // assert_eq!(Some(&mut 6), iter.next_back());
+    // assert_eq!(Some(&mut 5), iter.next());
+    // assert_eq!(None, iter.next());
 }
 
 #[test]
