@@ -191,6 +191,7 @@ where
     pub fn leaves(self) -> OwnedBFSLeavesIteratorWithAncestors<Node> {
         OwnedBFSLeavesIteratorWithAncestors {
             is_root: self.is_root,
+            yielded_root: !self.is_root,
             item_stack: self.item_stack,
             iterator_queue: self
                 .iterator_queue

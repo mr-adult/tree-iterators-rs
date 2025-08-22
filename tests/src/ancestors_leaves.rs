@@ -63,6 +63,44 @@ fn leaves_has_correct_order() {
     }
 }
 
+#[test]
+fn root_only_leaves_has_correct_order() {
+    let mut tree = Tree {
+        value: 0,
+        children: vec![],
+    };
+
+    for borrowed_iter in get_borrowed_leaves_iters(&tree) {
+        assert_len!(1, borrowed_iter);
+    }
+
+    for mut borrowed_iter in get_borrowed_leaves_iters(&tree) {
+        while let Some(item) = borrowed_iter.next() {
+            assert_eq!(&[&0], item);
+        }
+    }
+
+    for mut_borrowed_iter in get_mut_borrowed_leaves_iters(&mut tree) {
+        assert_len!(1, mut_borrowed_iter);
+    }
+
+    for mut mut_borrowed_iter in get_mut_borrowed_leaves_iters(&mut tree) {
+        while let Some(item) = mut_borrowed_iter.next() {
+            assert_eq!(&[&mut 0], item);
+        }
+    }
+
+    for owned_iter in get_owned_leaves_iters(tree.clone()) {
+        assert_len!(1, owned_iter);
+    }
+
+    for mut owned_iter in get_owned_leaves_iters(tree.clone()) {
+        while let Some(item) = owned_iter.next() {
+            assert_eq!(&[0], item);
+        }
+    }
+}
+
 fn get_borrowed_leaves_iters<T>(
     test_tree: &Tree<T>,
 ) -> impl Iterator<Item = Box<dyn StreamingIterator<Item = [&T]> + '_>> + '_ {
@@ -176,6 +214,45 @@ fn binary_leaves_has_correct_order() {
 
     for owned_iter in get_owned_leaves_binary_iters(test_tree) {
         assert_len!(expected.len(), owned_iter);
+    }
+}
+
+#[test]
+fn root_only_binary_leaves_has_correct_order() {
+    let mut tree = BinaryTree {
+        value: 0,
+        left: None,
+        right: None,
+    };
+
+    for borrowed_iter in get_borrowed_leaves_binary_iters(&tree) {
+        assert_len!(1, borrowed_iter);
+    }
+
+    for mut borrowed_iter in get_borrowed_leaves_binary_iters(&tree) {
+        while let Some(item) = borrowed_iter.next() {
+            assert_eq!(&[&0], item);
+        }
+    }
+
+    for mut_borrowed_iter in get_mut_borrowed_leaves_binary_iters(&mut tree) {
+        assert_len!(1, mut_borrowed_iter);
+    }
+
+    for mut mut_borrowed_iter in get_mut_borrowed_leaves_binary_iters(&mut tree) {
+        while let Some(item) = mut_borrowed_iter.next() {
+            assert_eq!(&[&mut 0], item);
+        }
+    }
+
+    for owned_iter in get_owned_leaves_binary_iters(tree.clone()) {
+        assert_len!(1, owned_iter);
+    }
+
+    for mut owned_iter in get_owned_leaves_binary_iters(tree.clone()) {
+        while let Some(item) = owned_iter.next() {
+            assert_eq!(&[0], item);
+        }
     }
 }
 

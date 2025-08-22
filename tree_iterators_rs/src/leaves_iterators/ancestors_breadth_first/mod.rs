@@ -12,6 +12,11 @@ macro_rules! bfs_next {
 
             loop {
                 if self.iterator_queue.is_empty() {
+                    if !self.yielded_root {
+                        self.yielded_root = true;
+                        return false;
+                    }
+
                     self.item_stack.clear();
                     return false;
                 }

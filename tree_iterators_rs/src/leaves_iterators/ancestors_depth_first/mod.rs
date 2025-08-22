@@ -5,15 +5,16 @@ pub mod owned;
 macro_rules! streaming_leaves {
     ($get_value_and_children: ident) => {
         fn advance(&mut self) {
+            let mut pushed_another_iterator = false;
             if let Some(root) = self.root.take() {
                 let (value, children) = root.$get_value_and_children();
                 self.new_traversal_stack.push(children.into_iter());
                 self.item_stack.push(value);
+                pushed_another_iterator = true;
             } else {
                 self.item_stack.pop();
             }
 
-            let mut pushed_another_iterator = false;
             loop {
                 if let Some(new_stack_last) = self.new_traversal_stack.last_mut() {
                     if let Some(node) = new_stack_last.next() {

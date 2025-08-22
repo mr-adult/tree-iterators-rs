@@ -5,17 +5,18 @@ pub mod owned;
 macro_rules! dfs_postorder_leaves_next {
     ($get_value_and_children: ident) => {
         fn next(&mut self) -> Option<Self::Item> {
+            // keep track of if the children iterator was just added.
+            // In some cases this becomes important.
+            let mut just_added = false;
             loop {
                 match core::mem::take(&mut self.root) {
                     Some(next) => {
                         let (value, children) = next.$get_value_and_children();
                         self.traversal_stack_top.push(children.into_iter());
                         self.item_stack.push(value);
+                        just_added = true;
                     }
                     None => {
-                        // keep track of if the children iterator was just added.
-                        // In some cases this becomes important.
-                        let mut just_added = false;
                         loop {
                             let total_stack_len =
                                 self.traversal_stack_bottom.len() + self.traversal_stack_top.len();
