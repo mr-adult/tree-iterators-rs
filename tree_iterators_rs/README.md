@@ -88,8 +88,11 @@ into other iterators by chaining one of the following methods:
 
 ## Change Log
 
+- 3.5.1
+  - Fixes a bug where calling one of the tree traversal APIs' .leaves() methods on a tree that consists of only the root node would result in an incorrect traversal. Only .leaves() calls are affected and the standard .bfs(), .dfs_preorder(), etc. APIs were not susceptible to this bug.
+
 - 3.5.0
-  - Adds the [`prune_each`], [`prune_path_each`], [`prune_depth_each`], [`map_each`], and [`fold_each`] APIs to the various IntoIteratorOf\[Binary\]Trees traits.
+  - Adds the [`prune_each`](crate::prelude::OwnedIntoIteratorOfTrees::prune_each), [`prune_path_each`](crate::prelude::OwnedIntoIteratorOfTrees::prune_path_each), [`prune_depth_each`](crate::prelude::OwnedIntoIteratorOfTrees::prune_depth_each), [`map_each`](crate::prelude::OwnedIntoIteratorOfTrees::map_each), and [`fold_each`](crate::prelude::OwnedIntoIteratorOfTrees::fold_each) APIs to the various IntoIteratorOf\[Binary\]Trees traits.
 
 - 3.4.1
   - fixes [a crash when prune() or prune_path() APIs cause an asymmetrical prune](https://github.com/mr-adult/tree-iterators-rs/issues/15).
