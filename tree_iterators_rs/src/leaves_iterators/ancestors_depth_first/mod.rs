@@ -54,10 +54,10 @@ macro_rules! streaming_leaves {
         }
 
         fn get(&self) -> Option<&Self::Item> {
-            if self.item_stack.len() > 0 {
-                Some(&self.item_stack.as_slice())
-            } else {
+            if self.item_stack.is_empty() {
                 None
+            } else {
+                Some(self.item_stack.as_slice())
             }
         }
     };
@@ -66,10 +66,10 @@ macro_rules! streaming_leaves {
 macro_rules! get_mut {
     () => {
         fn get_mut(&mut self) -> Option<&mut Self::Item> {
-            if self.item_stack.len() == 0 {
+            if self.item_stack.is_empty() {
                 None
             } else {
-                Some(&mut self.item_stack[..])
+                Some(self.item_stack.as_mut())
             }
         }
     };

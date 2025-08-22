@@ -4,64 +4,6 @@ pub mod owned;
 
 macro_rules! bfs_next {
     ($get_value_and_children: ident) => {
-        fn bfs_next(&mut self) -> bool {
-            if self.is_root {
-                self.is_root = false;
-                return true;
-            }
-
-            loop {
-                if self.iterator_queue.is_empty() {
-                    if !self.yielded_root {
-                        self.yielded_root = true;
-                        return false;
-                    }
-
-                    self.item_stack.clear();
-                    return false;
-                }
-
-                if self.item_stack.len() == self.traversal_stack.len() + 2 {
-                    self.pop_from_item_stack();
-                }
-
-                let iter = &mut self.iterator_queue[0];
-
-                if let Some(next) = iter.next() {
-                    let (value, children) = next.$get_value_and_children();
-                    self.item_stack.push(value);
-
-                    let mut peekable_children = children.into_iter().peekable();
-                    let has_children = peekable_children.peek().is_some();
-
-                    self.iterator_queue.push_back(peekable_children);
-                    return has_children;
-                }
-
-                let top_of_traversal_stack = self
-                    .traversal_stack
-                    .last_mut()
-                    .unwrap_or(&mut self.tree_cache);
-
-                if !top_of_traversal_stack.children.is_empty() {
-                    top_of_traversal_stack.children.push_front(None);
-                } else {
-                    // used up all the values, so just pop it
-                    while let Some(last) = self.traversal_stack.last() {
-                        if last.children.len() > 1 {
-                            break;
-                        }
-
-                        self.traversal_stack.pop();
-                        self.item_stack.pop();
-                    }
-                }
-
-                self.advance_dfs();
-                self.iterator_queue.pop_front();
-            }
-        }
-
         fn advance_dfs(&mut self) {
             let starting_depth = self.item_stack.len();
             loop {
@@ -139,27 +81,76 @@ macro_rules! bfs_next {
 macro_rules! get_mut {
     () => {
         fn get_mut(&mut self) -> Option<&mut Self::Item> {
-            if self.item_stack.len() == 0 {
+            if self.item_stack.is_empty() {
                 None
             } else {
-                Some(&mut self.item_stack[..])
+                Some(self.item_stack.as_mut())
             }
         }
     };
 }
 
 macro_rules! streaming_leaves {
-    () => {
+    ($get_value_and_children: ident) => {
         fn advance(&mut self) {
             loop {
-                if !self.bfs_next() {
-                    break;
+                if self.iterator_queue.is_empty() {
+                    self.item_stack.clear();
+                    return;
                 }
+
+                if self.item_stack.len() == self.traversal_stack.len() + 2 {
+                    self.pop_from_item_stack();
+                }
+
+                let iter = &mut self.iterator_queue[0];
+
+                if let Some(next) = iter.next() {
+                    self.is_root = false;
+
+                    let (value, children) = next.$get_value_and_children();
+                    self.item_stack.push(value);
+
+                    let mut peekable_children = children.into_iter().peekable();
+                    let has_children = peekable_children.peek().is_some();
+
+                    self.iterator_queue.push_back(peekable_children);
+                    if has_children {
+                        continue;
+                    } else {
+                        return;
+                    }
+                } else if self.is_root {
+                    self.is_root = false;
+                    return;
+                }
+
+                let top_of_traversal_stack = self
+                    .traversal_stack
+                    .last_mut()
+                    .unwrap_or(&mut self.tree_cache);
+
+                if !top_of_traversal_stack.children.is_empty() {
+                    top_of_traversal_stack.children.push_front(None);
+                } else {
+                    // used up all the values, so just pop it
+                    while let Some(last) = self.traversal_stack.last() {
+                        if last.children.len() > 1 {
+                            break;
+                        }
+
+                        self.traversal_stack.pop();
+                        self.item_stack.pop();
+                    }
+                }
+
+                self.advance_dfs();
+                self.iterator_queue.pop_front();
             }
         }
 
         fn get(&self) -> Option<&Self::Item> {
-            if self.item_stack.len() == 0 {
+            if self.item_stack.is_empty() {
                 None
             } else {
                 Some(self.item_stack.as_slice())
