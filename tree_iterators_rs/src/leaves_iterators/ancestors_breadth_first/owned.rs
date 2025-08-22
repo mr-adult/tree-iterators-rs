@@ -16,7 +16,6 @@ where
     Node: OwnedTreeNode,
 {
     pub(crate) is_root: bool,
-    pub(crate) yielded_root: bool,
     pub(crate) item_stack: Vec<Node::OwnedValue>,
     pub(crate) tree_cache: TreeNodeVecDeque<Node::OwnedValue>,
     pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::OwnedValue>>,
@@ -36,7 +35,7 @@ where
 {
     type Item = [Node::OwnedValue];
 
-    streaming_leaves!();
+    streaming_leaves!(get_value_and_children);
 }
 
 impl<Node> StreamingIteratorMut for OwnedBFSLeavesIteratorWithAncestors<Node>
@@ -51,7 +50,6 @@ where
     Node: OwnedBinaryTreeNode,
 {
     is_root: bool,
-    yielded_root: bool,
     item_stack: Vec<Node::OwnedValue>,
     tree_cache: TreeNodeVecDeque<Node::OwnedValue>,
     traversal_stack: Vec<TreeNodeVecDeque<Node::OwnedValue>>,
@@ -67,7 +65,6 @@ where
     ) -> OwnedBinaryBFSLeavesIteratorWithAncestors<Node> {
         OwnedBinaryBFSLeavesIteratorWithAncestors {
             is_root: source.is_root,
-            yielded_root: !source.is_root,
             item_stack: source.item_stack,
             iterator_queue: source
                 .iterator_queue
@@ -88,7 +85,7 @@ where
 {
     type Item = [Node::OwnedValue];
 
-    streaming_leaves!();
+    streaming_leaves!(get_value_and_children);
 }
 
 impl<Node> StreamingIteratorMut for OwnedBinaryBFSLeavesIteratorWithAncestors<Node>

@@ -16,7 +16,6 @@ where
     Node: BorrowedTreeNode<'a>,
 {
     pub(crate) is_root: bool,
-    pub(crate) yielded_root: bool,
     pub(crate) item_stack: Vec<Node::BorrowedValue>,
     pub(crate) tree_cache: TreeNodeVecDeque<Node::BorrowedValue>,
     pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::BorrowedValue>>,
@@ -37,7 +36,7 @@ where
 {
     type Item = [Node::BorrowedValue];
 
-    streaming_leaves!();
+    streaming_leaves!(get_value_and_children_iter);
 }
 
 pub struct BorrowedBinaryBFSLeavesIteratorWithAncestors<'a, Node>
@@ -45,7 +44,6 @@ where
     Node: BorrowedBinaryTreeNode<'a>,
 {
     is_root: bool,
-    yielded_root: bool,
     item_stack: Vec<Node::BorrowedValue>,
     tree_cache: TreeNodeVecDeque<Node::BorrowedValue>,
     traversal_stack: Vec<TreeNodeVecDeque<Node::BorrowedValue>>,
@@ -61,7 +59,6 @@ where
     ) -> BorrowedBinaryBFSLeavesIteratorWithAncestors<'a, Node> {
         BorrowedBinaryBFSLeavesIteratorWithAncestors {
             is_root: source.is_root,
-            yielded_root: !source.is_root,
             item_stack: source.item_stack,
             iterator_queue: source
                 .iterator_queue
@@ -82,5 +79,5 @@ where
 {
     type Item = [Node::BorrowedValue];
 
-    streaming_leaves!();
+    streaming_leaves!(get_value_and_children_iter);
 }
