@@ -41,6 +41,44 @@ fn leaves_has_correct_order() {
     }
 }
 
+#[test]
+fn root_only_leaves_has_correct_order() {
+    let mut tree = Tree {
+        value: 0,
+        children: vec![],
+    };
+
+    for borrowed_iter in get_borrowed_leaves_iters(&tree) {
+        assert_len!(1, borrowed_iter);
+    }
+
+    for borrowed_iter in get_borrowed_leaves_iters(&tree) {
+        for item in borrowed_iter {
+            assert_eq!(0, *item);
+        }
+    }
+
+    for mut_borrowed_iter in get_mut_borrowed_leaves_iters(&mut tree) {
+        assert_len!(1, mut_borrowed_iter);
+    }
+
+    for mut_borrowed_iter in get_mut_borrowed_leaves_iters(&mut tree) {
+        for item in mut_borrowed_iter {
+            assert_eq!(0, *item);
+        }
+    }
+
+    for owned_iter in get_owned_leaves_iters(tree.clone()) {
+        assert_len!(1, owned_iter);
+    }
+
+    for owned_iter in get_owned_leaves_iters(tree.clone()) {
+        for item in owned_iter {
+            assert_eq!(0, item);
+        }
+    }
+}
+
 fn get_borrowed_leaves_iters<T>(
     test_tree: &Tree<T>,
 ) -> impl Iterator<Item = Box<dyn Iterator<Item = &T> + '_>> + '_ {
@@ -120,6 +158,45 @@ fn binary_leaves_has_correct_order() {
 
     for owned_iter in get_owned_leaves_binary_iters(test_tree) {
         assert_len!(expected.len(), owned_iter);
+    }
+}
+
+#[test]
+fn binary_root_only_leaves_has_correct_order() {
+    let mut tree = BinaryTree {
+        value: 0,
+        left: None,
+        right: None,
+    };
+
+    for borrowed_iter in get_borrowed_leaves_binary_iters(&tree) {
+        assert_len!(1, borrowed_iter);
+    }
+
+    for borrowed_iter in get_borrowed_leaves_binary_iters(&tree) {
+        for item in borrowed_iter {
+            assert_eq!(0, *item);
+        }
+    }
+
+    for mut_borrowed_iter in get_mut_borrowed_leaves_binary_iters(&mut tree) {
+        assert_len!(1, mut_borrowed_iter);
+    }
+
+    for mut_borrowed_iter in get_mut_borrowed_leaves_binary_iters(&mut tree) {
+        for item in mut_borrowed_iter {
+            assert_eq!(0, *item);
+        }
+    }
+
+    for owned_iter in get_owned_leaves_binary_iters(tree.clone()) {
+        assert_len!(1, owned_iter);
+    }
+
+    for owned_iter in get_owned_leaves_binary_iters(tree.clone()) {
+        for item in owned_iter {
+            assert_eq!(0, item);
+        }
     }
 }
 

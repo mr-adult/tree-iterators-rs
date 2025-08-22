@@ -63,17 +63,29 @@ where
     }
 
     #[doc = include_str!("../../doc_files/leaves.md")]
-    pub fn leaves(self) -> OwnedBinaryLeavesIterator<Node, IntoIter<Node>> {
-        let mut traversal_stack_bottom = Vec::with_capacity(self.right_stack.capacity());
-        for opt in self.right_stack {
-            traversal_stack_bottom.push(opt.into_iter());
-        }
+    pub fn leaves(mut self) -> OwnedBinaryLeavesIterator<Node, IntoIter<Node>> {
+        if self.moved {
+            let mut traversal_stack_bottom = Vec::with_capacity(self.right_stack.capacity());
+            for opt in self.right_stack {
+                traversal_stack_bottom.push(opt.into_iter());
+            }
 
-        OwnedBinaryLeavesIterator {
-            root: None,
-            traversal_stack_bottom,
-            traversal_stack_top: Vec::new(),
-            item_stack: Vec::new(),
+            OwnedBinaryLeavesIterator {
+                root: None,
+                traversal_stack_bottom,
+                traversal_stack_top: Vec::new(),
+                item_stack: self.item_stack,
+            }
+        } else {
+            OwnedBinaryLeavesIterator {
+                root: self
+                    .right_stack
+                    .pop()
+                    .expect("root to be in the right stack if we haven't moved yet"),
+                traversal_stack_bottom: Vec::new(),
+                traversal_stack_top: Vec::new(),
+                item_stack: self.item_stack,
+            }
         }
     }
 

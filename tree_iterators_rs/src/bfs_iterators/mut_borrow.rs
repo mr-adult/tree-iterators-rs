@@ -189,6 +189,7 @@ where
     pub fn leaves(self) -> MutBorrowedBFSLeavesIteratorWithAncestors<'a, Node> {
         MutBorrowedBFSLeavesIteratorWithAncestors {
             is_root: self.is_root,
+            yielded_root: !self.is_root,
             item_stack: self.item_stack,
             iterator_queue: self
                 .iterator_queue

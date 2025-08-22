@@ -16,6 +16,7 @@ where
     Node: MutBorrowedTreeNode<'a>,
 {
     pub(crate) is_root: bool,
+    pub(crate) yielded_root: bool,
     pub(crate) item_stack: Vec<Node::MutBorrowedValue>,
     pub(crate) tree_cache: TreeNodeVecDeque<Node::MutBorrowedValue>,
     pub(crate) traversal_stack: Vec<TreeNodeVecDeque<Node::MutBorrowedValue>>,
@@ -51,6 +52,7 @@ where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
     is_root: bool,
+    yielded_root: bool,
     item_stack: Vec<Node::MutBorrowedValue>,
     tree_cache: TreeNodeVecDeque<Node::MutBorrowedValue>,
     traversal_stack: Vec<TreeNodeVecDeque<Node::MutBorrowedValue>>,
@@ -66,6 +68,7 @@ where
     ) -> MutBorrowedBinaryBFSLeavesIteratorWithAncestors<'a, Node> {
         MutBorrowedBinaryBFSLeavesIteratorWithAncestors {
             is_root: source.is_root,
+            yielded_root: !source.is_root,
             item_stack: source.item_stack,
             iterator_queue: source
                 .iterator_queue
