@@ -37,17 +37,55 @@ fn leaves_has_correct_order() {
             i += 1;
         }
 
-        for mut mut_borrowed_iter in get_mut_borrowed_leaves_iters(&mut test_tree) {
+        {
+            let mut iter_mut = test_tree
+                .dfs_preorder_iter_mut()
+                .attach_ancestors()
+                .leaves();
             let mut i = 0;
-            while let Some(value) = mut_borrowed_iter.next() {
+            while let Some(value) = iter_mut.next() {
+                assert!(expected[i].iter().eq(value.iter().map(|val| &**val)));
+                i += 1;
+            }
+        }
+        {
+            let mut iter_mut = test_tree
+                .dfs_postorder_iter_mut()
+                .attach_ancestors()
+                .leaves();
+            let mut i = 0;
+            while let Some(value) = iter_mut.next() {
+                assert!(expected[i].iter().eq(value.iter().map(|val| &**val)));
+                i += 1;
+            }
+        }
+        {
+            let mut iter_mut = test_tree.bfs_iter_mut().attach_ancestors().leaves();
+            let mut i = 0;
+            while let Some(value) = iter_mut.next() {
                 assert!(expected[i].iter().eq(value.iter().map(|val| &**val)));
                 i += 1;
             }
         }
 
-        for mut_borrowed_iter in get_mut_borrowed_leaves_iters(&mut test_tree) {
-            assert_len!(expected.len(), mut_borrowed_iter);
-        }
+        assert_len!(
+            expected.len(),
+            test_tree
+                .dfs_preorder_iter_mut()
+                .attach_ancestors()
+                .leaves()
+        );
+        assert_len!(
+            expected.len(),
+            test_tree
+                .dfs_postorder_iter_mut()
+                .attach_ancestors()
+                .leaves()
+        );
+        assert_len!(
+            expected.len(),
+            test_tree.bfs_iter_mut().attach_ancestors().leaves()
+        );
 
         for mut owned_iter in get_owned_leaves_iters(test_tree.clone()) {
             let mut i = 0;
@@ -80,12 +118,25 @@ fn root_only_leaves_has_correct_order() {
         }
     }
 
-    for mut_borrowed_iter in get_mut_borrowed_leaves_iters(&mut tree) {
-        assert_len!(1, mut_borrowed_iter);
-    }
+    assert_len!(1, tree.dfs_preorder_iter_mut().attach_ancestors().leaves());
+    assert_len!(1, tree.dfs_postorder_iter_mut().attach_ancestors().leaves());
+    assert_len!(1, tree.bfs_iter_mut().attach_ancestors().leaves());
 
-    for mut mut_borrowed_iter in get_mut_borrowed_leaves_iters(&mut tree) {
-        while let Some(item) = mut_borrowed_iter.next() {
+    {
+        let mut iter_mut = tree.dfs_preorder_iter_mut().attach_ancestors().leaves();
+        while let Some(item) = iter_mut.next() {
+            assert_eq!(&[&mut 0], item);
+        }
+    }
+    {
+        let mut iter_mut = tree.dfs_postorder_iter_mut().attach_ancestors().leaves();
+        while let Some(item) = iter_mut.next() {
+            assert_eq!(&[&mut 0], item);
+        }
+    }
+    {
+        let mut iter_mut = tree.bfs_iter_mut().attach_ancestors().leaves();
+        while let Some(item) = iter_mut.next() {
             assert_eq!(&[&mut 0], item);
         }
     }
@@ -111,38 +162,6 @@ fn get_borrowed_leaves_iters<T>(
         Box::new(test_tree.bfs_iter().attach_ancestors().leaves()),
     ]
     .into_iter()
-}
-
-fn get_mut_borrowed_leaves_iters<T>(
-    test_tree: &mut Tree<T>,
-) -> impl Iterator<Item = Box<dyn StreamingIterator<Item = [&mut T]> + '_>> + '_ {
-    // Rust doesn't like this, but we know that only 1 iterator will be accessed at a time
-    // and no reallocations will be done as we are doing a readonly test,
-    // so we are still within the "safe" rust system with only 1 active mutable reference.
-    // This also makes the test much nicer to write.
-    unsafe {
-        [
-            Box::new(
-                (*(test_tree as *mut Tree<T>))
-                    .dfs_preorder_iter_mut()
-                    .attach_ancestors()
-                    .leaves(),
-            ) as Box<dyn StreamingIterator<Item = [&mut T]>>,
-            Box::new(
-                (*(test_tree as *mut Tree<T>))
-                    .dfs_postorder_iter_mut()
-                    .attach_ancestors()
-                    .leaves(),
-            ),
-            Box::new(
-                (*(test_tree as *mut Tree<T>))
-                    .bfs_iter_mut()
-                    .attach_ancestors()
-                    .leaves(),
-            ),
-        ]
-        .into_iter()
-    }
 }
 
 fn get_owned_leaves_iters<T: Clone + 'static>(
@@ -192,17 +211,67 @@ fn binary_leaves_has_correct_order() {
         i += 1;
     }
 
-    for mut mut_borrowed_iter in get_mut_borrowed_leaves_binary_iters(&mut test_tree) {
+    {
+        let mut iter_mut = test_tree
+            .dfs_preorder_iter_mut()
+            .attach_ancestors()
+            .leaves();
         let mut i = 0;
-        while let Some(value) = mut_borrowed_iter.next() {
+        while let Some(value) = iter_mut.next() {
+            assert!(expected[i].iter().eq(value.iter().map(|val| &**val)));
+            i += 1;
+        }
+    }
+    {
+        let mut iter_mut = test_tree.dfs_inorder_iter_mut().attach_ancestors().leaves();
+        let mut i = 0;
+        while let Some(value) = iter_mut.next() {
+            assert!(expected[i].iter().eq(value.iter().map(|val| &**val)));
+            i += 1;
+        }
+    }
+    {
+        let mut iter_mut = test_tree
+            .dfs_postorder_iter_mut()
+            .attach_ancestors()
+            .leaves();
+        let mut i = 0;
+        while let Some(value) = iter_mut.next() {
+            assert!(expected[i].iter().eq(value.iter().map(|val| &**val)));
+            i += 1;
+        }
+    }
+    {
+        let mut iter_mut = test_tree.bfs_iter_mut().attach_ancestors().leaves();
+        let mut i = 0;
+        while let Some(value) = iter_mut.next() {
             assert!(expected[i].iter().eq(value.iter().map(|val| &**val)));
             i += 1;
         }
     }
 
-    for mut_borrowed_iter in get_mut_borrowed_leaves_binary_iters(&mut test_tree) {
-        assert_len!(expected.len(), mut_borrowed_iter);
-    }
+    assert_len!(
+        expected.len(),
+        test_tree
+            .dfs_preorder_iter_mut()
+            .attach_ancestors()
+            .leaves()
+    );
+    assert_len!(
+        expected.len(),
+        test_tree.dfs_inorder_iter_mut().attach_ancestors().leaves()
+    );
+    assert_len!(
+        expected.len(),
+        test_tree
+            .dfs_postorder_iter_mut()
+            .attach_ancestors()
+            .leaves()
+    );
+    assert_len!(
+        expected.len(),
+        test_tree.bfs_iter_mut().attach_ancestors().leaves()
+    );
 
     for mut owned_iter in get_owned_leaves_binary_iters(test_tree.clone()) {
         let mut i = 0;
@@ -235,12 +304,32 @@ fn root_only_binary_leaves_has_correct_order() {
         }
     }
 
-    for mut_borrowed_iter in get_mut_borrowed_leaves_binary_iters(&mut tree) {
-        assert_len!(1, mut_borrowed_iter);
-    }
+    assert_len!(1, tree.dfs_preorder_iter_mut().attach_ancestors().leaves());
+    assert_len!(1, tree.dfs_inorder_iter_mut().attach_ancestors().leaves());
+    assert_len!(1, tree.dfs_postorder_iter_mut().attach_ancestors().leaves());
+    assert_len!(1, tree.bfs_iter_mut().attach_ancestors().leaves());
 
-    for mut mut_borrowed_iter in get_mut_borrowed_leaves_binary_iters(&mut tree) {
-        while let Some(item) = mut_borrowed_iter.next() {
+    {
+        let mut iter_mut = tree.dfs_preorder_iter_mut().attach_ancestors().leaves();
+        while let Some(item) = iter_mut.next() {
+            assert_eq!(&[&mut 0], item);
+        }
+    }
+    {
+        let mut iter_mut = tree.dfs_inorder_iter_mut().attach_ancestors().leaves();
+        while let Some(item) = iter_mut.next() {
+            assert_eq!(&[&mut 0], item);
+        }
+    }
+    {
+        let mut iter_mut = tree.dfs_postorder_iter_mut().attach_ancestors().leaves();
+        while let Some(item) = iter_mut.next() {
+            assert_eq!(&[&mut 0], item);
+        }
+    }
+    {
+        let mut iter_mut = tree.bfs_iter_mut().attach_ancestors().leaves();
+        while let Some(item) = iter_mut.next() {
             assert_eq!(&[&mut 0], item);
         }
     }
@@ -266,40 +355,6 @@ fn get_borrowed_leaves_binary_iters<T>(
         Box::new(test_tree.dfs_postorder_iter().attach_ancestors().leaves()),
         Box::new(test_tree.bfs_iter().attach_ancestors().leaves()),
     ]
-}
-
-fn get_mut_borrowed_leaves_binary_iters<T>(
-    test_tree: &mut BinaryTree<T>,
-) -> impl Iterator<Item = Box<dyn StreamingIterator<Item = [&mut T]> + '_>> {
-    unsafe {
-        [
-            Box::new(
-                (*(test_tree as *mut BinaryTree<T>))
-                    .dfs_preorder_iter_mut()
-                    .attach_ancestors()
-                    .leaves(),
-            ) as Box<dyn StreamingIterator<Item = [&mut T]>>,
-            Box::new(
-                (*(test_tree as *mut BinaryTree<T>))
-                    .dfs_inorder_iter_mut()
-                    .attach_ancestors()
-                    .leaves(),
-            ),
-            Box::new(
-                (*(test_tree as *mut BinaryTree<T>))
-                    .dfs_postorder_iter_mut()
-                    .attach_ancestors()
-                    .leaves(),
-            ),
-            Box::new(
-                (*(test_tree as *mut BinaryTree<T>))
-                    .bfs_iter_mut()
-                    .attach_ancestors()
-                    .leaves(),
-            ),
-        ]
-        .into_iter()
-    }
 }
 
 fn get_owned_leaves_binary_iters<T: Clone + 'static>(
