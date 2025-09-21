@@ -193,9 +193,9 @@ pub struct MutBorrowedDFSInorderIteratorWithContext<'a, Node>
 where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
-    right_stack: Vec<Option<&'a mut Node>>,
+    right_stack: Vec<Option<*mut Node>>,
     current_context: TreeContext<Node::MutBorrowedValue, [Option<&'a mut Node>; 2]>,
-    into_iterator_stack: Vec<[Option<&'a mut Node>; 2]>,
+    into_iterator_stack: Vec<[Option<*mut Node>; 2]>,
     status_stack: Vec<TraversalStatus>,
 }
 
@@ -208,7 +208,7 @@ where
         path: Vec<usize>,
     ) -> MutBorrowedDFSInorderIteratorWithContext<'a, Node> {
         let mut right_stack = Vec::new();
-        right_stack.push(Some(root));
+        right_stack.push(Some(root as *mut Node));
 
         let context = TreeContext {
             path,
@@ -244,8 +244,12 @@ where
                     }
                     TraversalStatus::WentLeft => {
                         *last_status = TraversalStatus::ReturnedSelf;
-                        self.current_context.children =
-                            Some(self.into_iterator_stack.pop().unwrap());
+                        self.current_context.children = Some(
+                            self.into_iterator_stack
+                                .pop()
+                                .unwrap()
+                                .map(|opt| opt.map(|item| unsafe { &mut *item })),
+                        );
                         return;
                     }
                     TraversalStatus::ReturnedSelf => {
@@ -264,12 +268,12 @@ where
         }
 
         while let Some(current_val) = current {
-            let (value, children) = current_val.get_value_and_children_binary_iter_mut();
+            let (value, children) = unsafe { &mut *current_val }.get_value_and_children_binary_iter_mut();
 
+            let [left, right] = children.map(|child_opt| child_opt.map(|child| child as *mut Node));
             self.right_stack
-                .push(unsafe { core::ptr::read(&children[1] as *const Option<&'a mut Node>) });
-            let left = unsafe { core::ptr::read(&children[0] as *const Option<&'a mut Node>) };
-            self.into_iterator_stack.push(children);
+                .push(right.clone());
+            self.into_iterator_stack.push([left, right]);
 
             self.current_context.ancestors.push(value);
             match self.status_stack.last() {
@@ -289,7 +293,8 @@ where
         self.current_context.children = Some(
             self.into_iterator_stack
                 .pop()
-                .expect("There to be a children IntoIterator"),
+                .expect("There to be a children IntoIterator")
+                .map(|opt| opt.map(|node_ref| unsafe { &mut *node_ref })),
         );
     }
 
