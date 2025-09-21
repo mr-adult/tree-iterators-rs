@@ -88,6 +88,9 @@ into other iterators by chaining one of the following methods:
 
 ## Change Log
 
+- 3.5.2
+  - Fixes mutable reference aliasing issues detected by miri in the unsafe code behind the [`MutBorrowedBinaryTreeNode`](crate::prelude::MutBorrowedBinaryTreeNode) implementations of [`.dfs_postorder().attach_context()`](crate::dfs_postorder_iterators::mut_borrow::MutBorrowedBinaryDFSPostorderIterator::attach_context) and [`.dfs_inorder().attach_context()`](crate::dfs_inorder_iterators::mut_borrow::MutBorrowedDFSInorderIterator::attach_context) APIs. All existing APIs for [`MutBorrowedTreeNode`](crate::prelude::MutBorrowedTreeNode) passed miri testing. All code not in the [`MutBorrowedBinaryTreeNode`](crate::prelude::MutBorrowedBinaryTreeNode) or [`MutBorrowedTreeNode`](crate::prelude::MutBorrowedTreeNode) traits is written in safe Rust.
+
 - 3.5.1
   - Fixes a bug where calling one of the tree traversal APIs' .leaves() methods on a tree that consists of only the root node would result in an incorrect traversal. Only .leaves() calls are affected and the standard .bfs(), .dfs_preorder(), etc. APIs were not susceptible to this bug.
 
