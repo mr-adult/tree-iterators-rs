@@ -408,9 +408,9 @@ where
     Node: MutBorrowedBinaryTreeNode<'a>,
 {
     root: Option<&'a mut Node>,
-    traversal_stack: Vec<IntoIter<Option<&'a mut Node>, 2>>,
+    traversal_stack: Vec<IntoIter<Option<*mut Node>, 2>>,
     current_context: TreeContext<Node::MutBorrowedValue, [Option<&'a mut Node>; 2]>,
-    into_iterator_stack: Vec<[Option<&'a mut Node>; 2]>,
+    into_iterator_stack: Vec<[Option<*mut Node>; 2]>,
 }
 
 impl<'a, Node> MutBorrowedBinaryDFSPostorderIteratorWithContext<'a, Node>
@@ -440,17 +440,22 @@ where
 {
     type Item = TreeContext<Node::MutBorrowedValue, [Option<&'a mut Node>; 2]>;
     fn advance(&mut self) {
+        self.current_context.children = None;
+
         if let Some(next) = self.root.take() {
-            let (value, children) = next.get_value_and_children_binary_iter_mut();
+            let (value, mut children) = next.get_value_and_children_binary_iter_mut();
+
+            let left = children[0].as_mut().map(|val| *val as *mut Node);
+            let right = children[1].as_mut().map(|val| *val as *mut Node);
+
             // ASSUMPTION: self.into_iterator_stack will always outlive self.traversal_stack.
             // If that assumption is not true, this code will cause Undefined Behavior.
-            self.traversal_stack.push(
-                unsafe { core::ptr::read(&children as *const [Option<&'a mut Node>; 2]) }
-                    .into_iter(),
-            );
+            self.traversal_stack
+                .push([left.clone(), right.clone()].into_iter());
+            self.into_iterator_stack.push([left, right]);
+
             self.current_context.ancestors.push(value);
             self.current_context.path.push(usize::MAX);
-            self.into_iterator_stack.push(children);
         } else {
             self.current_context.ancestors.pop();
             if self.current_context.ancestors.is_empty() {
@@ -469,19 +474,20 @@ where
                     *last = last.wrapping_add(1);
 
                     if let Some(node) = node {
-                        let (value, children) = node.get_value_and_children_binary_iter_mut();
+                        let (value, mut children) =
+                            unsafe { &mut *node }.get_value_and_children_binary_iter_mut();
+
+                        let left = children[0].as_mut().map(|val| *val as *mut Node);
+                        let right = children[1].as_mut().map(|val| *val as *mut Node);
+
+                        self.traversal_stack
+                            .push([left.clone(), right.clone()].into_iter());
+                        self.into_iterator_stack.push([left, right]);
 
                         // ASSUMPTION: self.into_iterator_stack will always outlive self.traversal_stack.
                         // If that assumption is not true, this code will cause Undefined Behavior.
-                        self.traversal_stack.push(
-                            unsafe {
-                                core::ptr::read(&children as *const [Option<&'a mut Node>; 2])
-                            }
-                            .into_iter(),
-                        );
                         self.current_context.ancestors.push(value);
                         self.current_context.path.push(usize::MAX);
-                        self.into_iterator_stack.push(children);
                         continue 'outer;
                     }
                 }
@@ -490,10 +496,11 @@ where
             self.current_context.children = Some(
                 self.into_iterator_stack
                     .pop()
-                    .expect("There to be a children IntoIterator"),
+                    .expect("There to be a children IntoIterator")
+                    .map(|opt| opt.map(|val| unsafe { &mut *val })),
             );
-            self.traversal_stack.pop();
             self.current_context.path.pop();
+            self.traversal_stack.pop();
             return;
         }
     }
