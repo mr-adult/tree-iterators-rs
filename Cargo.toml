@@ -12,4 +12,4 @@ unused_unsafe = "warn"
 
 [workspace.dependencies]
 streaming-iterator = { version = "0.1.9", features = ["alloc"] }
-tree_iterators_rs = { version = "3.5.0", path = "tree_iterators_rs" }
+tree_iterators_rs = { version = "3.5.2", path = "tree_iterators_rs" }

@@ -1,4 +1,5 @@
 #![cfg(test)]
+#![forbid(unsafe_code)]
 
 use tree_iterators_rs::prelude::*;
 
