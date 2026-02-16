@@ -77,14 +77,15 @@ use super::dfs_postorder_iterators::{
 
 pub use super::tree_context::TreeContext;
 pub use super::tree_iterators::{
-    BinaryPrune, BinaryPrunePath, BinaryTreeIterator, Map, Prune, PruneDepth, PrunePath,
+    BinaryPrune, BinaryPrunePath, BinaryTreeIterator, Map, MapPath, Prune, PruneDepth, PrunePath,
     TreeIterator, TreeIteratorBase,
 };
 
 pub use super::tree_collection_iterators::{
-    BinaryCollectionPrune, BinaryCollectionPrunePath, BinaryFold, BinaryTreeCollectionIterator,
-    CollectionMap, CollectionPrune, CollectionPruneDepth, CollectionPrunePath, Fold,
-    TreeCollectionIterator, TreeCollectionIteratorBase,
+    BinaryCollectionPrune, BinaryCollectionPrunePath, BinaryFold, BinaryFoldPath,
+    BinaryTreeCollectionIterator, CollectionMap, CollectionMapPath, CollectionPrune,
+    CollectionPruneDepth, CollectionPrunePath, Fold, FoldPath, TreeCollectionIterator,
+    TreeCollectionIteratorBase,
 };
 
 /// A default implemenation of a binary tree node. This struct
@@ -671,6 +672,16 @@ where
         self.into_pipeline().map_tree(f).collect_tree().unwrap()
     }
 
+    /// Identical to [`map`](OwnedBinaryTreeNode::map) except that the closure is passed
+    /// an additional parameter: the path of the current node in the tree (see
+    /// [`current_path`](TreeIteratorBase::current_path) for more details).
+    fn map_path<Output, F>(self, f: F) -> BinaryTree<Output>
+    where
+        F: FnMut(&[usize], Self::OwnedValue) -> Output,
+    {
+        self.into_pipeline().map_path(f).collect_tree().unwrap()
+    }
+
     /// fold is a tree-based analog to [fold](core::iter::Iterator::fold).
     ///
     /// Folds every element into an accumulation by applying an operation, returning the
@@ -711,6 +722,18 @@ where
     {
         self.into_pipeline()
             .fold_tree(f)
+            .expect("there to always be at least the root to fold")
+    }
+
+    /// Identical to [`fold`](OwnedBinaryTreeNode::fold) except that the closure is passed
+    /// an additional parameter: the path of the current node in the tree (see
+    /// [`current_path`](TreeIteratorBase::current_path) for more details).
+    fn fold_path<Output, F>(self, f: F) -> Output
+    where
+        F: FnMut([Option<Output>; 2], &[usize], Self::OwnedValue) -> Output,
+    {
+        self.into_pipeline()
+            .fold_path(f)
             .expect("there to always be at least the root to fold")
     }
 }
@@ -1180,6 +1203,16 @@ where
         self.into_pipeline().map_tree(f).collect_tree().unwrap()
     }
 
+    /// Identical to [`map`](OwnedTreeNode::map) except that the closure is passed
+    /// an additional parameter: the path of the current node in the tree (see
+    /// [`current_path`](TreeIteratorBase::current_path) for more details).
+    fn map_path<Output, F>(self, f: F) -> Tree<Output>
+    where
+        F: FnMut(&[usize], Self::OwnedValue) -> Output,
+    {
+        self.into_pipeline().map_path(f).collect_tree().unwrap()
+    }
+
     /// fold is a tree-based analog to [fold](core::iter::Iterator::fold).
     ///
     /// Folds every element into an accumulation by applying an operation, returning the
@@ -1218,6 +1251,16 @@ where
         F: FnMut(Vec<Output>, Self::OwnedValue) -> Output,
     {
         self.into_pipeline().fold_tree(f).unwrap()
+    }
+
+    /// Identical to [`fold`](OwnedTreeNode::fold) except that the closure is passed
+    /// an additional parameter: the path of the current node in the tree (see
+    /// [`current_path`](TreeIteratorBase::current_path) for more details).
+    fn fold_path<Output, F>(self, f: F) -> Output
+    where
+        F: FnMut(Vec<Output>, &[usize], Self::OwnedValue) -> Output,
+    {
+        self.into_pipeline().fold_path(f).unwrap()
     }
 }
 
@@ -1739,6 +1782,16 @@ where
         self.into_pipeline_mut().map_tree(f).collect_tree().unwrap()
     }
 
+    /// Identical to [`map_mut`](MutBorrowedBinaryTreeNode::map_mut) except that the closure is passed
+    /// an additional parameter: the path of the current node in the tree (see
+    /// [`current_path`](TreeIteratorBase::current_path) for more details).
+    fn map_path_mut<Output, F>(&'a mut self, f: F) -> BinaryTree<Output>
+    where
+        F: FnMut(&[usize], Self::MutBorrowedValue) -> Output,
+    {
+        self.into_pipeline_mut().map_path(f).collect_tree().unwrap()
+    }
+
     /// fold is a tree-based analog to [fold](core::iter::Iterator::fold).
     ///
     /// Folds every element into an accumulation by applying an operation, returning the
@@ -1778,6 +1831,16 @@ where
         F: FnMut([Option<Output>; 2], Self::MutBorrowedValue) -> Output,
     {
         self.into_pipeline_mut().fold_tree(f).unwrap()
+    }
+
+    /// Identical to [`fold_mut`](MutBorrowedBinaryTreeNode::fold_mut) except that the closure is passed
+    /// an additional parameter: the path of the current node in the tree (see
+    /// [`current_path`](TreeIteratorBase::current_path) for more details).
+    fn fold_path_mut<Output, F>(&'a mut self, f: F) -> Output
+    where
+        F: FnMut([Option<Output>; 2], &[usize], Self::MutBorrowedValue) -> Output,
+    {
+        self.into_pipeline_mut().fold_path(f).unwrap()
     }
 }
 
@@ -2249,6 +2312,16 @@ where
         self.into_pipeline_mut().map_tree(f).collect_tree().unwrap()
     }
 
+    /// Identical to [`map_mut`](MutBorrowedTreeNode::map_mut) except that the closure is passed
+    /// an additional parameter: the path of the current node in the tree (see
+    /// [`current_path`](TreeIteratorBase::current_path) for more details).
+    fn map_path_mut<Output, F>(&'a mut self, f: F) -> Tree<Output>
+    where
+        F: FnMut(&[usize], Self::MutBorrowedValue) -> Output,
+    {
+        self.into_pipeline_mut().map_path(f).collect_tree().unwrap()
+    }
+
     /// fold is a tree-based analog to [fold](core::iter::Iterator::fold).
     ///
     /// Folds every element into an accumulation by applying an operation, returning the
@@ -2287,6 +2360,16 @@ where
         F: FnMut(Vec<Output>, Self::MutBorrowedValue) -> Output,
     {
         self.into_pipeline_mut().fold_tree(f).unwrap()
+    }
+
+    /// Identical to [`fold_mut`](MutBorrowedTreeNode::fold_mut) except that the closure is passed
+    /// an additional parameter: the path of the current node in the tree (see
+    /// [`current_path`](TreeIteratorBase::current_path) for more details).
+    fn fold_path_mut<Output, F>(&'a mut self, f: F) -> Output
+    where
+        F: FnMut(Vec<Output>, &[usize], Self::MutBorrowedValue) -> Output,
+    {
+        self.into_pipeline_mut().fold_path(f).unwrap()
     }
 }
 
@@ -2805,6 +2888,16 @@ where
         self.into_pipeline_ref().map_tree(f).collect_tree().unwrap()
     }
 
+    /// Identical to [`map_ref`](BorrowedBinaryTreeNode::map_ref) except that the closure is passed
+    /// an additional parameter: the path of the current node in the tree (see
+    /// [`current_path`](TreeIteratorBase::current_path) for more details).
+    fn map_path_ref<Output, F>(&'a self, f: F) -> BinaryTree<Output>
+    where
+        F: FnMut(&[usize], Self::BorrowedValue) -> Output,
+    {
+        self.into_pipeline_ref().map_path(f).collect_tree().unwrap()
+    }
+
     /// fold is a tree-based analog to [fold](core::iter::Iterator::fold).
     ///
     /// Folds every element into an accumulation by applying an operation, returning the
@@ -2844,6 +2937,16 @@ where
         F: FnMut([Option<Output>; 2], Self::BorrowedValue) -> Output,
     {
         self.into_pipeline_ref().fold_tree(f).unwrap()
+    }
+
+    /// Identical to [`fold_ref`](BorrowedBinaryTreeNode::fold_ref) except that the closure is passed
+    /// an additional parameter: the path of the current node in the tree (see
+    /// [`current_path`](TreeIteratorBase::current_path) for more details).
+    fn fold_path_ref<Output, F>(&'a self, f: F) -> Output
+    where
+        F: FnMut([Option<Output>; 2], &[usize], Self::BorrowedValue) -> Output,
+    {
+        self.into_pipeline_ref().fold_path(f).unwrap()
     }
 }
 
@@ -3312,6 +3415,16 @@ where
         self.into_pipeline_ref().map_tree(f).collect_tree().unwrap()
     }
 
+    /// Identical to [`map_ref`](BorrowedTreeNode::map_ref) except that the closure is passed
+    /// an additional parameter: the path of the current node in the tree (see
+    /// [`current_path`](TreeIteratorBase::current_path) for more details).
+    fn map_path_ref<Output, F>(&'a self, f: F) -> Tree<Output>
+    where
+        F: FnMut(&[usize], Self::BorrowedValue) -> Output,
+    {
+        self.into_pipeline_ref().map_path(f).collect_tree().unwrap()
+    }
+
     /// fold is a tree-based analog to [fold](core::iter::Iterator::fold).
     ///
     /// Folds every element into an accumulation by applying an operation, returning the
@@ -3350,6 +3463,16 @@ where
         F: FnMut(Vec<Output>, Self::BorrowedValue) -> Output,
     {
         self.into_pipeline_ref().fold_tree(f).unwrap()
+    }
+
+    /// Identical to [`fold_ref`](BorrowedTreeNode::fold_ref) except that the closure is passed
+    /// an additional parameter: the path of the current node in the tree (see
+    /// [`current_path`](TreeIteratorBase::current_path) for more details).
+    fn fold_path_ref<Output, F>(&'a self, f: F) -> Output
+    where
+        F: FnMut(Vec<Output>, &[usize], Self::BorrowedValue) -> Output,
+    {
+        self.into_pipeline_ref().fold_path(f).unwrap()
     }
 }
 
@@ -3661,6 +3784,30 @@ where
         self.into_pipeline().map_trees(f).trees()
     }
 
+    /// Applies the map_path operation to every tree within this [`OwnedIntoIteratorOfTrees`].
+    ///
+    /// For more details, see [`map_path`](OwnedTreeNode::map_path)
+    #[must_use]
+    fn map_path_each<Output, F>(
+        self,
+        f: F,
+    ) -> Trees<
+        Output,
+        (),
+        CollectionMapPath<
+            T::OwnedValue,
+            T::OwnedChildren,
+            impl TreeCollectionIterator<T::OwnedValue, T::OwnedChildren>,
+            F,
+            Output,
+        >,
+    >
+    where
+        F: FnMut(&[usize], T::OwnedValue) -> Output,
+    {
+        self.into_pipeline().map_path(f).trees()
+    }
+
     /// Applies the fold operation to every tree within this [`OwnedIntoIteratorOfTrees`].
     ///
     /// For more details, see [`fold`](OwnedTreeNode::fold)
@@ -3679,6 +3826,26 @@ where
         F: FnMut(Vec<Output>, T::OwnedValue) -> Output,
     {
         self.into_pipeline().fold_trees(f)
+    }
+
+    /// Applies the fold_path operation to every tree within this [`OwnedIntoIteratorOfTrees`].
+    ///
+    /// For more details, see [`fold_path`](OwnedTreeNode::fold_path)
+    #[must_use]
+    fn fold_path_each<Output, F>(
+        self,
+        f: F,
+    ) -> FoldPath<
+        T::OwnedValue,
+        T::OwnedChildren,
+        impl TreeCollectionIterator<T::OwnedValue, T::OwnedChildren>,
+        F,
+        Output,
+    >
+    where
+        F: FnMut(Vec<Output>, &[usize], T::OwnedValue) -> Output,
+    {
+        self.into_pipeline().fold_path(f)
     }
 }
 
@@ -3902,6 +4069,30 @@ where
         self.into_pipeline().map_trees(f).trees()
     }
 
+    /// Applies the map_path operation to every tree within this [`OwnedIntoIteratorOfBinaryTrees`].
+    ///
+    /// For more details, see [`map_path`](OwnedBinaryTreeNode::map_path)
+    #[must_use]
+    fn map_path_each<Output, F>(
+        self,
+        f: F,
+    ) -> BinaryTrees<
+        Output,
+        (),
+        CollectionMap<
+            T::OwnedValue,
+            [Option<T>; 2],
+            impl BinaryTreeCollectionIterator<T::OwnedValue, [Option<T>; 2]>,
+            F,
+            Output,
+        >,
+    >
+    where
+        F: FnMut(T::OwnedValue) -> Output,
+    {
+        self.into_pipeline().map_trees(f).trees()
+    }
+
     /// Applies the fold operation to every tree within this [`OwnedIntoIteratorOfBinaryTrees`].
     ///
     /// For more details, see [`fold`](OwnedBinaryTreeNode::fold)
@@ -3920,6 +4111,26 @@ where
         F: FnMut([Option<Output>; 2], T::OwnedValue) -> Output,
     {
         self.into_pipeline().fold_trees(f)
+    }
+
+    /// Applies the fold_path operation to every tree within this [`OwnedIntoIteratorOfBinaryTrees`].
+    ///
+    /// For more details, see [`fold_path`](OwnedBinaryTreeNode::fold_path)
+    #[must_use]
+    fn fold_path_each<Output, F>(
+        self,
+        f: F,
+    ) -> BinaryFoldPath<
+        T::OwnedValue,
+        [Option<T>; 2],
+        impl BinaryTreeCollectionIterator<T::OwnedValue, [Option<T>; 2]>,
+        F,
+        Output,
+    >
+    where
+        F: FnMut([Option<Output>; 2], &[usize], T::OwnedValue) -> Output,
+    {
+        self.into_pipeline().fold_path(f)
     }
 }
 
@@ -4125,6 +4336,30 @@ where
         self.into_pipeline_mut().map_trees(f).trees()
     }
 
+    /// Applies the map_path operation to every tree within this [`MutBorrowedIntoIteratorOfTrees`].
+    ///
+    /// For more details, see [`map_path_mut`](MutBorrowedTreeNode::map_path_mut)
+    #[must_use]
+    fn map_path_each_mut<Output, F>(
+        self,
+        f: F,
+    ) -> Trees<
+        Output,
+        (),
+        CollectionMapPath<
+            T::MutBorrowedValue,
+            T::MutBorrowedChildren,
+            impl TreeCollectionIterator<T::MutBorrowedValue, T::MutBorrowedChildren>,
+            F,
+            Output,
+        >,
+    >
+    where
+        F: FnMut(&[usize], T::MutBorrowedValue) -> Output,
+    {
+        self.into_pipeline_mut().map_path(f).trees()
+    }
+
     /// Applies the fold operation to every tree within this [`MutBorrowedIntoIteratorOfTrees`].
     ///
     /// For more details, see [`fold_mut`](MutBorrowedTreeNode::fold_mut)
@@ -4143,6 +4378,26 @@ where
         F: FnMut(Vec<Output>, T::MutBorrowedValue) -> Output,
     {
         self.into_pipeline_mut().fold_trees(f)
+    }
+
+    /// Applies the fold_path operation to every tree within this [`MutBorrowedIntoIteratorOfTrees`].
+    ///
+    /// For more details, see [`fold_path_mut`](MutBorrowedTreeNode::fold_path_mut)
+    #[must_use]
+    fn fold_path_each_mut<Output, F>(
+        self,
+        f: F,
+    ) -> FoldPath<
+        T::MutBorrowedValue,
+        T::MutBorrowedChildren,
+        impl TreeCollectionIterator<T::MutBorrowedValue, T::MutBorrowedChildren>,
+        F,
+        Output,
+    >
+    where
+        F: FnMut(Vec<Output>, &[usize], T::MutBorrowedValue) -> Output,
+    {
+        self.into_pipeline_mut().fold_path(f)
     }
 }
 
@@ -4368,6 +4623,30 @@ where
         self.into_pipeline_mut().map_trees(f).trees()
     }
 
+    /// Applies the map_path operation to every tree within this [`MutBorrowedIntoIteratorOfBinaryTrees`].
+    ///
+    /// For more details, see [`map_path_mut`](MutBorrowedBinaryTreeNode::map_path_mut)
+    #[must_use]
+    fn map_path_each_mut<Output, F>(
+        self,
+        f: F,
+    ) -> BinaryTrees<
+        Output,
+        (),
+        CollectionMapPath<
+            T::MutBorrowedValue,
+            [Option<&'a mut T>; 2],
+            impl BinaryTreeCollectionIterator<T::MutBorrowedValue, [Option<&'a mut T>; 2]>,
+            F,
+            Output,
+        >,
+    >
+    where
+        F: FnMut(&[usize], T::MutBorrowedValue) -> Output,
+    {
+        self.into_pipeline_mut().map_path(f).trees()
+    }
+
     /// Applies the fold operation to every tree within this [`MutBorrowedIntoIteratorOfBinaryTrees`].
     ///
     /// For more details, see [`fold_mut`](MutBorrowedBinaryTreeNode::fold_mut)
@@ -4386,6 +4665,26 @@ where
         F: FnMut([Option<Output>; 2], T::MutBorrowedValue) -> Output,
     {
         self.into_pipeline_mut().fold_trees(f)
+    }
+
+    /// Applies the fold_path operation to every tree within this [`MutBorrowedIntoIteratorOfBinaryTrees`].
+    ///
+    /// For more details, see [`fold_path_mut`](MutBorrowedBinaryTreeNode::fold_path_mut)
+    #[must_use]
+    fn fold_path_each_mut<Output, F>(
+        self,
+        f: F,
+    ) -> BinaryFoldPath<
+        T::MutBorrowedValue,
+        [Option<&'a mut T>; 2],
+        impl BinaryTreeCollectionIterator<T::MutBorrowedValue, [Option<&'a mut T>; 2]>,
+        F,
+        Output,
+    >
+    where
+        F: FnMut([Option<Output>; 2], &[usize], T::MutBorrowedValue) -> Output,
+    {
+        self.into_pipeline_mut().fold_path(f)
     }
 }
 
@@ -4591,6 +4890,30 @@ where
         self.into_pipeline_ref().map_trees(f).trees()
     }
 
+    /// Applies the map_path operation to every tree within this [`BorrowedIntoIteratorOfTrees`].
+    ///
+    /// For more details, see [`map_path_ref`](BorrowedTreeNode::map_path_ref)
+    #[must_use]
+    fn map_path_each_ref<Output, F>(
+        self,
+        f: F,
+    ) -> Trees<
+        Output,
+        (),
+        CollectionMapPath<
+            T::BorrowedValue,
+            T::BorrowedChildren,
+            impl TreeCollectionIterator<T::BorrowedValue, T::BorrowedChildren>,
+            F,
+            Output,
+        >,
+    >
+    where
+        F: FnMut(&[usize], T::BorrowedValue) -> Output,
+    {
+        self.into_pipeline_ref().map_path(f).trees()
+    }
+
     /// Applies the fold operation to every tree within this [`BorrowedIntoIteratorOfTrees`].
     ///
     /// For more details, see [`fold_ref`](BorrowedTreeNode::fold_ref)
@@ -4609,6 +4932,26 @@ where
         F: FnMut(Vec<Output>, T::BorrowedValue) -> Output,
     {
         self.into_pipeline_ref().fold_trees(f)
+    }
+
+    /// Applies the fold_path operation to every tree within this [`BorrowedIntoIteratorOfTrees`].
+    ///
+    /// For more details, see [`fold_path_ref`](BorrowedTreeNode::fold_path_ref)
+    #[must_use]
+    fn fold_path_each_ref<Output, F>(
+        self,
+        f: F,
+    ) -> FoldPath<
+        T::BorrowedValue,
+        T::BorrowedChildren,
+        impl TreeCollectionIterator<T::BorrowedValue, T::BorrowedChildren>,
+        F,
+        Output,
+    >
+    where
+        F: FnMut(Vec<Output>, &[usize], T::BorrowedValue) -> Output,
+    {
+        self.into_pipeline_ref().fold_path(f)
     }
 }
 
@@ -4829,6 +5172,30 @@ where
         self.into_pipeline_ref().map_trees(f).trees()
     }
 
+    /// Applies the map_path operation to every tree within this [`BorrowedIntoIteratorOfBinaryTrees`].
+    ///
+    /// For more details, see [`map_path_ref`](BorrowedBinaryTreeNode::map_path_ref)
+    #[must_use]
+    fn map_path_each_ref<Output, F>(
+        self,
+        f: F,
+    ) -> BinaryTrees<
+        Output,
+        (),
+        CollectionMapPath<
+            T::BorrowedValue,
+            [Option<&'a T>; 2],
+            impl BinaryTreeCollectionIterator<T::BorrowedValue, [Option<&'a T>; 2]>,
+            F,
+            Output,
+        >,
+    >
+    where
+        F: FnMut(&[usize], T::BorrowedValue) -> Output,
+    {
+        self.into_pipeline_ref().map_path(f).trees()
+    }
+
     /// Applies the fold operation to every tree within this [`BorrowedIntoIteratorOfBinaryTrees`].
     ///
     /// For more details, see [`fold_ref`](BorrowedBinaryTreeNode::fold_ref)
@@ -4847,6 +5214,26 @@ where
         F: FnMut([Option<Output>; 2], T::BorrowedValue) -> Output,
     {
         self.into_pipeline_ref().fold_trees(f)
+    }
+
+    /// Applies the fold_path operation to every tree within this [`BorrowedIntoIteratorOfBinaryTrees`].
+    ///
+    /// For more details, see [`fold_path_ref`](BorrowedBinaryTreeNode::fold_path_ref)
+    #[must_use]
+    fn fold_path_each_ref<Output, F>(
+        self,
+        f: F,
+    ) -> BinaryFoldPath<
+        T::BorrowedValue,
+        [Option<&'a T>; 2],
+        impl BinaryTreeCollectionIterator<T::BorrowedValue, [Option<&'a T>; 2]>,
+        F,
+        Output,
+    >
+    where
+        F: FnMut([Option<Output>; 2], &[usize], T::BorrowedValue) -> Output,
+    {
+        self.into_pipeline_ref().fold_path(f)
     }
 }
 

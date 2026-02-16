@@ -9,6 +9,9 @@ mod dfs_inorder;
 mod dfs_postorder;
 mod dfs_preorder;
 mod get_at_path;
+mod prune;
+mod map;
+mod fold;
 mod leaves;
 
 #[cfg(test)]

@@ -1,9 +1,13 @@
 use alloc::vec::Vec;
 
 mod map;
+mod map_path;
 pub use map::CollectionMap;
+pub use map_path::CollectionMapPath;
 mod fold;
+mod fold_path;
 pub use fold::{BinaryFold, Fold};
+pub use fold_path::{BinaryFoldPath, FoldPath};
 mod prune;
 mod prune_depth;
 mod prune_path;
@@ -201,6 +205,17 @@ where
     {
         CollectionMap::new(self, f)
     }
+
+    /// Identical to [`map_trees`](TreeCollectionIteratorBase::map_trees) except that the closure is passed
+    /// an additional parameter: the path of the current node in the tree (see
+    /// [`current_path`](TreeCollectionIteratorBase::current_path) for more details).
+    #[must_use]
+    fn map_path<F, Output>(self, f: F) -> CollectionMapPath<Value, Children, Self, F, Output>
+    where
+        F: FnMut(&[usize], Value) -> Output,
+    {
+        CollectionMapPath::new(self, f)
+    }
 }
 
 pub trait TreeCollectionIterator<Value, Children>:
@@ -360,6 +375,17 @@ where
         F: FnMut(Vec<Output>, Value) -> Output,
     {
         Fold::new(self, f)
+    }
+
+    /// Identical to [`fold_path`](TreeCollectionIterator::fold_path) except that the closure is passed
+    /// an additional parameter: the path of the current node in the tree (see
+    /// [`current_path`](TreeCollectionIteratorBase::current_path) for more details).
+    #[must_use]
+    fn fold_path<Output, F>(self, f: F) -> FoldPath<Value, Children, Self, F, Output>
+    where
+        F: FnMut(Vec<Output>, &[usize], Value) -> Output,
+    {
+        FoldPath::new(self, f)
     }
 
     /// trees() converts this TreeCollectionIterator into a standard
@@ -562,6 +588,17 @@ where
         F: FnMut([Option<Output>; 2], Value) -> Output,
     {
         BinaryFold::new(self, f)
+    }
+
+    /// Identical to [`fold_path`](BinaryTreeCollectionIterator::fold_path) except that the closure is passed
+    /// an additional parameter: the path of the current node in the tree (see
+    /// [`current_path`](TreeCollectionIteratorBase::current_path) for more details).
+    #[must_use]
+    fn fold_path<Output, F>(self, f: F) -> BinaryFoldPath<Value, Children, Self, F, Output>
+    where
+        F: FnMut([Option<Output>; 2], &[usize], Value) -> Output,
+    {
+        BinaryFoldPath::new(self, f)
     }
 
     /// trees() converts this BinaryTreeCollectionIterator into a standard

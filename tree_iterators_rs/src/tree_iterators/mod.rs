@@ -3,7 +3,9 @@ use alloc::{boxed::Box, vec::Vec};
 use crate::prelude::{BinaryTree, Tree};
 
 mod map;
+mod map_path;
 pub use map::Map;
+pub use map_path::MapPath;
 
 mod prune;
 mod prune_depth;
@@ -164,6 +166,17 @@ where
         F: FnMut(Value) -> Output,
     {
         Map::new(self, f)
+    }
+
+    /// Identical to [`map_tree`](TreeIteratorBase::map_tree) except that the closure is passed
+    /// an additional parameter: the path of the current node in the tree (see
+    /// [`current_path`](TreeIteratorBase::current_path) for more details).
+    #[must_use]
+    fn map_path<F, Output>(self, f: F) -> MapPath<Value, Children, Self, F, Output>
+    where
+        F: FnMut(&[usize], Value) -> Output,
+    {
+        MapPath::new(self, f)
     }
 }
 
@@ -392,6 +405,45 @@ where
             .pop()
             .map(|root| f(folded_so_far.pop().unwrap_or_default(), root))
     }
+
+    /// Identical to [`fold_tree`](TreeIterator::fold_tree) except that the closure is passed
+    /// an additional parameter: the path of the current node in the tree (see
+    /// [`current_path`](TreeIteratorBase::current_path) for more details).
+    fn fold_path<F, Output>(mut self, mut f: F) -> Option<Output>
+    where
+        F: FnMut(Vec<Output>, &[usize], Value) -> Output,
+    {
+        let mut inversion_stack: Vec<Value> = Vec::new();
+        let mut folded_so_far: Vec<Vec<Output>> = Vec::new();
+        let mut paths = Vec::new();
+        while let Some(item) = self.next() {
+            while folded_so_far.len() > self.current_depth() {
+                let items = folded_so_far.pop().unwrap();
+                let value_to_fold = inversion_stack.pop().unwrap();
+                let folded = f(items, &paths, value_to_fold);
+                paths.pop();
+                folded_so_far.last_mut().unwrap().push(folded);
+            }
+
+            inversion_stack.push(item);
+            folded_so_far.push(Vec::new());
+            if paths.len() < self.current_depth() {
+                paths.push(self.current_path().last().copied().unwrap());
+            }
+        }
+
+        while folded_so_far.len() > 1 {
+            let items = folded_so_far.pop().unwrap();
+            let value_to_fold = inversion_stack.pop().unwrap();
+            let folded = f(items, &paths, value_to_fold);
+            paths.pop();
+            folded_so_far.last_mut().unwrap().push(folded);
+        }
+
+        inversion_stack
+            .pop()
+            .map(|root: Value| f(folded_so_far.pop().unwrap_or_default(), &[], root))
+    }
 }
 
 pub trait BinaryTreeIterator<Value, Children>: TreeIteratorBase<Value, Children>
@@ -615,9 +667,21 @@ where
     ///
     /// assert_eq!(num_nodes_in_tree, 4);
     /// ```
-    fn fold_tree<F, Output>(mut self, mut f: F) -> Option<Output>
+    fn fold_tree<F, Output>(self, mut f: F) -> Option<Output>
     where
         F: FnMut([Option<Output>; 2], Value) -> Output,
+    {
+        // unlike the Tree implementation, there's no additional computational overhead for fold_path,
+        // so just reuse it.
+        self.fold_path(|acc, _, value| f(acc, value))
+    }
+
+    /// Identical to [`fold_tree`](BinaryTreeIterator::fold_tree) except that the closure is passed
+    /// an additional parameter: the path of the current node in the tree (see
+    /// [`current_path`](TreeIteratorBase::current_path) for more details).
+    fn fold_path<F, Output>(mut self, mut f: F) -> Option<Output>
+    where
+        F: FnMut([Option<Output>; 2], &[usize], Value) -> Output,
     {
         let mut inversion_stack = Vec::new();
         let mut folded_so_far = Vec::new();
@@ -626,26 +690,28 @@ where
             while folded_so_far.len() > self.current_depth() {
                 let items = folded_so_far.pop().unwrap();
                 let value_to_fold = inversion_stack.pop().unwrap();
+                let folded = f(items, &paths, value_to_fold);
                 let path_segment = paths.pop().unwrap();
-                let folded = f(items, value_to_fold);
                 folded_so_far.last_mut().unwrap()[path_segment] = Some(folded);
             }
 
             inversion_stack.push(item);
             folded_so_far.push(Default::default());
-            paths.push(self.current_path().last().copied().unwrap_or_default());
+            if paths.len() < self.current_depth() {
+                paths.push(self.current_path().last().copied().unwrap());
+            }
         }
 
         while folded_so_far.len() > 1 {
             let items = folded_so_far.pop().unwrap();
             let value_to_fold = inversion_stack.pop().unwrap();
+            let folded = f(items, &paths, value_to_fold);
             let path_segment = paths.pop().unwrap();
-            let folded = f(items, value_to_fold);
             folded_so_far.last_mut().unwrap()[path_segment] = Some(folded);
         }
 
         inversion_stack
             .pop()
-            .map(|root| f(folded_so_far.pop().unwrap_or_default(), root))
+            .map(|root| f(folded_so_far.pop().unwrap_or_default(), &[], root))
     }
 }
