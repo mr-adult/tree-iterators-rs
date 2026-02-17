@@ -88,6 +88,9 @@ into other iterators by chaining one of the following methods:
 
 ## Change Log
 
+- 3.6.0
+  - Adds the [`map_path`](crate::prelude::OwnedTreeNode::map_path) and [`fold_path`](crate::prelude::OwnedTreeNode::fold_path) methods for all *TreeNode traits and *TreeCollection ttraits.
+
 - 3.5.2
   - Fixes mutable reference aliasing issues detected by miri in the unsafe code behind the [`MutBorrowedBinaryTreeNode`](crate::prelude::MutBorrowedBinaryTreeNode) implementations of [`.dfs_postorder().attach_context()`](crate::dfs_postorder_iterators::mut_borrow::MutBorrowedBinaryDFSPostorderIterator::attach_context) and [`.dfs_inorder().attach_context()`](crate::dfs_inorder_iterators::mut_borrow::MutBorrowedDFSInorderIterator::attach_context) APIs. All existing APIs for [`MutBorrowedTreeNode`](crate::prelude::MutBorrowedTreeNode) passed miri testing. All code not in the [`MutBorrowedBinaryTreeNode`](crate::prelude::MutBorrowedBinaryTreeNode) or [`MutBorrowedTreeNode`](crate::prelude::MutBorrowedTreeNode) traits is written in safe Rust.
 
@@ -131,22 +134,6 @@ into other iterators by chaining one of the following methods:
     [`BorrowedTreeNode::at_path_ref`](crate::prelude::BorrowedTreeNode::at_path_ref)
   - adds
     [`BorrowedBinaryTreeNode::at_path_ref`](crate::prelude::BorrowedBinaryTreeNode::at_path_ref)
-
-- 3.2.0
-  - Adds the IntoIteratorOfTrees and IntoIteratorOfBinaryTrees traits for more
-    easily working with collections of trees. A default implementation of all
-    functionality is provided for [`Vec`](alloc::vec::Vec) and
-    [`[T]`](core::array) types. The new traits include:
-    - [`OwnedIntoIteratorOfTrees`](crate::prelude::OwnedIntoIteratorOfTrees)
-    - [`OwnedIntoIteratorOfBinaryTrees`](crate::prelude::OwnedIntoIteratorOfBinaryTrees)
-    - [`MutBorrowedIntoIteratorOfTrees`](crate::prelude::MutBorrowedIntoIteratorOfTrees)
-    - [`MutBorrowedIntoIteratorOfBinaryTrees`](crate::prelude::MutBorrowedIntoIteratorOfBinaryTrees)
-    - [`BorrowedIntoIteratorOfTrees`](crate::prelude::BorrowedIntoIteratorOfTrees)
-    - [`BorrowedIntoIteratorOfBinaryTrees`](crate::prelude::BorrowedIntoIteratorOfBinaryTrees)
-  - Additionally, each of these traits' iteration APIs allow calling
-    .attach_context(). These IntoIterator-based .attach_context() calls will
-    track the index in the IntoIteratorOfTrees as part of the path provided in
-    the [`TreeContext`](crate::prelude::TreeContext)
 
 ## Examples
 
